@@ -33,6 +33,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -40,6 +41,7 @@ import { cn } from '@/lib/utils';
 import { useCategories } from '@/hooks/useCategories';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useCreditCards } from '@/hooks/useCreditCards';
+import { useInstitutions } from '@/hooks/useInstitutions';
 import { CreateTransactionData, Transaction } from '@/hooks/useTransactions';
 
 const transactionSchema = z.object({
@@ -47,12 +49,12 @@ const transactionSchema = z.object({
   description: z.string().min(1, 'Descrição é obrigatória'),
   amount: z.string().min(1, 'Valor é obrigatório'),
   event_date: z.string().min(1, 'Data do evento é obrigatória'),
-  effective_date: z.string().min(1, 'Data de efetivação é obrigatória'),
+  is_effective: z.boolean(),
+  effective_date: z.string().optional(),
   category_id: z.string().optional(),
   source_type: z.enum(['account', 'credit_card']),
   account_id: z.string().optional(),
   credit_card_id: z.string().optional(),
-  status: z.enum(['pendente', 'concluido']),
 }).refine((data) => {
   if (data.source_type === 'account') {
     return !!data.account_id;
@@ -64,6 +66,14 @@ const transactionSchema = z.object({
 }, {
   message: 'Selecione uma conta ou cartão de crédito',
   path: ['source_type'],
+}).refine((data) => {
+  if (data.is_effective) {
+    return !!data.effective_date;
+  }
+  return true;
+}, {
+  message: 'Data de efetivação é obrigatória quando o lançamento está efetivado',
+  path: ['effective_date'],
 });
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
@@ -90,6 +100,20 @@ export function TransactionModal({
   const { categories } = useCategories();
   const { accounts } = useAccounts();
   const { creditCards } = useCreditCards();
+  const { institutions } = useInstitutions();
+
+  // Get only child categories (categories that have a parent_id)
+  const childCategories = categories.flatMap(category => 
+    category.subcategories && category.subcategories.length > 0 
+      ? category.subcategories 
+      : category.parent_id ? [category] : []
+  );
+
+  // Create maps for institution lookup
+  const institutionMap = institutions.reduce((acc, institution) => {
+    acc[institution.id] = institution.name;
+    return acc;
+  }, {} as Record<string, string>);
 
   const form = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
@@ -98,14 +122,16 @@ export function TransactionModal({
       description: '',
       amount: '',
       event_date: '',
+      is_effective: false,
       effective_date: '',
       category_id: '',
       source_type: 'account',
       account_id: '',
       credit_card_id: '',
-      status: 'pendente',
     },
   });
+
+  const isEffective = form.watch('is_effective');
 
   useEffect(() => {
     if (transaction) {
@@ -114,12 +140,12 @@ export function TransactionModal({
         description: transaction.description,
         amount: Math.abs(transaction.amount).toString(),
         event_date: transaction.event_date,
-        effective_date: transaction.effective_date,
+        is_effective: transaction.status === 'concluido',
+        effective_date: transaction.effective_date || '',
         category_id: transaction.category_id || '',
         source_type: transaction.account_id ? 'account' : 'credit_card',
         account_id: transaction.account_id || '',
         credit_card_id: transaction.credit_card_id || '',
-        status: transaction.status,
       });
     } else {
       form.reset({
@@ -127,12 +153,12 @@ export function TransactionModal({
         description: '',
         amount: '',
         event_date: '',
+        is_effective: false,
         effective_date: '',
         category_id: '',
         source_type: 'account',
         account_id: '',
         credit_card_id: '',
-        status: 'pendente',
       });
     }
   }, [transaction, form]);
@@ -146,18 +172,14 @@ export function TransactionModal({
       description: data.description,
       amount: finalAmount,
       event_date: data.event_date,
-      effective_date: data.effective_date,
+      effective_date: data.is_effective ? data.effective_date : undefined,
       category_id: data.category_id || undefined,
-      status: data.status,
+      status: data.is_effective ? 'concluido' : 'pendente',
       account_id: data.source_type === 'account' ? data.account_id : undefined,
       credit_card_id: data.source_type === 'credit_card' ? data.credit_card_id : undefined,
     };
 
     onSave(transactionData);
-  };
-
-  const formatDateForInput = (dateString: string) => {
-    return dateString;
   };
 
   const parseInputDate = (dateString: string) => {
@@ -236,99 +258,51 @@ export function TransactionModal({
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="event_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data do Evento</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(parseInputDate(field.value), "dd/MM/yyyy", { locale: ptBR })
-                            ) : (
-                              <span>Selecione a data</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value ? parseInputDate(field.value) : undefined}
-                          onSelect={(date) => {
-                            if (date) {
-                              const year = date.getFullYear();
-                              const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                              const day = date.getDate().toString().padStart(2, '0');
-                              field.onChange(`${year}-${month}-${day}`);
-                            }
-                          }}
-                          locale={ptBR}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="effective_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data de Efetivação</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(parseInputDate(field.value), "dd/MM/yyyy", { locale: ptBR })
-                            ) : (
-                              <span>Selecione a data</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value ? parseInputDate(field.value) : undefined}
-                          onSelect={(date) => {
-                            if (date) {
-                              const year = date.getFullYear();
-                              const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                              const day = date.getDate().toString().padStart(2, '0');
-                              field.onChange(`${year}-${month}-${day}`);
-                            }
-                          }}
-                          locale={ptBR}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="event_date"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Data do Evento</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(parseInputDate(field.value), "dd/MM/yyyy", { locale: ptBR })
+                          ) : (
+                            <span>Selecione a data</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value ? parseInputDate(field.value) : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            const year = date.getFullYear();
+                            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                            const day = date.getDate().toString().padStart(2, '0');
+                            field.onChange(`${year}-${month}-${day}`);
+                          }
+                        }}
+                        locale={ptBR}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -344,7 +318,7 @@ export function TransactionModal({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="none">Sem categoria</SelectItem>
-                      {categories.map((category) => (
+                      {childCategories.map((category) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
                         </SelectItem>
@@ -407,7 +381,7 @@ export function TransactionModal({
                       <SelectContent>
                         {accounts.map((account) => (
                           <SelectItem key={account.id} value={account.id}>
-                            {account.name}
+                            {institutionMap[account.institution_id]} - {account.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -434,7 +408,7 @@ export function TransactionModal({
                       <SelectContent>
                         {creditCards.map((card) => (
                           <SelectItem key={card.id} value={card.id}>
-                            {card.name}
+                            {institutionMap[card.institution_id]} - {card.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -445,27 +419,73 @@ export function TransactionModal({
               />
             )}
 
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+            <div className="flex items-center space-x-4">
+              <FormField
+                control={form.control}
+                name="is_effective"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o status" />
-                      </SelectTrigger>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="pendente">Pendente</SelectItem>
-                      <SelectItem value="concluido">Concluído</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
+                    <FormLabel className="text-sm font-normal">
+                      Efetivado
+                    </FormLabel>
+                  </FormItem>
+                )}
+              />
+
+              {isEffective && (
+                <FormField
+                  control={form.control}
+                  name="effective_date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col flex-1">
+                      <FormLabel>Data de Efetivação</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(parseInputDate(field.value), "dd/MM/yyyy", { locale: ptBR })
+                              ) : (
+                                <span>Selecione a data</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value ? parseInputDate(field.value) : undefined}
+                            onSelect={(date) => {
+                              if (date) {
+                                const year = date.getFullYear();
+                                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                                const day = date.getDate().toString().padStart(2, '0');
+                                field.onChange(`${year}-${month}-${day}`);
+                              }
+                            }}
+                            locale={ptBR}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
-            />
+            </div>
 
             <div className="flex justify-end space-x-2 pt-4">
               <Button type="button" variant="outline" onClick={onClose}>

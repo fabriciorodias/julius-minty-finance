@@ -46,7 +46,7 @@ export interface CreateTransactionData {
   description: string;
   amount: number;
   event_date: string;
-  effective_date: string;
+  effective_date?: string;
   status: 'pendente' | 'concluido';
   type: 'receita' | 'despesa';
 }

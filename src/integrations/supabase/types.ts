@@ -222,7 +222,7 @@ export type Database = {
           created_at: string
           credit_card_id: string | null
           description: string
-          effective_date: string
+          effective_date: string | null
           event_date: string
           id: string
           installment_id: string | null
@@ -239,7 +239,7 @@ export type Database = {
           created_at?: string
           credit_card_id?: string | null
           description: string
-          effective_date: string
+          effective_date?: string | null
           event_date: string
           id?: string
           installment_id?: string | null
@@ -256,7 +256,7 @@ export type Database = {
           created_at?: string
           credit_card_id?: string | null
           description?: string
-          effective_date?: string
+          effective_date?: string | null
           event_date?: string
           id?: string
           installment_id?: string | null

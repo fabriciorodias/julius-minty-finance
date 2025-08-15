@@ -37,7 +37,7 @@ import { cn } from '@/lib/utils';
 import { MonthSelector } from '@/components/planning/MonthSelector';
 import { TransactionModal } from '@/components/transactions/TransactionModal';
 import { InstallmentRecurringModal } from '@/components/transactions/InstallmentRecurringModal';
-import { useTransactions, TransactionFilters, CreateTransactionData, InstallmentData, Transaction } from '@/hooks/useTransactions';
+import { useTransactions, TransactionFilters, CreateTransactionData, InstallmentData, TransactionWithRelations } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useCreditCards } from '@/hooks/useCreditCards';
@@ -61,11 +61,7 @@ export default function Lancamentos() {
 
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState(false);
-  const [editingTransaction, setEditingTransaction] = useState<Transaction & {
-    categories: { name: string } | null;
-    accounts: { name: string } | null;
-    credit_cards: { name: string } | null;
-  } | undefined>(undefined);
+  const [editingTransaction, setEditingTransaction] = useState<TransactionWithRelations | undefined>(undefined);
 
   // Calcular startDate e endDate baseado no mês selecionado
   const currentFilters: TransactionFilters = {
@@ -142,11 +138,7 @@ export default function Lancamentos() {
     setIsInstallmentModalOpen(false);
   };
 
-  const handleEditTransaction = (transaction: Transaction & {
-    categories: { name: string } | null;
-    accounts: { name: string } | null;
-    credit_cards: { name: string } | null;
-  }) => {
+  const handleEditTransaction = (transaction: TransactionWithRelations) => {
     setEditingTransaction(transaction);
     setIsTransactionModalOpen(true);
   };

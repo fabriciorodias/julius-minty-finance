@@ -22,6 +22,12 @@ export interface Transaction {
   created_at: string;
 }
 
+export interface TransactionWithRelations extends Transaction {
+  categories: { name: string } | null;
+  accounts: { name: string } | null;
+  credit_cards: { name: string } | null;
+}
+
 export interface TransactionFilters {
   dateBase?: 'event' | 'effective';
   startDate?: string;
@@ -68,20 +74,20 @@ export function useTransactions(filters: TransactionFilters = {}) {
     error,
   } = useQuery({
     queryKey: ['transactions', user?.id, filters],
-    queryFn: async () => {
+    queryFn: async (): Promise<TransactionWithRelations[]> => {
       if (!user?.id) return [];
 
       let query = supabase
         .from('transactions')
         .select(`
           *,
-          categories (
+          categories!left (
             name
           ),
-          accounts (
+          accounts!left (
             name
           ),
-          credit_cards (
+          credit_cards!left (
             name
           )
         `)
@@ -123,11 +129,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
       const { data, error } = await query.order('event_date', { ascending: false });
 
       if (error) throw error;
-      return data as (Transaction & {
-        categories: { name: string } | null;
-        accounts: { name: string } | null;
-        credit_cards: { name: string } | null;
-      })[];
+      return data || [];
     },
     enabled: !!user?.id,
   });

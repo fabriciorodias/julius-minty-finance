@@ -119,7 +119,8 @@ const Planejamento = () => {
           // Create array with 12 months, filling missing months with 0
           const monthlyAmounts = Array(12).fill(0);
           yearlyBudgets.forEach(budget => {
-            const monthIndex = new Date(budget.month).getMonth();
+            // Fix the month index calculation to avoid timezone issues
+            const monthIndex = parseInt(budget.month.slice(5, 7), 10) - 1;
             monthlyAmounts[monthIndex] = budget.budgeted_amount;
           });
           

@@ -7,6 +7,7 @@ import { PlusCircle, Edit2, ChevronDown, ChevronRight } from "lucide-react";
 import { useCategories, Category } from '@/hooks/useCategories';
 import { useBudgets } from '@/hooks/useBudgets';
 import { BudgetModal } from '@/components/planning/BudgetModal';
+import { MonthSelector } from '@/components/planning/MonthSelector';
 
 const Planejamento = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -17,12 +18,14 @@ const Planejamento = () => {
     monthlyAmounts?: number[];
   } | undefined>(undefined);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [currentMonth, setCurrentMonth] = useState<string>(
+    new Date().toISOString().slice(0, 7) + '-01'
+  );
   
   const { categories, isLoading: categoriesLoading } = useCategories();
-  const { budgets, createFixedBudget, createVariableBudget, getYearlyBudgets, isCreatingFixed, isCreatingVariable } = useBudgets();
+  const { budgets, createFixedBudget, createVariableBudget, getYearlyBudgets, isCreatingFixed, isCreatingVariable } = useBudgets(currentMonth);
 
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
+  const currentYear = new Date(currentMonth).getFullYear();
 
   // Separar categorias por tipo
   const receitas = categories.filter(cat => cat.type === 'receita');
@@ -437,11 +440,12 @@ const Planejamento = () => {
             Organize e controle seu orçamento mensal
           </p>
         </div>
-        <div className="text-right">
+        <div className="flex flex-col items-end gap-2">
           <p className="text-sm text-mint-text-secondary">Período de Referência</p>
-          <p className="font-semibold text-mint-text-primary">
-            {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
-          </p>
+          <MonthSelector 
+            selectedMonth={currentMonth}
+            onMonthChange={setCurrentMonth}
+          />
         </div>
       </div>
 

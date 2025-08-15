@@ -37,7 +37,11 @@ export function useCategories() {
       const rootCategories: Category[] = [];
 
       data.forEach(category => {
-        categoriesMap.set(category.id, { ...category, subcategories: [] });
+        categoriesMap.set(category.id, { 
+          ...category, 
+          type: category.type as 'receita' | 'despesa',
+          subcategories: [] 
+        });
       });
 
       data.forEach(category => {

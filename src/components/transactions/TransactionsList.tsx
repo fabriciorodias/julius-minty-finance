@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Edit, Trash2, FileText, Plus } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TransactionWithRelations } from '@/hooks/useTransactions';
 import { Account } from '@/hooks/useAccounts';
@@ -57,6 +56,15 @@ export function TransactionsList({
       return `${institutionMap[card?.institution_id || '']} - ${transaction.credit_cards.name}`;
     }
     return '-';
+  };
+
+  // Helper function to safely parse date strings as local dates
+  const parseLocalDate = (dateStr: string) => {
+    return parse(dateStr, 'yyyy-MM-dd', new Date());
+  };
+
+  const formatDate = (dateStr: string) => {
+    return format(parseLocalDate(dateStr), 'dd/MM/yyyy', { locale: ptBR });
   };
 
   if (isLoading) {
@@ -133,11 +141,11 @@ export function TransactionsList({
               {transactions.map((transaction) => (
                 <TableRow key={transaction.id} className="hover:bg-muted/50">
                   <TableCell className="font-medium">
-                    {format(new Date(transaction.event_date), 'dd/MM/yyyy', { locale: ptBR })}
+                    {formatDate(transaction.event_date)}
                   </TableCell>
                   <TableCell>
                     {transaction.effective_date
-                      ? format(new Date(transaction.effective_date), 'dd/MM/yyyy', { locale: ptBR })
+                      ? formatDate(transaction.effective_date)
                       : '-'
                     }
                   </TableCell>

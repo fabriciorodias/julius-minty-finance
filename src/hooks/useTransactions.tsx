@@ -13,7 +13,7 @@ export interface Transaction {
   description: string;
   amount: number;
   event_date: string;
-  effective_date: string;
+  effective_date: string | null;
   status: 'pendente' | 'concluido';
   type: 'receita' | 'despesa';
   installment_id: string | null;

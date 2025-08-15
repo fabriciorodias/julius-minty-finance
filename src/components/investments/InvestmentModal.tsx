@@ -85,12 +85,12 @@ export function InvestmentModal({ isOpen, onClose, onSave, isLoading }: Investme
             <Label htmlFor="institution_id" className="text-mint-text-primary font-medium">
               Instituição Financeira
             </Label>
-            <Select onValueChange={(value) => setValue('institution_id', value || undefined)}>
+            <Select onValueChange={(value) => setValue('institution_id', value === 'none' ? undefined : value)}>
               <SelectTrigger className="mint-input">
                 <SelectValue placeholder="Selecione a instituição" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhuma</SelectItem>
+                <SelectItem value="none">Nenhuma</SelectItem>
                 {institutions.map((institution) => (
                   <SelectItem key={institution.id} value={institution.id}>
                     {institution.name}

@@ -3,7 +3,8 @@ import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 interface PortfolioData {
-  type: string;
+  type?: string;
+  institution?: string;
   value: number;
   percentage: number;
 }
@@ -22,9 +23,10 @@ export function InvestmentPortfolioChart({ data, title }: InvestmentPortfolioCha
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
+      const label = data.type || data.institution;
       return (
         <div className="bg-white p-3 border rounded-lg shadow-lg">
-          <p className="font-medium">{data.type}</p>
+          <p className="font-medium">{label}</p>
           <p className="font-bold text-mint-primary">
             {formatCurrency(data.value)}
           </p>
@@ -70,11 +72,14 @@ export function InvestmentPortfolioChart({ data, title }: InvestmentPortfolioCha
           <Legend 
             verticalAlign="bottom" 
             height={36}
-            formatter={(value, entry: any) => (
-              <span style={{ color: entry.color }}>
-                {value} ({entry.payload.percentage.toFixed(1)}%)
-              </span>
-            )}
+            formatter={(value, entry: any) => {
+              const label = entry.payload.type || entry.payload.institution;
+              return (
+                <span style={{ color: entry.color }}>
+                  {label} ({entry.payload.percentage.toFixed(1)}%)
+                </span>
+              );
+            }}
           />
         </PieChart>
       </ResponsiveContainer>

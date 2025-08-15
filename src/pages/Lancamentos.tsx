@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTransactions, TransactionFilters, TransactionWithRelations, CreateTransactionData } from '@/hooks/useTransactions';
@@ -8,8 +9,12 @@ import { useInstitutions } from '@/hooks/useInstitutions';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { TransactionModal } from '@/components/transactions/TransactionModal';
 import { InstallmentRecurringModal } from '@/components/transactions/InstallmentRecurringModal';
+import { ImportTransactionsModal } from '@/components/transactions/ImportTransactionsModal';
+import { InvoiceManagerModal } from '@/components/transactions/InvoiceManagerModal';
 import { TransactionFilters as FiltersComponent } from '@/components/transactions/TransactionFilters';
 import { TransactionsList } from '@/components/transactions/TransactionsList';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Upload, CreditCard, AlertTriangle } from 'lucide-react';
 
 export default function Lancamentos() {
   // Persist filters in localStorage
@@ -18,6 +23,8 @@ export default function Lancamentos() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionWithRelations | null>(null);
 
   const { categories } = useCategories();
@@ -61,11 +68,21 @@ export default function Lancamentos() {
     }
   };
 
+  const handleImportSuccess = () => {
+    // Filter to show only uncategorized transactions after import
+    setFilters({ ...filters, withoutCategory: true });
+  };
+
   const filteredTransactions = useMemo(() => {
     return transactions.filter(transaction =>
       transaction.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [transactions, searchTerm]);
+
+  // Check for uncategorized transactions
+  const uncategorizedCount = useMemo(() => {
+    return transactions.filter(t => t.category_id === null).length;
+  }, [transactions]);
 
   useEffect(() => {
     if (!isModalOpen) {
@@ -90,6 +107,14 @@ export default function Lancamentos() {
           </p>
         </div>
         <div className="flex space-x-2">
+          <Button onClick={() => setIsImportModalOpen(true)} variant="outline" className="flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            Importar Extratos/Faturas
+          </Button>
+          <Button onClick={() => setIsInvoiceModalOpen(true)} variant="outline" className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            Gerenciar Faturas
+          </Button>
           <Button onClick={() => setIsInstallmentModalOpen(true)} variant="outline">
             Lançamento Parcelado/Recorrente
           </Button>
@@ -98,6 +123,24 @@ export default function Lancamentos() {
           </Button>
         </div>
       </div>
+
+      {/* Alert for uncategorized transactions */}
+      {uncategorizedCount > 0 && (
+        <Alert className="border-yellow-200 bg-yellow-50">
+          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription className="text-yellow-800">
+            Você tem <strong>{uncategorizedCount}</strong> lançamento{uncategorizedCount > 1 ? 's' : ''} sem categoria. 
+            É recomendado categorizar todos os lançamentos para um melhor controle financeiro.
+            <Button 
+              variant="link" 
+              className="p-0 h-auto ml-2 text-yellow-800 underline"
+              onClick={() => setFilters({ ...filters, withoutCategory: true })}
+            >
+              Ver lançamentos não categorizados
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Filtros */}
       <FiltersComponent
@@ -139,6 +182,17 @@ export default function Lancamentos() {
         onClose={() => setIsInstallmentModalOpen(false)}
         onSave={createInstallments}
         isLoading={isCreatingInstallments}
+      />
+
+      <ImportTransactionsModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={handleImportSuccess}
+      />
+
+      <InvoiceManagerModal
+        isOpen={isInvoiceModalOpen}
+        onClose={() => setIsInvoiceModalOpen(false)}
       />
     </div>
   );

@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -36,6 +37,7 @@ export interface TransactionFilters {
   creditCardId?: string;
   status?: 'pendente' | 'concluido';
   q?: string;
+  withoutCategory?: boolean;
 }
 
 export interface CreateTransactionData {
@@ -125,6 +127,10 @@ export function useTransactions(filters: TransactionFilters = {}) {
         query = query.ilike('description', `%${filters.q}%`);
       }
 
+      if (filters.withoutCategory) {
+        query = query.is('category_id', null);
+      }
+
       const { data, error } = await query.order('event_date', { ascending: false });
 
       if (error) throw error;
@@ -160,6 +166,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
       toast({
         title: "Lançamento criado",
         description: "O lançamento foi criado com sucesso.",
@@ -189,6 +196,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
       toast({
         title: "Lançamento atualizado",
         description: "O lançamento foi atualizado com sucesso.",
@@ -215,6 +223,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
       toast({
         title: "Lançamento excluído",
         description: "O lançamento foi excluído com sucesso.",
@@ -241,6 +250,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
     },
     onSuccess: (_, ids) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
       toast({
         title: "Lançamentos excluídos",
         description: `${ids.length} lançamento${ids.length > 1 ? 's foram excluídos' : ' foi excluído'} com sucesso.`,
@@ -296,6 +306,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
       toast({
         title: "Lançamentos parcelados criados",
         description: "Todos os lançamentos parcelados foram criados com sucesso.",

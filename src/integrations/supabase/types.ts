@@ -187,6 +187,159 @@ export type Database = {
         }
         Relationships: []
       }
+      investment_balances: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          investment_id: string
+          month: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance: number
+          created_at?: string
+          id?: string
+          investment_id: string
+          month: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          investment_id?: string
+          month?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_balances_investment_id_fkey"
+            columns: ["investment_id"]
+            isOneToOne: false
+            referencedRelation: "investments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investment_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          investment_id: string
+          transaction_date: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          investment_id: string
+          transaction_date: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          investment_id?: string
+          transaction_date?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_transactions_investment_id_fkey"
+            columns: ["investment_id"]
+            isOneToOne: false
+            referencedRelation: "investments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investments: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          due_date: string | null
+          id: string
+          institution_id: string | null
+          issuer: string | null
+          name: string
+          status: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          due_date?: string | null
+          id?: string
+          institution_id?: string | null
+          issuer?: string | null
+          name: string
+          status?: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          due_date?: string | null
+          id?: string
+          institution_id?: string | null
+          issuer?: string | null
+          name?: string
+          status?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investments_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_indicators: {
+        Row: {
+          cdi: number | null
+          created_at: string
+          indicator_date: string
+          ipca: number | null
+          selic: number | null
+          updated_at: string
+        }
+        Insert: {
+          cdi?: number | null
+          created_at?: string
+          indicator_date: string
+          ipca?: number | null
+          selic?: number | null
+          updated_at?: string
+        }
+        Update: {
+          cdi?: number | null
+          created_at?: string
+          indicator_date?: string
+          ipca?: number | null
+          selic?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       plan_installments: {
         Row: {
           created_at: string
@@ -321,6 +474,7 @@ export type Database = {
           gender: string | null
           id: string
           last_name: string | null
+          monthly_cost_of_living: number | null
           updated_at: string | null
         }
         Insert: {
@@ -329,6 +483,7 @@ export type Database = {
           gender?: string | null
           id: string
           last_name?: string | null
+          monthly_cost_of_living?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -337,6 +492,7 @@ export type Database = {
           gender?: string | null
           id?: string
           last_name?: string | null
+          monthly_cost_of_living?: number | null
           updated_at?: string | null
         }
         Relationships: []

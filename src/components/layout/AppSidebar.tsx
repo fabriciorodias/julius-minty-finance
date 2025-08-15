@@ -68,8 +68,8 @@ export function AppSidebar() {
           className={({ isActive }) =>
             `flex items-center w-full px-3 py-2 rounded-lg julius-transition ${
               isActive
-                ? "bg-julius-accent text-julius-accent-foreground shadow-sm"
-                : "text-julius-primary hover:bg-julius-secondary"
+                ? "bg-accent text-accent-foreground shadow-sm"
+                : "text-foreground hover:bg-muted hover:text-foreground"
             }`
           }
         >
@@ -79,7 +79,7 @@ export function AppSidebar() {
           {!collapsed && (
             <>
               <span className="flex-1 text-sm font-medium">{item.title}</span>
-              <span className="material-icons text-sm text-julius-muted-foreground ml-2">
+              <span className="material-icons text-sm text-muted-foreground ml-2">
                 construction
               </span>
             </>
@@ -90,18 +90,18 @@ export function AppSidebar() {
   );
 
   return (
-    <Sidebar className={`${collapsed ? "w-16" : "w-64"} border-r border-julius-border bg-sidebar`}>
-      <SidebarHeader className="p-6 border-b border-julius-border">
+    <Sidebar className={`${collapsed ? "w-16" : "w-64"} border-r border-border bg-sidebar`}>
+      <SidebarHeader className="p-6 border-b border-border">
         <div className="flex items-center">
-          <div className="w-10 h-10 bg-julius-accent rounded-xl flex items-center justify-center">
-            <span className="material-icons text-julius-accent-foreground text-xl">
+          <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center">
+            <span className="material-icons text-accent-foreground text-xl">
               account_balance_wallet
             </span>
           </div>
           {!collapsed && (
             <div className="ml-3">
-              <h1 className="text-xl font-bold text-julius-primary">Julius</h1>
-              <p className="text-xs text-julius-muted-foreground">Planejamento Financeiro</p>
+              <h1 className="text-xl font-bold text-foreground">Julius</h1>
+              <p className="text-xs text-muted-foreground">Planejamento Financeiro</p>
             </div>
           )}
         </div>
@@ -116,7 +116,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <Separator className="my-6 bg-julius-border" />
+        <Separator className="my-6 bg-border" />
 
         <SidebarGroup>
           <SidebarGroupContent>

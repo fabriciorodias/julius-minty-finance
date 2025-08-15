@@ -1,69 +1,79 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Julius Design System - Cores em HSL */
-
 @layer base {
   :root {
-    /* Julius Brand Colors */
-    --julius-primary: 210 22% 22%; /* #2c3e50 - Cinza-azulado escuro */
-    --julius-primary-foreground: 0 0% 100%; /* Branco */
-    
-    --julius-secondary: 210 17% 98%; /* #f8f9fa - Cinza muito claro */
-    --julius-secondary-foreground: 210 22% 22%;
-    
-    --julius-accent: 145 63% 49%; /* #2ecc71 - Verde-menta */
-    --julius-accent-foreground: 0 0% 100%;
-    
-    --julius-muted: 210 14% 89%; /* #e9ecef - Cinza neutro */
-    --julius-muted-foreground: 215 16% 47%; /* #6c757d - Cinza médio */
-    
-    --julius-border: 210 14% 89%;
-    --julius-input: 210 14% 89%;
-    --julius-ring: 145 63% 49%;
-
-    /* Background colors */
-    --background: var(--julius-secondary);
-    --foreground: var(--julius-primary);
-
+    --background: 0 0% 100%;
+    --foreground: 210 22% 22%;
     --card: 0 0% 100%;
-    --card-foreground: var(--julius-primary);
-
+    --card-foreground: 210 22% 22%;
     --popover: 0 0% 100%;
-    --popover-foreground: var(--julius-primary);
+    --popover-foreground: 210 22% 22%;
+    --primary: 210 22% 22%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 17% 98%;
+    --secondary-foreground: 210 22% 22%;
+    --muted: 210 17% 95%;
+    --muted-foreground: 210 10% 60%;
+    --accent: 145 63% 49%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 210 17% 90%;
+    --input: 210 17% 90%;
+    --ring: 145 63% 49%;
+    --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
 
-    --primary: var(--julius-primary);
-    --primary-foreground: var(--julius-primary-foreground);
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 210 22% 22%;
+    --sidebar-primary: 210 22% 22%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 145 63% 49%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 210 17% 90%;
+    --sidebar-ring: 145 63% 49%;
+  }
 
-    --secondary: var(--julius-muted);
-    --secondary-foreground: var(--julius-primary);
+  .dark {
+    --background: 210 22% 22%;
+    --foreground: 0 0% 100%;
+    --card: 210 22% 22%;
+    --card-foreground: 0 0% 100%;
+    --popover: 210 22% 22%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 210 22% 22%;
+    --secondary: 210 17% 30%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 17% 25%;
+    --muted-foreground: 210 10% 70%;
+    --accent: 145 63% 49%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 210 17% 25%;
+    --input: 210 17% 25%;
+    --ring: 145 63% 49%;
 
-    --muted: var(--julius-muted);
-    --muted-foreground: var(--julius-muted-foreground);
-
-    --accent: var(--julius-accent);
-    --accent-foreground: var(--julius-accent-foreground);
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: var(--julius-border);
-    --input: var(--julius-input);
-    --ring: var(--julius-ring);
-
-    --radius: 0.75rem; /* Bordas mais arredondadas para visual moderno */
-
-    /* Sidebar específico para Julius */
-    --sidebar-background: 0 0% 100%; /* Branco puro */
-    --sidebar-foreground: var(--julius-primary);
-    --sidebar-primary: var(--julius-accent);
-    --sidebar-primary-foreground: var(--julius-accent-foreground);
-    --sidebar-accent: var(--julius-secondary);
-    --sidebar-accent-foreground: var(--julius-primary);
-    --sidebar-border: var(--julius-border);
-    --sidebar-ring: var(--julius-ring);
+    /* Sidebar Dark */
+    --sidebar-background: 210 22% 22%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 210 22% 22%;
+    --sidebar-accent: 145 63% 49%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 210 17% 25%;
+    --sidebar-ring: 145 63% 49%;
   }
 }
 
@@ -71,49 +81,15 @@
   * {
     @apply border-border;
   }
-
   body {
-    @apply bg-background text-foreground font-inter antialiased;
-  }
-
-  /* Scrollbar personalizada */
-  ::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: hsl(var(--julius-muted));
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: hsl(var(--julius-muted-foreground));
-    border-radius: 3px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--julius-primary));
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
 
-/* Animações suaves para toda a aplicação */
-@layer components {
+/* Julius custom utility classes */
+@layer utilities {
   .julius-transition {
     @apply transition-all duration-200 ease-in-out;
-  }
-
-  .julius-hover-lift {
-    @apply julius-transition hover:translate-y-[-2px] hover:shadow-lg;
-  }
-
-  .julius-card {
-    @apply bg-card rounded-xl border border-border shadow-sm julius-transition;
-  }
-
-  .julius-button-primary {
-    @apply bg-accent text-accent-foreground hover:bg-accent/90 julius-transition;
-  }
-
-  .julius-button-secondary {
-    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 julius-transition;
   }
 }

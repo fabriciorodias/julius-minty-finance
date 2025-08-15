@@ -81,13 +81,13 @@ export function useTransactions(filters: TransactionFilters = {}) {
         .from('transactions')
         .select(`
           *,
-          categories (
+          categories!left (
             name
           ),
-          accounts (
+          accounts!left (
             name
           ),
-          credit_cards (
+          credit_cards!left (
             name
           )
         `)
@@ -129,7 +129,16 @@ export function useTransactions(filters: TransactionFilters = {}) {
       const { data, error } = await query.order('event_date', { ascending: false });
 
       if (error) throw error;
-      return (data || []) as TransactionWithRelations[];
+      
+      // Transform the data to match our expected type structure
+      const transformedData = (data || []).map(item => ({
+        ...item,
+        categories: item.categories && !('error' in item.categories) ? item.categories : null,
+        accounts: item.accounts && !('error' in item.accounts) ? item.accounts : null,
+        credit_cards: item.credit_cards && !('error' in item.credit_cards) ? item.credit_cards : null,
+      })) as TransactionWithRelations[];
+
+      return transformedData;
     },
     enabled: !!user?.id,
   });

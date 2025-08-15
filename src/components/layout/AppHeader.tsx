@@ -1,7 +1,7 @@
 
 import { useLocation } from "react-router-dom";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserMenu } from "@/components/layout/UserMenu";
 
 const pageTitle: Record<string, string> = {
   "/dashboard": "Dashboards",
@@ -11,6 +11,7 @@ const pageTitle: Record<string, string> = {
   "/investimentos": "Investimentos",
   "/entidades": "Gerenciar Entidades",
   "/tutoriais": "Tutoriais",
+  "/profile": "Meu Perfil",
   "/": "Dashboard"
 };
 
@@ -25,13 +26,7 @@ export function AppHeader() {
         <h2 className="text-xl font-semibold text-primary-foreground">{currentTitle}</h2>
       </div>
 
-      <div className="flex items-center">
-        <Avatar className="h-8 w-8 bg-primary-foreground bg-opacity-20">
-          <AvatarFallback className="bg-transparent text-primary-foreground text-sm font-medium">
-            U
-          </AvatarFallback>
-        </Avatar>
-      </div>
+      <UserMenu />
     </header>
   );
 }

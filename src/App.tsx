@@ -3,7 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppLayout } from "./components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Planos from "./pages/Planos";
@@ -12,6 +14,11 @@ import Lancamentos from "./pages/Lancamentos";
 import Investimentos from "./pages/Investimentos";
 import Entidades from "./pages/Entidades";
 import Tutoriais from "./pages/Tutoriais";
+import Profile from "./pages/Profile";
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 console.log('App.tsx: App component loading...');
@@ -27,19 +34,82 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <AppLayout>
+          <AuthProvider>
             <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/planos" element={<Planos />} />
-              <Route path="/planejamento" element={<Planejamento />} />
-              <Route path="/lancamentos" element={<Lancamentos />} />
-              <Route path="/investimentos" element={<Investimentos />} />
-              <Route path="/entidades" element={<Entidades />} />
-              <Route path="/tutoriais" element={<Tutoriais />} />
+              {/* Auth routes */}
+              <Route path="/auth/login" element={<Login />} />
+              <Route path="/auth/register" element={<Register />} />
+              <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
+              
+              {/* Protected routes */}
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Navigate to="/dashboard" replace />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/dashboard" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Dashboard />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/planos" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Planos />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/planejamento" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Planejamento />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/lancamentos" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Lancamentos />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/investimentos" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Investimentos />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/entidades" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Entidades />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/tutoriais" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Tutoriais />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Profile />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </AppLayout>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

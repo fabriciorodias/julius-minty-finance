@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -141,7 +142,7 @@ export function TransactionModal({
         event_date: transaction.event_date,
         is_effective: transaction.status === 'concluido',
         effective_date: transaction.effective_date || '',
-        category_id: transaction.category_id || '',
+        category_id: transaction.category_id || 'none',
         source_type: transaction.account_id ? 'account' : 'credit_card',
         account_id: transaction.account_id || '',
         credit_card_id: transaction.credit_card_id || '',
@@ -154,7 +155,7 @@ export function TransactionModal({
         event_date: '',
         is_effective: false,
         effective_date: '',
-        category_id: '',
+        category_id: 'none',
         source_type: 'account',
         account_id: '',
         credit_card_id: '',
@@ -172,7 +173,7 @@ export function TransactionModal({
       amount: finalAmount,
       event_date: data.event_date,
       effective_date: data.is_effective ? data.effective_date : undefined,
-      category_id: data.category_id === '' ? undefined : data.category_id,
+      category_id: data.category_id === 'none' ? undefined : data.category_id,
       status: data.is_effective ? 'concluido' : 'pendente',
       account_id: data.source_type === 'account' ? data.account_id : undefined,
       credit_card_id: data.source_type === 'credit_card' ? data.credit_card_id : undefined,
@@ -189,7 +190,7 @@ export function TransactionModal({
         event_date: '',
         is_effective: false,
         effective_date: '',
-        category_id: '',
+        category_id: 'none',
         source_type: data.source_type, // Keep the same source type
         account_id: data.source_type === 'account' ? data.account_id : '',
         credit_card_id: data.source_type === 'credit_card' ? data.credit_card_id : '',
@@ -335,7 +336,7 @@ export function TransactionModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Sem categoria</SelectItem>
+                      <SelectItem value="none">Sem categoria</SelectItem>
                       {childCategories.map((category) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}

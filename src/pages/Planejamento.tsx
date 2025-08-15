@@ -1,9 +1,9 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Edit2 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { PlusCircle, Edit2, ChevronDown, ChevronRight } from "lucide-react";
 import { useCategories, Category } from '@/hooks/useCategories';
 import { useBudgets } from '@/hooks/useBudgets';
 import { BudgetModal } from '@/components/planning/BudgetModal';
@@ -16,6 +16,7 @@ const Planejamento = () => {
     fixedAmount?: number;
     monthlyAmounts?: number[];
   } | undefined>(undefined);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   
   const { categories, isLoading: categoriesLoading } = useCategories();
   const { budgets, createFixedBudget, createVariableBudget, getYearlyBudgets, isCreatingFixed, isCreatingVariable } = useBudgets();
@@ -80,6 +81,16 @@ const Planejamento = () => {
     // Para despesas: Planejado - Realizado (positivo = dentro do orçamento)
     // Para receitas: Realizado - Planejado (positivo = acima da meta)
     return categoryType === 'despesa' ? budgeted - realized : realized - budgeted;
+  };
+
+  const toggleCategoryExpansion = (categoryId: string) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
+    }
+    setExpandedCategories(newExpanded);
   };
 
   const handleEditBudget = async (category: Category) => {
@@ -161,41 +172,96 @@ const Planejamento = () => {
     const difference = getDifference(category, type);
     const hasExceeded = type === 'despesa' && realized > budgeted && budgeted > 0;
     const isEditable = !hasSubcategories;
+    const isExpanded = expandedCategories.has(category.id);
 
-    return (
-      <>
-        <tr className="border-b border-mint-border/50 hover:bg-mint-hover">
-          <td className="py-3 px-2">
-            <div className="flex flex-col">
-              <span className={`font-medium ${hasSubcategories ? 'text-mint-text-primary font-semibold' : 'text-mint-text-primary'}`}>
-                {category.name}
-              </span>
-              {hasSubcategories && (
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {category.subcategories?.map((sub) => (
-                    <Badge key={sub.id} variant="secondary" className="text-xs">
-                      {sub.name}
+    if (hasSubcategories) {
+      // Categoria-pai com subcategorias
+      return (
+        <>
+          <tr className="border-b border-mint-border/50 bg-mint-hover/30">
+            <td className="py-4 px-2">
+              <Collapsible open={isExpanded} onOpenChange={() => toggleCategoryExpansion(category.id)}>
+                <CollapsibleTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="flex items-center gap-2 p-0 h-auto font-semibold text-mint-text-primary hover:bg-transparent"
+                  >
+                    {isExpanded ? 
+                      <ChevronDown className="w-4 h-4" /> : 
+                      <ChevronRight className="w-4 h-4" />
+                    }
+                    <span className="text-base font-bold">{category.name}</span>
+                    <Badge variant="outline" className="text-xs ml-2">
+                      {category.subcategories?.length} subcategorias
                     </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-          </td>
-          <td className="py-3 px-2 text-center">
-            {isEditable ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleEditBudget(category)}
-                className="text-mint-text-primary hover:bg-mint-hover"
-              >
-                {budgeted > 0 ? formatCurrency(budgeted) : 'Definir'}
-              </Button>
-            ) : (
-              <span className="text-mint-text-secondary font-medium">
+                  </Button>
+                </CollapsibleTrigger>
+              </Collapsible>
+            </td>
+            <td className="py-4 px-2 text-center">
+              <span className="text-mint-text-primary font-bold text-base">
                 {formatCurrency(budgeted)}
               </span>
-            )}
+            </td>
+            <td className={`py-4 px-2 text-center font-bold text-base ${
+              hasExceeded ? 'text-red-600' : 'text-mint-text-primary'
+            }`}>
+              {formatCurrency(realized)}
+            </td>
+            <td className={`py-4 px-2 text-center font-bold text-base ${
+              hasExceeded ? 'text-red-600' : 
+              difference > 0 ? 'text-green-600' : 
+              difference < 0 ? 'text-red-600' : 'text-mint-text-secondary'
+            }`}>
+              {formatCurrency(Math.abs(difference))}
+              {difference > 0 && <span className="text-xs ml-1">↑</span>}
+              {difference < 0 && <span className="text-xs ml-1">↓</span>}
+            </td>
+            <td className="py-4 px-2 text-center">
+              <span className="text-mint-text-secondary text-sm">-</span>
+            </td>
+          </tr>
+          
+          {/* Subcategorias colapsáveis */}
+          <tr>
+            <td colSpan={5} className="p-0">
+              <Collapsible open={isExpanded} onOpenChange={() => toggleCategoryExpansion(category.id)}>
+                <CollapsibleContent>
+                  <div className="bg-mint-hover/10">
+                    {category.subcategories?.map((subcategory, index) => (
+                      <SubcategoryRow 
+                        key={subcategory.id} 
+                        category={subcategory} 
+                        type={type}
+                        isLast={index === category.subcategories!.length - 1}
+                      />
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </td>
+          </tr>
+        </>
+      );
+    } else {
+      // Categoria sem subcategorias (categoria independente)
+      return (
+        <tr className="border-b border-mint-border/50 hover:bg-mint-hover">
+          <td className="py-3 px-2">
+            <span className="font-medium text-mint-text-primary text-base">
+              {category.name}
+            </span>
+          </td>
+          <td className="py-3 px-2 text-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEditBudget(category)}
+              className="text-mint-text-primary hover:bg-mint-hover"
+            >
+              {budgeted > 0 ? formatCurrency(budgeted) : 'Definir'}
+            </Button>
           </td>
           <td className={`py-3 px-2 text-center font-medium ${
             hasExceeded ? 'text-red-600' : 'text-mint-text-primary'
@@ -212,26 +278,79 @@ const Planejamento = () => {
             {difference < 0 && <span className="text-xs ml-1">↓</span>}
           </td>
           <td className="py-3 px-2 text-center">
-            {isEditable ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleEditBudget(category)}
-                className="text-mint-text-secondary hover:text-mint-text-primary hover:bg-mint-hover"
-              >
-                <Edit2 className="w-4 h-4" />
-              </Button>
-            ) : (
-              <span className="text-mint-text-secondary text-sm">-</span>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEditBudget(category)}
+              className="text-mint-text-secondary hover:text-mint-text-primary hover:bg-mint-hover"
+            >
+              <Edit2 className="w-4 h-4" />
+            </Button>
           </td>
         </tr>
-        
-        {/* Render subcategories if they exist */}
-        {hasSubcategories && category.subcategories?.map((subcategory) => (
-          <CategoryRow key={subcategory.id} category={subcategory} type={type} />
-        ))}
-      </>
+      );
+    }
+  };
+
+  const SubcategoryRow = ({ 
+    category, 
+    type, 
+    isLast 
+  }: { 
+    category: Category; 
+    type: 'receita' | 'despesa';
+    isLast: boolean;
+  }) => {
+    const budgeted = getBudgetedAmount(category.id);
+    const realized = getRealizedAmount(category.id);
+    const difference = getDifference(category, type);
+    const hasExceeded = type === 'despesa' && realized > budgeted && budgeted > 0;
+
+    return (
+      <tr className={`hover:bg-mint-hover/50 ${!isLast ? 'border-b border-mint-border/20' : ''}`}>
+        <td className="py-3 px-2 pl-8">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-px bg-mint-border"></div>
+            <span className="font-medium text-mint-text-secondary text-sm">
+              {category.name}
+            </span>
+          </div>
+        </td>
+        <td className="py-3 px-2 text-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEditBudget(category)}
+            className="text-mint-text-primary hover:bg-mint-hover text-sm"
+          >
+            {budgeted > 0 ? formatCurrency(budgeted) : 'Definir'}
+          </Button>
+        </td>
+        <td className={`py-3 px-2 text-center font-medium text-sm ${
+          hasExceeded ? 'text-red-600' : 'text-mint-text-primary'
+        }`}>
+          {formatCurrency(realized)}
+        </td>
+        <td className={`py-3 px-2 text-center font-medium text-sm ${
+          hasExceeded ? 'text-red-600' : 
+          difference > 0 ? 'text-green-600' : 
+          difference < 0 ? 'text-red-600' : 'text-mint-text-secondary'
+        }`}>
+          {formatCurrency(Math.abs(difference))}
+          {difference > 0 && <span className="text-xs ml-1">↑</span>}
+          {difference < 0 && <span className="text-xs ml-1">↓</span>}
+        </td>
+        <td className="py-3 px-2 text-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEditBudget(category)}
+            className="text-mint-text-secondary hover:text-mint-text-primary hover:bg-mint-hover"
+          >
+            <Edit2 className="w-3 h-3" />
+          </Button>
+        </td>
+      </tr>
     );
   };
 
@@ -247,6 +366,24 @@ const Planejamento = () => {
             {type === 'receita' ? 'trending_up' : 'trending_down'}
           </span>
           {title}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              const allCategoryIds = new Set(categoriesList
+                .filter(cat => cat.subcategories && cat.subcategories.length > 0)
+                .map(cat => cat.id)
+              );
+              setExpandedCategories(
+                expandedCategories.size === allCategoryIds.size ? 
+                new Set() : 
+                allCategoryIds
+              );
+            }}
+            className="ml-auto text-xs text-mint-text-secondary hover:text-mint-text-primary"
+          >
+            {expandedCategories.size > 0 ? 'Recolher Todas' : 'Expandir Todas'}
+          </Button>
         </CardTitle>
       </CardHeader>
       <CardContent>

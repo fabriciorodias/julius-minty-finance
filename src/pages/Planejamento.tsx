@@ -18,14 +18,18 @@ const Planejamento = () => {
     monthlyAmounts?: number[];
   } | undefined>(undefined);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  
+  // Initialize current month using local date to avoid timezone issues
+  const now = new Date();
   const [currentMonth, setCurrentMonth] = useState<string>(
-    new Date().toISOString().slice(0, 7) + '-01'
+    `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-01`
   );
   
   const { categories, isLoading: categoriesLoading } = useCategories();
   const { budgets, createFixedBudget, createVariableBudget, getYearlyBudgets, isCreatingFixed, isCreatingVariable } = useBudgets(currentMonth);
 
-  const currentYear = new Date(currentMonth).getFullYear();
+  // Extract year from string to avoid timezone issues
+  const currentYear = parseInt(currentMonth.slice(0, 4), 10);
 
   // Separar categorias por tipo
   const receitas = categories.filter(cat => cat.type === 'receita');

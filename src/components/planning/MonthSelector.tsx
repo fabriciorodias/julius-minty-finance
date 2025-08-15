@@ -16,8 +16,10 @@ interface MonthSelectorProps {
 export function MonthSelector({ selectedMonth, onMonthChange }: MonthSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   
-  // Convert YYYY-MM-01 format to Date object
-  const selectedDate = new Date(selectedMonth);
+  // Parse YYYY-MM-01 format using local time to avoid timezone issues
+  const year = parseInt(selectedMonth.slice(0, 4), 10);
+  const month = parseInt(selectedMonth.slice(5, 7), 10);
+  const selectedDate = new Date(year, month - 1, 1);
   
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
@@ -31,16 +33,28 @@ export function MonthSelector({ selectedMonth, onMonthChange }: MonthSelectorPro
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
-    const currentDate = new Date(selectedMonth);
+    // Parse current month using string slicing to avoid timezone issues
+    const currentYear = parseInt(selectedMonth.slice(0, 4), 10);
+    const currentMonth = parseInt(selectedMonth.slice(5, 7), 10);
+    
+    let newYear = currentYear;
+    let newMonth = currentMonth;
+    
     if (direction === 'prev') {
-      currentDate.setMonth(currentDate.getMonth() - 1);
+      newMonth -= 1;
+      if (newMonth < 1) {
+        newMonth = 12;
+        newYear -= 1;
+      }
     } else {
-      currentDate.setMonth(currentDate.getMonth() + 1);
+      newMonth += 1;
+      if (newMonth > 12) {
+        newMonth = 1;
+        newYear += 1;
+      }
     }
     
-    const year = currentDate.getFullYear();
-    const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-    const monthString = `${year}-${month}-01`;
+    const monthString = `${newYear}-${newMonth.toString().padStart(2, '0')}-01`;
     onMonthChange(monthString);
   };
 

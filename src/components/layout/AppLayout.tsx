@@ -8,6 +8,8 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
+  console.log('AppLayout: Rendering layout...');
+  
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">

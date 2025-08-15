@@ -14,6 +14,7 @@ import Lancamentos from "./pages/Lancamentos";
 import Investimentos from "./pages/Investimentos";
 import Entidades from "./pages/Entidades";
 import Tutoriais from "./pages/Tutoriais";
+import Ferramentas from "./pages/Ferramentas";
 import Profile from "./pages/Profile";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -98,6 +99,13 @@ const App = () => {
                 <ProtectedRoute>
                   <AppLayout>
                     <Entidades />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/ferramentas" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Ferramentas />
                   </AppLayout>
                 </ProtectedRoute>
               } />

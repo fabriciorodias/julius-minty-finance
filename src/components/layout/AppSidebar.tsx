@@ -38,6 +38,11 @@ const mainMenuItems = [
     title: "Investimentos",
     url: "/investimentos",
     icon: "trending_up"
+  },
+  {
+    title: "Ferramentas",
+    url: "/ferramentas",
+    icon: "build"
   }
 ];
 
@@ -80,7 +85,7 @@ export function AppSidebar() {
           {!isCollapsed && (
             <div className="flex items-center justify-between w-full min-h-[24px]">
               <span className="text-sm font-medium leading-tight flex-1 pr-2">{item.title}</span>
-              {item.url !== '/planos' && (
+              {item.url !== '/planos' && item.url !== '/ferramentas' && (
                 <span className="material-icons text-sm flex-shrink-0 opacity-60">
                   construction
                 </span>

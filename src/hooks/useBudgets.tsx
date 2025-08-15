@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -48,6 +47,23 @@ export function useBudgets(month?: string) {
     },
     enabled: !!user?.id,
   });
+
+  // Function to get yearly budget data for a specific category
+  const getYearlyBudgets = async (categoryId: string, year: number): Promise<Budget[]> => {
+    if (!user?.id) throw new Error('Usuário não autenticado');
+
+    const { data, error } = await supabase
+      .from('budgets')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('category_id', categoryId)
+      .gte('month', `${year}-01-01`)
+      .lte('month', `${year}-12-01`)
+      .order('month', { ascending: true });
+
+    if (error) throw error;
+    return data as Budget[];
+  };
 
   const createBudgetMutation = useMutation({
     mutationFn: async (budgetData: BudgetData) => {
@@ -239,6 +255,7 @@ export function useBudgets(month?: string) {
     deleteBudget: deleteBudgetMutation.mutate,
     createFixedBudget: createFixedBudgetMutation.mutate,
     createVariableBudget: createVariableBudgetMutation.mutate,
+    getYearlyBudgets,
     isCreating: createBudgetMutation.isPending,
     isUpdating: updateBudgetMutation.isPending,
     isDeleting: deleteBudgetMutation.isPending,

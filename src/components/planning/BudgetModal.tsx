@@ -14,6 +14,11 @@ interface BudgetModalProps {
   onSubmit: (type: 'fixed' | 'variable', amount?: number, monthlyAmounts?: number[]) => void;
   category: Category | null;
   isLoading?: boolean;
+  initialValues?: {
+    type: 'fixed' | 'variable';
+    fixedAmount?: number;
+    monthlyAmounts?: number[];
+  };
 }
 
 const monthNames = [
@@ -21,19 +26,30 @@ const monthNames = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
-export function BudgetModal({ isOpen, onClose, onSubmit, category, isLoading }: BudgetModalProps) {
+export function BudgetModal({ isOpen, onClose, onSubmit, category, isLoading, initialValues }: BudgetModalProps) {
   const [budgetType, setBudgetType] = useState<'fixed' | 'variable'>('fixed');
   const [fixedAmount, setFixedAmount] = useState<string>('');
   const [monthlyAmounts, setMonthlyAmounts] = useState<string[]>(Array(12).fill(''));
 
   useEffect(() => {
     if (isOpen && category) {
-      // Reset form when modal opens
-      setBudgetType('fixed');
-      setFixedAmount('');
-      setMonthlyAmounts(Array(12).fill(''));
+      if (initialValues) {
+        // Pre-fill with existing values
+        setBudgetType(initialValues.type);
+        if (initialValues.type === 'fixed' && initialValues.fixedAmount !== undefined) {
+          setFixedAmount(initialValues.fixedAmount.toString());
+        }
+        if (initialValues.type === 'variable' && initialValues.monthlyAmounts) {
+          setMonthlyAmounts(initialValues.monthlyAmounts.map(amount => amount.toString()));
+        }
+      } else {
+        // Reset form when modal opens without initial values
+        setBudgetType('fixed');
+        setFixedAmount('');
+        setMonthlyAmounts(Array(12).fill(''));
+      }
     }
-  }, [isOpen, category]);
+  }, [isOpen, category, initialValues]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

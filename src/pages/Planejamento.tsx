@@ -11,9 +11,14 @@ import { BudgetModal } from '@/components/planning/BudgetModal';
 const Planejamento = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [initialValues, setInitialValues] = useState<{
+    type: 'fixed' | 'variable';
+    fixedAmount?: number;
+    monthlyAmounts?: number[];
+  } | undefined>(undefined);
   
   const { categories, isLoading: categoriesLoading } = useCategories();
-  const { budgets, createFixedBudget, createVariableBudget, isCreatingFixed, isCreatingVariable } = useBudgets();
+  const { budgets, createFixedBudget, createVariableBudget, getYearlyBudgets, isCreatingFixed, isCreatingVariable } = useBudgets();
 
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
@@ -26,6 +31,17 @@ const Planejamento = () => {
   const getBudgetedAmount = (categoryId: string): number => {
     const budget = budgets.find(b => b.category_id === categoryId && b.month === currentMonth);
     return budget?.budgeted_amount || 0;
+  };
+
+  // Função para calcular a soma dos orçamentos das subcategorias
+  const getSubcategoriesTotal = (category: Category): number => {
+    if (!category.subcategories || category.subcategories.length === 0) {
+      return getBudgetedAmount(category.id);
+    }
+    
+    return category.subcategories.reduce((total, subcategory) => {
+      return total + getBudgetedAmount(subcategory.id);
+    }, 0);
   };
 
   // Por enquanto, valores realizados são zero (serão implementados com o módulo de lançamentos)
@@ -42,8 +58,50 @@ const Planejamento = () => {
     return categoryType === 'despesa' ? budgeted - realized : realized - budgeted;
   };
 
-  const handleEditBudget = (category: Category) => {
+  const handleEditBudget = async (category: Category) => {
+    // Only allow editing for categories without subcategories
+    if (category.subcategories && category.subcategories.length > 0) {
+      return;
+    }
+
     setSelectedCategory(category);
+    
+    try {
+      // Fetch existing yearly budget data
+      const yearlyBudgets = await getYearlyBudgets(category.id, currentYear);
+      
+      if (yearlyBudgets.length > 0) {
+        // Check if all months have the same value (fixed) or different values (variable)
+        const amounts = yearlyBudgets.map(b => b.budgeted_amount);
+        const isFixed = amounts.every(amount => amount === amounts[0]);
+        
+        if (isFixed) {
+          setInitialValues({
+            type: 'fixed',
+            fixedAmount: amounts[0]
+          });
+        } else {
+          // Create array with 12 months, filling missing months with 0
+          const monthlyAmounts = Array(12).fill(0);
+          yearlyBudgets.forEach(budget => {
+            const monthIndex = new Date(budget.month).getMonth();
+            monthlyAmounts[monthIndex] = budget.budgeted_amount;
+          });
+          
+          setInitialValues({
+            type: 'variable',
+            monthlyAmounts
+          });
+        }
+      } else {
+        // No existing budgets, start fresh
+        setInitialValues(undefined);
+      }
+    } catch (error) {
+      console.error('Error fetching yearly budgets:', error);
+      setInitialValues(undefined);
+    }
+    
     setIsModalOpen(true);
   };
 
@@ -70,6 +128,87 @@ const Planejamento = () => {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  };
+
+  const CategoryRow = ({ category, type }: { category: Category; type: 'receita' | 'despesa' }) => {
+    const hasSubcategories = category.subcategories && category.subcategories.length > 0;
+    const budgeted = hasSubcategories ? getSubcategoriesTotal(category) : getBudgetedAmount(category.id);
+    const realized = getRealizedAmount(category.id);
+    const difference = getDifference(category.id, type);
+    const hasExceeded = type === 'despesa' && realized > budgeted && budgeted > 0;
+    const isEditable = !hasSubcategories;
+
+    return (
+      <>
+        <tr className="border-b border-mint-border/50 hover:bg-mint-hover">
+          <td className="py-3 px-2">
+            <div className="flex flex-col">
+              <span className={`font-medium ${hasSubcategories ? 'text-mint-text-primary font-semibold' : 'text-mint-text-primary'}`}>
+                {category.name}
+              </span>
+              {hasSubcategories && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {category.subcategories?.map((sub) => (
+                    <Badge key={sub.id} variant="secondary" className="text-xs">
+                      {sub.name}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          </td>
+          <td className="py-3 px-2 text-center">
+            {isEditable ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleEditBudget(category)}
+                className="text-mint-text-primary hover:bg-mint-hover"
+              >
+                {budgeted > 0 ? formatCurrency(budgeted) : 'Definir'}
+              </Button>
+            ) : (
+              <span className="text-mint-text-secondary font-medium">
+                {formatCurrency(budgeted)}
+              </span>
+            )}
+          </td>
+          <td className={`py-3 px-2 text-center font-medium ${
+            hasExceeded ? 'text-red-600' : 'text-mint-text-primary'
+          }`}>
+            {formatCurrency(realized)}
+          </td>
+          <td className={`py-3 px-2 text-center font-medium ${
+            hasExceeded ? 'text-red-600' : 
+            difference > 0 ? 'text-green-600' : 
+            difference < 0 ? 'text-red-600' : 'text-mint-text-secondary'
+          }`}>
+            {formatCurrency(Math.abs(difference))}
+            {difference > 0 && <span className="text-xs ml-1">↑</span>}
+            {difference < 0 && <span className="text-xs ml-1">↓</span>}
+          </td>
+          <td className="py-3 px-2 text-center">
+            {isEditable ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleEditBudget(category)}
+                className="text-mint-text-secondary hover:text-mint-text-primary hover:bg-mint-hover"
+              >
+                <Edit2 className="w-4 h-4" />
+              </Button>
+            ) : (
+              <span className="text-mint-text-secondary text-sm">-</span>
+            )}
+          </td>
+        </tr>
+        
+        {/* Render subcategories if they exist */}
+        {hasSubcategories && category.subcategories?.map((subcategory) => (
+          <CategoryRow key={subcategory.id} category={subcategory} type={type} />
+        ))}
+      </>
+    );
   };
 
   const CategoryTable = ({ title, categoriesList, type }: { 
@@ -99,65 +238,9 @@ const Planejamento = () => {
               </tr>
             </thead>
             <tbody>
-              {categoriesList.map((category) => {
-                const budgeted = getBudgetedAmount(category.id);
-                const realized = getRealizedAmount(category.id);
-                const difference = getDifference(category.id, type);
-                const hasExceeded = type === 'despesa' && realized > budgeted && budgeted > 0;
-
-                return (
-                  <tr key={category.id} className="border-b border-mint-border/50 hover:bg-mint-hover">
-                    <td className="py-3 px-2">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-mint-text-primary">{category.name}</span>
-                        {category.subcategories.length > 0 && (
-                          <div className="mt-1 flex flex-wrap gap-1">
-                            {category.subcategories.map((sub) => (
-                              <Badge key={sub.id} variant="secondary" className="text-xs">
-                                {sub.name}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-3 px-2 text-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditBudget(category)}
-                        className="text-mint-text-primary hover:bg-mint-hover"
-                      >
-                        {budgeted > 0 ? formatCurrency(budgeted) : 'Definir'}
-                      </Button>
-                    </td>
-                    <td className={`py-3 px-2 text-center font-medium ${
-                      hasExceeded ? 'text-red-600' : 'text-mint-text-primary'
-                    }`}>
-                      {formatCurrency(realized)}
-                    </td>
-                    <td className={`py-3 px-2 text-center font-medium ${
-                      hasExceeded ? 'text-red-600' : 
-                      difference > 0 ? 'text-green-600' : 
-                      difference < 0 ? 'text-red-600' : 'text-mint-text-secondary'
-                    }`}>
-                      {formatCurrency(Math.abs(difference))}
-                      {difference > 0 && <span className="text-xs ml-1">↑</span>}
-                      {difference < 0 && <span className="text-xs ml-1">↓</span>}
-                    </td>
-                    <td className="py-3 px-2 text-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditBudget(category)}
-                        className="text-mint-text-secondary hover:text-mint-text-primary hover:bg-mint-hover"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
+              {categoriesList.map((category) => (
+                <CategoryRow key={category.id} category={category} type={type} />
+              ))}
             </tbody>
           </table>
         </div>
@@ -235,9 +318,11 @@ const Planejamento = () => {
         onClose={() => {
           setIsModalOpen(false);
           setSelectedCategory(null);
+          setInitialValues(undefined);
         }}
         onSubmit={handleBudgetSubmit}
         category={selectedCategory}
+        initialValues={initialValues}
         isLoading={isCreatingFixed || isCreatingVariable}
       />
     </div>

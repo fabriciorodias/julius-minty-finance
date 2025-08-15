@@ -94,7 +94,9 @@ export function usePlans() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Type assertion to ensure proper typing
+      return (data || []) as PlanWithInstallments[];
     },
     enabled: !!user?.id,
   });

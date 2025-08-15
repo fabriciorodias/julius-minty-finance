@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -120,10 +120,10 @@ export function InstallmentRecurringModal({
       eventDate: '',
       firstEffectiveDate: '',
       totalInstallments: '',
-      category_id: '',
+      category_id: undefined,
       source_type: 'credit_card',
-      account_id: '',
-      credit_card_id: '',
+      account_id: undefined,
+      credit_card_id: undefined,
       status: 'pendente',
     },
   });
@@ -137,13 +137,45 @@ export function InstallmentRecurringModal({
       dayOfMonth: '',
       totalRepetitions: '',
       type: 'despesa',
-      category_id: '',
+      category_id: undefined,
       source_type: 'account',
-      account_id: '',
-      credit_card_id: '',
+      account_id: undefined,
+      credit_card_id: undefined,
       status: 'pendente',
     },
   });
+
+  // Reset forms when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      installmentForm.reset({
+        description: '',
+        amount: '',
+        eventDate: '',
+        firstEffectiveDate: '',
+        totalInstallments: '',
+        category_id: undefined,
+        source_type: 'credit_card',
+        account_id: undefined,
+        credit_card_id: undefined,
+        status: 'pendente',
+      });
+
+      recurringForm.reset({
+        description: '',
+        amount: '',
+        eventDate: '',
+        dayOfMonth: '',
+        totalRepetitions: '',
+        type: 'despesa',
+        category_id: undefined,
+        source_type: 'account',
+        account_id: undefined,
+        credit_card_id: undefined,
+        status: 'pendente',
+      });
+    }
+  }, [isOpen, installmentForm, recurringForm]);
 
   const onInstallmentSubmit = (data: InstallmentFormData) => {
     const installmentData: InstallmentData = {
@@ -259,9 +291,9 @@ export function InstallmentRecurringModal({
                 onValueChange={(value) => {
                   field.onChange(value);
                   if (value === 'account') {
-                    form.setValue('credit_card_id', '');
+                    form.setValue('credit_card_id', undefined);
                   } else {
-                    form.setValue('account_id', '');
+                    form.setValue('account_id', undefined);
                   }
                 }}
                 value={field.value}
@@ -289,7 +321,7 @@ export function InstallmentRecurringModal({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Conta</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione uma conta" />
@@ -316,7 +348,7 @@ export function InstallmentRecurringModal({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cartão de Crédito</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um cartão" />
@@ -419,14 +451,14 @@ export function InstallmentRecurringModal({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Categoria</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={(value) => field.onChange(value === 'none' ? undefined : value)} value={field.value ?? 'none'}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione uma categoria" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Sem categoria</SelectItem>
+                          <SelectItem value="none">Sem categoria</SelectItem>
                           {categories.map((category) => (
                             <SelectItem key={category.id} value={category.id}>
                               {category.name}
@@ -589,14 +621,14 @@ export function InstallmentRecurringModal({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Categoria</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={(value) => field.onChange(value === 'none' ? undefined : value)} value={field.value ?? 'none'}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione uma categoria" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Sem categoria</SelectItem>
+                          <SelectItem value="none">Sem categoria</SelectItem>
                           {categories.map((category) => (
                             <SelectItem key={category.id} value={category.id}>
                               {category.name}

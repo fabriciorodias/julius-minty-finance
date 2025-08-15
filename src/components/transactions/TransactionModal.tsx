@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -163,7 +162,7 @@ export function TransactionModal({
     }
   }, [transaction, form]);
 
-  const onSubmit = (data: TransactionFormData) => {
+  const handleSubmit = (data: TransactionFormData, saveAndNew: boolean = false) => {
     const amount = parseFloat(data.amount);
     const finalAmount = data.type === 'receita' ? amount : -amount;
 
@@ -173,13 +172,32 @@ export function TransactionModal({
       amount: finalAmount,
       event_date: data.event_date,
       effective_date: data.is_effective ? data.effective_date : undefined,
-      category_id: data.category_id || undefined,
+      category_id: data.category_id === '' ? undefined : data.category_id,
       status: data.is_effective ? 'concluido' : 'pendente',
       account_id: data.source_type === 'account' ? data.account_id : undefined,
       credit_card_id: data.source_type === 'credit_card' ? data.credit_card_id : undefined,
     };
 
     onSave(transactionData);
+
+    if (saveAndNew && !transaction) {
+      // Reset form for new transaction, keeping some defaults
+      form.reset({
+        type: data.type, // Keep the same type
+        description: '',
+        amount: '',
+        event_date: '',
+        is_effective: false,
+        effective_date: '',
+        category_id: '',
+        source_type: data.source_type, // Keep the same source type
+        account_id: data.source_type === 'account' ? data.account_id : '',
+        credit_card_id: data.source_type === 'credit_card' ? data.credit_card_id : '',
+      });
+    } else {
+      // Close modal for regular save or when editing
+      onClose();
+    }
   };
 
   const parseInputDate = (dateString: string) => {
@@ -197,7 +215,7 @@ export function TransactionModal({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form className="space-y-4">
             <FormField
               control={form.control}
               name="type"
@@ -317,7 +335,7 @@ export function TransactionModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="none">Sem categoria</SelectItem>
+                      <SelectItem value="">Sem categoria</SelectItem>
                       {childCategories.map((category) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
@@ -491,7 +509,23 @@ export function TransactionModal({
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              
+              {!transaction && (
+                <Button 
+                  type="button" 
+                  variant="secondary"
+                  disabled={isLoading}
+                  onClick={form.handleSubmit((data) => handleSubmit(data, true))}
+                >
+                  {isLoading ? 'Salvando...' : 'Salvar e criar novo'}
+                </Button>
+              )}
+              
+              <Button 
+                type="button" 
+                disabled={isLoading}
+                onClick={form.handleSubmit((data) => handleSubmit(data, false))}
+              >
                 {isLoading ? 'Salvando...' : 'Salvar'}
               </Button>
             </div>

@@ -70,7 +70,7 @@ export function AppSidebar() {
             `flex items-center w-full px-3 py-2 rounded-lg transition-colors duration-200 ${
               isActive
                 ? "bg-julius-accent text-white shadow-sm"
-                : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                : "text-julius-primary hover:bg-gray-100 hover:text-julius-primary"
             }`
           }
         >
@@ -82,7 +82,7 @@ export function AppSidebar() {
           {!isCollapsed && (
             <>
               <span className={`flex-1 text-sm font-medium ${
-                isActive ? "text-white" : "text-gray-700"
+                isActive ? "text-white" : "text-julius-primary"
               }`}>{item.title}</span>
               <span className={`material-icons text-sm ml-2 ${
                 isActive ? "text-white" : "text-gray-500"
@@ -107,7 +107,7 @@ export function AppSidebar() {
           </div>
           {!isCollapsed && (
             <div className="ml-3">
-              <h1 className="text-xl font-bold text-gray-900">Julius</h1>
+              <h1 className="text-xl font-bold text-julius-primary">Julius</h1>
               <p className="text-xs text-gray-600">Planejamento Financeiro</p>
             </div>
           )}

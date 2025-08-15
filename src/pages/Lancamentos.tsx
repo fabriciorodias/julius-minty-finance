@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -94,12 +93,14 @@ export default function Lancamentos() {
 
   const handleFilterChange = (key: keyof TransactionFilters, value: string) => {
     setFilters(prev => {
-      const newFilters = { ...prev, [key]: value || undefined };
+      // Convert "all" back to empty string for the filter
+      const filterValue = value === 'all' ? '' : value;
+      const newFilters = { ...prev, [key]: filterValue || undefined };
       
       // Limpar campos mutuamente exclusivos
-      if (key === 'accountId' && value) {
+      if (key === 'accountId' && filterValue) {
         newFilters.creditCardId = undefined;
-      } else if (key === 'creditCardId' && value) {
+      } else if (key === 'creditCardId' && filterValue) {
         newFilters.accountId = undefined;
       }
       
@@ -244,14 +245,14 @@ export default function Lancamentos() {
           <div className="space-y-2">
             <label className="text-sm font-medium">Status</label>
             <Select
-              value={filters.status || ''}
+              value={filters.status || 'all'}
               onValueChange={(value) => handleFilterChange('status', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="pendente">Pendente</SelectItem>
                 <SelectItem value="concluido">Concluído</SelectItem>
               </SelectContent>
@@ -262,14 +263,14 @@ export default function Lancamentos() {
           <div className="space-y-2">
             <label className="text-sm font-medium">Categoria</label>
             <Select
-              value={filters.categoryId || ''}
+              value={filters.categoryId || 'all'}
               onValueChange={(value) => handleFilterChange('categoryId', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Todas" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas</SelectItem>
+                <SelectItem value="all">Todas</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -283,14 +284,14 @@ export default function Lancamentos() {
           <div className="space-y-2">
             <label className="text-sm font-medium">Conta</label>
             <Select
-              value={filters.accountId || ''}
+              value={filters.accountId || 'all'}
               onValueChange={(value) => handleFilterChange('accountId', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Todas" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas</SelectItem>
+                <SelectItem value="all">Todas</SelectItem>
                 {accounts.map((account) => (
                   <SelectItem key={account.id} value={account.id}>
                     {account.name}
@@ -304,14 +305,14 @@ export default function Lancamentos() {
           <div className="space-y-2">
             <label className="text-sm font-medium">Cartão</label>
             <Select
-              value={filters.creditCardId || ''}
+              value={filters.creditCardId || 'all'}
               onValueChange={(value) => handleFilterChange('creditCardId', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 {creditCards.map((card) => (
                   <SelectItem key={card.id} value={card.id}>
                     {card.name}

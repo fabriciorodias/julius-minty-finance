@@ -123,19 +123,20 @@ export function TransactionModal({
       event_date: '',
       is_effective: false,
       effective_date: '',
-      category_id: '',
+      category_id: undefined,
       source_type: 'account',
-      account_id: '',
-      credit_card_id: '',
+      account_id: undefined,
+      credit_card_id: undefined,
     },
   });
 
   const isEffective = form.watch('is_effective');
 
-  // Fix: Reset form properly when modal opens for new transaction
+  // Reset form properly when modal opens
   useEffect(() => {
     if (isOpen) {
       if (transaction) {
+        // Editing existing transaction
         form.reset({
           type: transaction.type,
           description: transaction.description,
@@ -143,13 +144,13 @@ export function TransactionModal({
           event_date: transaction.event_date,
           is_effective: transaction.status === 'concluido',
           effective_date: transaction.effective_date || '',
-          category_id: transaction.category_id || 'none',
+          category_id: transaction.category_id || undefined,
           source_type: transaction.account_id ? 'account' : 'credit_card',
-          account_id: transaction.account_id || '',
-          credit_card_id: transaction.credit_card_id || '',
+          account_id: transaction.account_id || undefined,
+          credit_card_id: transaction.credit_card_id || undefined,
         });
       } else {
-        // Reset to clean state for new transaction
+        // Creating new transaction - always reset to clean state
         form.reset({
           type: 'despesa',
           description: '',
@@ -157,10 +158,10 @@ export function TransactionModal({
           event_date: '',
           is_effective: false,
           effective_date: '',
-          category_id: 'none',
+          category_id: undefined,
           source_type: 'account',
-          account_id: '',
-          credit_card_id: '',
+          account_id: undefined,
+          credit_card_id: undefined,
         });
       }
     }
@@ -176,7 +177,7 @@ export function TransactionModal({
       amount: finalAmount,
       event_date: data.event_date,
       effective_date: data.is_effective ? data.effective_date : undefined,
-      category_id: data.category_id === 'none' ? undefined : data.category_id,
+      category_id: data.category_id,
       status: data.is_effective ? 'concluido' : 'pendente',
       account_id: data.source_type === 'account' ? data.account_id : undefined,
       credit_card_id: data.source_type === 'credit_card' ? data.credit_card_id : undefined,
@@ -193,10 +194,10 @@ export function TransactionModal({
         event_date: '',
         is_effective: false,
         effective_date: '',
-        category_id: 'none',
+        category_id: undefined,
         source_type: data.source_type, // Keep the same source type
-        account_id: data.source_type === 'account' ? data.account_id : '',
-        credit_card_id: data.source_type === 'credit_card' ? data.credit_card_id : '',
+        account_id: data.source_type === 'account' ? data.account_id : undefined,
+        credit_card_id: data.source_type === 'credit_card' ? data.credit_card_id : undefined,
       });
     } else {
       // Close modal for regular save or when editing
@@ -332,7 +333,7 @@ export function TransactionModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Categoria</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione uma categoria" />
@@ -364,9 +365,9 @@ export function TransactionModal({
                         field.onChange(value);
                         // Limpar o campo não selecionado
                         if (value === 'account') {
-                          form.setValue('credit_card_id', '');
+                          form.setValue('credit_card_id', undefined);
                         } else {
-                          form.setValue('account_id', '');
+                          form.setValue('account_id', undefined);
                         }
                       }}
                       value={field.value}
@@ -394,7 +395,7 @@ export function TransactionModal({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Conta</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione uma conta" />
@@ -421,7 +422,7 @@ export function TransactionModal({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Cartão de Crédito</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione um cartão" />

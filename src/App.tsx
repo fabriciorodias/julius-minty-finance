@@ -20,13 +20,22 @@ import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import NotFound from "./pages/NotFound";
+import { useState } from "react";
 
 console.log('App.tsx: App component loading...');
 
-const queryClient = new QueryClient();
-
 const App = () => {
   console.log('App.tsx: App component rendering...');
+  
+  // Initialize QueryClient inside the component to ensure proper React context
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 1000 * 60 * 5, // 5 minutes
+        retry: 1,
+      },
+    },
+  }));
   
   return (
     <QueryClientProvider client={queryClient}>

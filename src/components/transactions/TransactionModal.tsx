@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -133,35 +132,39 @@ export function TransactionModal({
 
   const isEffective = form.watch('is_effective');
 
+  // Fix: Reset form properly when modal opens for new transaction
   useEffect(() => {
-    if (transaction) {
-      form.reset({
-        type: transaction.type,
-        description: transaction.description,
-        amount: Math.abs(transaction.amount).toString(),
-        event_date: transaction.event_date,
-        is_effective: transaction.status === 'concluido',
-        effective_date: transaction.effective_date || '',
-        category_id: transaction.category_id || 'none',
-        source_type: transaction.account_id ? 'account' : 'credit_card',
-        account_id: transaction.account_id || '',
-        credit_card_id: transaction.credit_card_id || '',
-      });
-    } else {
-      form.reset({
-        type: 'despesa',
-        description: '',
-        amount: '',
-        event_date: '',
-        is_effective: false,
-        effective_date: '',
-        category_id: 'none',
-        source_type: 'account',
-        account_id: '',
-        credit_card_id: '',
-      });
+    if (isOpen) {
+      if (transaction) {
+        form.reset({
+          type: transaction.type,
+          description: transaction.description,
+          amount: Math.abs(transaction.amount).toString(),
+          event_date: transaction.event_date,
+          is_effective: transaction.status === 'concluido',
+          effective_date: transaction.effective_date || '',
+          category_id: transaction.category_id || 'none',
+          source_type: transaction.account_id ? 'account' : 'credit_card',
+          account_id: transaction.account_id || '',
+          credit_card_id: transaction.credit_card_id || '',
+        });
+      } else {
+        // Reset to clean state for new transaction
+        form.reset({
+          type: 'despesa',
+          description: '',
+          amount: '',
+          event_date: '',
+          is_effective: false,
+          effective_date: '',
+          category_id: 'none',
+          source_type: 'account',
+          account_id: '',
+          credit_card_id: '',
+        });
+      }
     }
-  }, [transaction, form]);
+  }, [isOpen, transaction, form]);
 
   const handleSubmit = (data: TransactionFormData, saveAndNew: boolean = false) => {
     const amount = parseFloat(data.amount);

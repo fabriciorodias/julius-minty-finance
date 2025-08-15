@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTransactions, TransactionFilters, TransactionWithRelations, CreateTransactionData } from '@/hooks/useTransactions';
@@ -33,6 +32,7 @@ export default function Lancamentos() {
     createTransaction,
     updateTransaction,
     deleteTransaction,
+    deleteBulkTransactions,
     createInstallments,
     isCreating,
     isUpdating,
@@ -47,6 +47,10 @@ export default function Lancamentos() {
 
   const handleDelete = (id: string) => {
     deleteTransaction(id);
+  };
+
+  const handleBulkDelete = (ids: string[]) => {
+    deleteBulkTransactions(ids);
   };
 
   const handleSaveTransaction = (data: CreateTransactionData) => {
@@ -116,7 +120,9 @@ export default function Lancamentos() {
         isLoading={isLoading}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onBulkDelete={handleBulkDelete}
         onNewTransaction={() => setIsModalOpen(true)}
+        isDeleting={isDeleting}
       />
 
       {/* Modais */}

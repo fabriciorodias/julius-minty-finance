@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -231,6 +230,32 @@ export function useTransactions(filters: TransactionFilters = {}) {
     },
   });
 
+  const deleteBulkTransactionsMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .in('id', ids);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, ids) => {
+      queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      toast({
+        title: "Lançamentos excluídos",
+        description: `${ids.length} lançamento${ids.length > 1 ? 's foram excluídos' : ' foi excluído'} com sucesso.`,
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting transactions:', error);
+      toast({
+        title: "Erro ao excluir lançamentos",
+        description: "Não foi possível excluir os lançamentos selecionados. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const createInstallmentsMutation = useMutation({
     mutationFn: async (installmentData: InstallmentData) => {
       if (!user?.id) throw new Error('User not authenticated');
@@ -293,10 +318,11 @@ export function useTransactions(filters: TransactionFilters = {}) {
     createTransaction: createTransactionMutation.mutate,
     updateTransaction: updateTransactionMutation.mutate,
     deleteTransaction: deleteTransactionMutation.mutate,
+    deleteBulkTransactions: deleteBulkTransactionsMutation.mutate,
     createInstallments: createInstallmentsMutation.mutate,
     isCreating: createTransactionMutation.isPending,
     isUpdating: updateTransactionMutation.isPending,
-    isDeleting: deleteTransactionMutation.isPending,
+    isDeleting: deleteTransactionMutation.isPending || deleteBulkTransactionsMutation.isPending,
     isCreatingInstallments: createInstallmentsMutation.isPending,
   };
 }

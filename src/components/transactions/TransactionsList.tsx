@@ -206,11 +206,7 @@ export function TransactionsList({
                     <Checkbox
                       checked={isAllSelected}
                       onCheckedChange={handleSelectAll}
-                      ref={(ref) => {
-                        if (ref) {
-                          ref.indeterminate = isPartiallySelected;
-                        }
-                      }}
+                      className={isPartiallySelected ? "data-[state=checked]:bg-primary/50" : ""}
                     />
                   </TableHead>
                   <TableHead>Data do Evento</TableHead>

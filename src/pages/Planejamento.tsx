@@ -49,9 +49,33 @@ const Planejamento = () => {
     return 0; // Placeholder - será implementado com transactions
   };
 
-  const getDifference = (categoryId: string, categoryType: 'receita' | 'despesa'): number => {
-    const budgeted = getBudgetedAmount(categoryId);
-    const realized = getRealizedAmount(categoryId);
+  // Função para calcular a soma dos valores realizados das subcategorias
+  const getSubcategoriesRealizedTotal = (category: Category): number => {
+    if (!category.subcategories || category.subcategories.length === 0) {
+      return getRealizedAmount(category.id);
+    }
+    
+    return category.subcategories.reduce((total, subcategory) => {
+      return total + getRealizedAmount(subcategory.id);
+    }, 0);
+  };
+
+  const getDifference = (category: Category, categoryType: 'receita' | 'despesa'): number => {
+    const hasSubcategories = category.subcategories && category.subcategories.length > 0;
+    
+    let budgeted: number;
+    let realized: number;
+    
+    if (hasSubcategories) {
+      // Para categorias-pai, somar as diferenças das subcategorias
+      return category.subcategories!.reduce((total, subcategory) => {
+        return total + getDifference(subcategory, categoryType);
+      }, 0);
+    } else {
+      // Para subcategorias, calcular a diferença individual
+      budgeted = getBudgetedAmount(category.id);
+      realized = getRealizedAmount(category.id);
+    }
     
     // Para despesas: Planejado - Realizado (positivo = dentro do orçamento)
     // Para receitas: Realizado - Planejado (positivo = acima da meta)
@@ -133,8 +157,8 @@ const Planejamento = () => {
   const CategoryRow = ({ category, type }: { category: Category; type: 'receita' | 'despesa' }) => {
     const hasSubcategories = category.subcategories && category.subcategories.length > 0;
     const budgeted = hasSubcategories ? getSubcategoriesTotal(category) : getBudgetedAmount(category.id);
-    const realized = getRealizedAmount(category.id);
-    const difference = getDifference(category.id, type);
+    const realized = hasSubcategories ? getSubcategoriesRealizedTotal(category) : getRealizedAmount(category.id);
+    const difference = getDifference(category, type);
     const hasExceeded = type === 'despesa' && realized > budgeted && budgeted > 0;
     const isEditable = !hasSubcategories;
 

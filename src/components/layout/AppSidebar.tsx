@@ -69,18 +69,24 @@ export function AppSidebar() {
           className={({ isActive }) =>
             `flex items-center w-full px-3 py-2 rounded-lg transition-colors duration-200 ${
               isActive
-                ? "bg-julius-accent text-julius-accent-foreground shadow-sm"
-                : "text-julius-foreground hover:bg-julius-muted hover:text-julius-foreground"
+                ? "bg-julius-accent text-white shadow-sm"
+                : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
             }`
           }
         >
-          <span className="material-icons text-xl mr-3 text-julius-primary">
+          <span className={`material-icons text-xl mr-3 ${
+            isActive ? "text-white" : "text-julius-primary"
+          }`}>
             {item.icon}
           </span>
           {!isCollapsed && (
             <>
-              <span className="flex-1 text-sm font-medium">{item.title}</span>
-              <span className="material-icons text-sm text-julius-muted-foreground ml-2">
+              <span className={`flex-1 text-sm font-medium ${
+                isActive ? "text-white" : "text-gray-700"
+              }`}>{item.title}</span>
+              <span className={`material-icons text-sm ml-2 ${
+                isActive ? "text-white" : "text-gray-500"
+              }`}>
                 construction
               </span>
             </>
@@ -91,18 +97,18 @@ export function AppSidebar() {
   );
 
   return (
-    <Sidebar className={`${isCollapsed ? "w-16" : "w-64"} border-r border-julius-border bg-julius-sidebar`}>
-      <SidebarHeader className="p-6 border-b border-julius-border">
+    <Sidebar className={`${isCollapsed ? "w-16" : "w-64"} border-r border-gray-200 bg-white`}>
+      <SidebarHeader className="p-6 border-b border-gray-200">
         <div className="flex items-center">
           <div className="w-10 h-10 bg-julius-accent rounded-xl flex items-center justify-center">
-            <span className="material-icons text-julius-accent-foreground text-xl">
+            <span className="material-icons text-white text-xl">
               account_balance_wallet
             </span>
           </div>
           {!isCollapsed && (
             <div className="ml-3">
-              <h1 className="text-xl font-bold text-julius-foreground">Julius</h1>
-              <p className="text-xs text-julius-muted-foreground">Planejamento Financeiro</p>
+              <h1 className="text-xl font-bold text-gray-900">Julius</h1>
+              <p className="text-xs text-gray-600">Planejamento Financeiro</p>
             </div>
           )}
         </div>
@@ -117,7 +123,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <Separator className="my-6 bg-julius-border" />
+        <Separator className="my-6 bg-gray-200" />
 
         <SidebarGroup>
           <SidebarGroupContent>

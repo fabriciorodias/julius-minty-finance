@@ -70,22 +70,22 @@ export function AppSidebar() {
             `flex items-center w-full px-3 py-2 rounded-lg transition-colors duration-200 ${
               isActive
                 ? "bg-julius-accent text-white shadow-sm"
-                : "text-julius-primary hover:bg-gray-100 hover:text-julius-primary"
+                : "text-slate-700 hover:bg-gray-100 hover:text-slate-800"
             }`
           }
         >
           <span className={`material-icons text-xl mr-3 ${
-            isActive ? "text-white" : "text-julius-primary"
+            isActive(item.url) ? "text-white" : "text-slate-600"
           }`}>
             {item.icon}
           </span>
           {!isCollapsed && (
             <>
               <span className={`flex-1 text-sm font-medium ${
-                isActive ? "text-white" : "text-julius-primary"
+                isActive(item.url) ? "text-white" : "text-slate-700"
               }`}>{item.title}</span>
               <span className={`material-icons text-sm ml-2 ${
-                isActive ? "text-white" : "text-gray-500"
+                isActive(item.url) ? "text-white" : "text-gray-500"
               }`}>
                 construction
               </span>
@@ -107,7 +107,7 @@ export function AppSidebar() {
           </div>
           {!isCollapsed && (
             <div className="ml-3">
-              <h1 className="text-xl font-bold text-julius-primary">Julius</h1>
+              <h1 className="text-xl font-bold text-slate-800">Julius</h1>
               <p className="text-xs text-gray-600">Planejamento Financeiro</p>
             </div>
           )}

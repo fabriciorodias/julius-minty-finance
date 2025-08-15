@@ -63,9 +63,12 @@ const config: Config = {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // Mint.com inspired colors
+        // Expanded Mint.com inspired colors
         mint: {
-          primary: "hsl(180, 100%, 26%)", // #008485 - Verde Teal principal
+          primary: "hsl(174, 100%, 33%)", // #00A693 - Verde principal mais fiel ao Mint
+          secondary: "hsl(174, 100%, 36%)", // #00B8A5 - Verde secundário mais claro
+          light: "hsl(174, 42%, 94%)", // #E6F7F5 - Verde muito claro para fundos
+          dark: "hsl(174, 100%, 27%)", // #008A7A - Verde escuro para contrastes
           "text-primary": "hsl(0, 0%, 13%)", // #222222 - Texto principal
           "text-secondary": "hsl(0, 0%, 42%)", // #6A6A6A - Texto secundário
           "bg-main": "hsl(0, 0%, 97%)", // #F7F7F7 - Fundo principal

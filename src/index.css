@@ -7,25 +7,25 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 210 22% 22%;
-    --card: 0 0% 100%;
-    --card-foreground: 210 22% 22%;
+    --background: 0 0% 97%; /* #F7F7F7 - Fundo principal do Mint */
+    --foreground: 0 0% 13%; /* #222222 - Texto principal */
+    --card: 0 0% 100%; /* #FFFFFF - Fundo dos cards */
+    --card-foreground: 0 0% 13%; /* #222222 - Texto dos cards */
     --popover: 0 0% 100%;
-    --popover-foreground: 210 22% 22%;
-    --primary: 210 22% 22%;
+    --popover-foreground: 0 0% 13%;
+    --primary: 180 100% 26%; /* #008485 - Verde Teal do Mint */
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 17% 98%;
-    --secondary-foreground: 210 22% 22%;
-    --muted: 210 17% 95%;
-    --muted-foreground: 210 10% 60%;
-    --accent: 145 63% 49%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 13%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 42%; /* #6A6A6A - Texto secundário */
+    --accent: 180 100% 26%; /* #008485 - Verde Teal */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 210 17% 90%;
-    --input: 210 17% 90%;
-    --ring: 145 63% 49%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 180 100% 26%; /* #008485 - Verde Teal */
     --radius: 0.5rem;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
@@ -33,47 +33,47 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
 
-    /* Sidebar */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 210 22% 22%;
-    --sidebar-primary: 210 22% 22%;
+    /* Sidebar - tons de branco e cinza */
+    --sidebar-background: 0 0% 100%; /* Branco */
+    --sidebar-foreground: 0 0% 13%; /* #222222 */
+    --sidebar-primary: 0 0% 13%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 145 63% 49%;
+    --sidebar-accent: 180 100% 26%; /* #008485 - Verde Teal */
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 210 17% 90%;
-    --sidebar-ring: 145 63% 49%;
+    --sidebar-border: 0 0% 85%;
+    --sidebar-ring: 180 100% 26%;
   }
 
   .dark {
-    --background: 210 22% 22%;
+    --background: 0 0% 13%;
     --foreground: 0 0% 100%;
-    --card: 210 22% 22%;
+    --card: 0 0% 13%;
     --card-foreground: 0 0% 100%;
-    --popover: 210 22% 22%;
+    --popover: 0 0% 13%;
     --popover-foreground: 0 0% 100%;
     --primary: 0 0% 100%;
-    --primary-foreground: 210 22% 22%;
-    --secondary: 210 17% 30%;
+    --primary-foreground: 0 0% 13%;
+    --secondary: 0 0% 20%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 210 17% 25%;
-    --muted-foreground: 210 10% 70%;
-    --accent: 145 63% 49%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 180 100% 26%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 100%;
-    --border: 210 17% 25%;
-    --input: 210 17% 25%;
-    --ring: 145 63% 49%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 180 100% 26%;
 
     /* Sidebar Dark */
-    --sidebar-background: 210 22% 22%;
+    --sidebar-background: 0 0% 13%;
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 210 22% 22%;
-    --sidebar-accent: 145 63% 49%;
+    --sidebar-primary-foreground: 0 0% 13%;
+    --sidebar-accent: 180 100% 26%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 210 17% 25%;
-    --sidebar-ring: 145 63% 49%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 180 100% 26%;
   }
 }
 
@@ -87,9 +87,17 @@
   }
 }
 
-/* Julius custom utility classes */
+/* Mint.com inspired utility classes */
 @layer utilities {
-  .julius-transition {
+  .mint-transition {
     @apply transition-all duration-200 ease-in-out;
+  }
+  
+  .mint-card {
+    @apply bg-card border-0 rounded-lg shadow-sm;
+  }
+  
+  .mint-hover-lift {
+    @apply mint-transition hover:shadow-md;
   }
 }

@@ -67,25 +67,25 @@ export function AppSidebar() {
         <NavLink
           to={item.url}
           className={({ isActive }) =>
-            `flex items-center w-full px-3 py-2 rounded-lg transition-colors duration-200 ${
+            `flex items-center w-full px-3 py-2 rounded-lg mint-transition ${
               isActive
-                ? "bg-julius-accent text-white shadow-sm"
-                : "text-slate-700 hover:bg-gray-100 hover:text-slate-800"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-foreground hover:bg-muted hover:text-foreground"
             }`
           }
         >
           <span className={`material-icons text-xl mr-3 ${
-            isActive(item.url) ? "text-white" : "text-slate-600"
+            isActive(item.url) ? "text-primary-foreground" : "text-muted-foreground"
           }`}>
             {item.icon}
           </span>
           {!isCollapsed && (
             <>
               <span className={`flex-1 text-sm font-medium ${
-                isActive(item.url) ? "text-white" : "text-slate-700"
+                isActive(item.url) ? "text-primary-foreground" : "text-foreground"
               }`}>{item.title}</span>
               <span className={`material-icons text-sm ml-2 ${
-                isActive(item.url) ? "text-white" : "text-gray-500"
+                isActive(item.url) ? "text-primary-foreground" : "text-muted-foreground"
               }`}>
                 construction
               </span>
@@ -97,18 +97,18 @@ export function AppSidebar() {
   );
 
   return (
-    <Sidebar className={`${isCollapsed ? "w-16" : "w-64"} border-r border-gray-200 bg-white`}>
-      <SidebarHeader className="p-6 border-b border-gray-200">
+    <Sidebar className={`${isCollapsed ? "w-16" : "w-64"} border-r border-border bg-sidebar`}>
+      <SidebarHeader className="p-6 border-b border-border">
         <div className="flex items-center">
-          <div className="w-10 h-10 bg-julius-accent rounded-xl flex items-center justify-center">
-            <span className="material-icons text-white text-xl">
+          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+            <span className="material-icons text-primary-foreground text-xl">
               account_balance_wallet
             </span>
           </div>
           {!isCollapsed && (
             <div className="ml-3">
-              <h1 className="text-xl font-bold text-slate-800">Julius</h1>
-              <p className="text-xs text-gray-600">Planejamento Financeiro</p>
+              <h1 className="text-xl font-bold text-foreground">Julius</h1>
+              <p className="text-xs text-muted-foreground">Planejamento Financeiro</p>
             </div>
           )}
         </div>
@@ -123,7 +123,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <Separator className="my-6 bg-gray-200" />
+        <Separator className="my-6 bg-border" />
 
         <SidebarGroup>
           <SidebarGroupContent>

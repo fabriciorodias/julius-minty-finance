@@ -63,14 +63,13 @@ const config: Config = {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // Julius custom colors
-        julius: {
-          primary: "hsl(210, 22%, 22%)", // #2c3e50 - cinza-azulado escuro
-          secondary: "hsl(210, 17%, 98%)", // #f8f9fa - branco/cinza muito claro
-          accent: "hsl(145, 63%, 49%)", // #2ecc71 - verde-menta vibrante
-          "accent-foreground": "hsl(0, 0%, 100%)", // branco para contraste
-          border: "hsl(210, 17%, 90%)", // cinza claro para bordas
-          "muted-foreground": "hsl(210, 10%, 60%)", // cinza neutro para textos secundários
+        // Mint.com inspired colors
+        mint: {
+          primary: "hsl(180, 100%, 26%)", // #008485 - Verde Teal principal
+          "text-primary": "hsl(0, 0%, 13%)", // #222222 - Texto principal
+          "text-secondary": "hsl(0, 0%, 42%)", // #6A6A6A - Texto secundário
+          "bg-main": "hsl(0, 0%, 97%)", // #F7F7F7 - Fundo principal
+          "bg-component": "hsl(0, 0%, 100%)", // #FFFFFF - Fundo dos componentes
         },
       },
       borderRadius: {

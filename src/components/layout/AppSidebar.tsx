@@ -67,23 +67,23 @@ export function AppSidebar() {
         <NavLink
           to={item.url}
           className={({ isActive }) =>
-            `flex items-center w-full px-3 py-2 rounded-lg mint-transition ${
+            `flex items-start w-full px-3 py-3 rounded-lg mint-transition min-h-[48px] ${
               isActive
-                ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm font-medium"
-                : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                ? "bg-white bg-opacity-20 text-white shadow-sm font-medium"
+                : "text-white text-opacity-90 hover:bg-white hover:bg-opacity-10 hover:text-white"
             }`
           }
         >
-          <span className="material-icons text-xl mr-3">
+          <span className="material-icons text-xl mr-3 mt-0.5 flex-shrink-0">
             {item.icon}
           </span>
           {!isCollapsed && (
-            <>
-              <span className="flex-1 text-sm font-medium">{item.title}</span>
-              <span className="material-icons text-sm ml-2">
+            <div className="flex items-center justify-between w-full min-h-[24px]">
+              <span className="text-sm font-medium leading-tight flex-1 pr-2">{item.title}</span>
+              <span className="material-icons text-sm flex-shrink-0 opacity-60">
                 construction
               </span>
-            </>
+            </div>
           )}
         </NavLink>
       </SidebarMenuButton>
@@ -91,18 +91,18 @@ export function AppSidebar() {
   );
 
   return (
-    <Sidebar className={`${isCollapsed ? "w-16" : "w-64"} border-r border-sidebar-border bg-sidebar`}>
-      <SidebarHeader className="p-6 border-b border-sidebar-border">
+    <Sidebar className={`${isCollapsed ? "w-16" : "w-64"} border-r-0 bg-mint-primary`}>
+      <SidebarHeader className="p-6 border-b border-white border-opacity-20">
         <div className="flex items-center">
-          <div className="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
-            <span className="material-icons text-sidebar-foreground text-xl">
+          <div className="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center flex-shrink-0">
+            <span className="material-icons text-white text-xl">
               account_balance_wallet
             </span>
           </div>
           {!isCollapsed && (
             <div className="ml-3">
-              <h1 className="text-xl font-bold text-sidebar-foreground">Julius</h1>
-              <p className="text-xs text-sidebar-foreground opacity-80">Planejamento Financeiro</p>
+              <h1 className="text-xl font-bold text-white">Julius</h1>
+              <p className="text-xs text-white opacity-80">Planejamento Financeiro</p>
             </div>
           )}
         </div>
@@ -111,17 +111,17 @@ export function AppSidebar() {
       <SidebarContent className="px-4 py-6">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-2">
+            <SidebarMenu className="space-y-1">
               {mainMenuItems.map(renderMenuItem)}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <Separator className="my-6 bg-sidebar-border opacity-30" />
+        <Separator className="my-6 bg-white opacity-20" />
 
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-2">
+            <SidebarMenu className="space-y-1">
               {settingsMenuItems.map(renderMenuItem)}
             </SidebarMenu>
           </SidebarGroupContent>

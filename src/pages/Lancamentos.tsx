@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +21,7 @@ import {
 import { Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useTransactions, TransactionFilters, TransactionWithRelations } from '@/hooks/useTransactions';
+import { useTransactions, TransactionFilters, TransactionWithRelations, CreateTransactionData } from '@/hooks/useTransactions';
 import { useCategories, Category } from '@/hooks/useCategories';
 import { useAccounts, Account } from '@/hooks/useAccounts';
 import { useCreditCards, CreditCard } from '@/hooks/useCreditCards';
@@ -74,6 +75,14 @@ export default function Lancamentos() {
 
   const handleDelete = (id: string) => {
     deleteTransaction(id);
+  };
+
+  const handleSaveTransaction = (data: CreateTransactionData) => {
+    if (selectedTransaction) {
+      updateTransaction({ id: selectedTransaction.id, ...data });
+    } else {
+      createTransaction(data);
+    }
   };
 
   const filteredTransactions = useMemo(() => {
@@ -150,6 +159,7 @@ export default function Lancamentos() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Get only child categories for the filter */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Categoria</label>
               <Select
@@ -161,7 +171,11 @@ export default function Lancamentos() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas</SelectItem>
-                  {categories.map((category) => (
+                  {categories.flatMap(category => 
+                    category.subcategories && category.subcategories.length > 0 
+                      ? category.subcategories 
+                      : category.parent_id ? [category] : []
+                  ).map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
                     </SelectItem>
@@ -328,7 +342,7 @@ export default function Lancamentos() {
       <TransactionModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSave={selectedTransaction ? updateTransaction : createTransaction}
+        onSave={handleSaveTransaction}
         transaction={selectedTransaction}
         isLoading={isCreating || isUpdating}
       />

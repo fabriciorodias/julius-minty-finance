@@ -25,6 +25,7 @@ import { Category } from '@/hooks/useCategories';
 import { Account } from '@/hooks/useAccounts';
 import { CreditCard } from '@/hooks/useCreditCards';
 import { Institution } from '@/hooks/useInstitutions';
+import type { DateRange } from 'react-day-picker';
 
 interface TransactionFiltersProps {
   filters: FilterType;
@@ -86,7 +87,7 @@ export function TransactionFilters({
   institutions,
 }: TransactionFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   
   // Create institution map for lookup
   const institutionMap = React.useMemo(() => 
@@ -129,15 +130,15 @@ export function TransactionFilters({
     });
   };
 
-  const handleDateRangeChange = (range: { from?: Date; to?: Date }) => {
+  const handleDateRangeChange = (range: DateRange | undefined) => {
     setDateRange(range);
-    if (range.from && range.to) {
+    if (range?.from && range?.to) {
       onFiltersChange({
         ...filters,
         startDate: format(range.from, 'yyyy-MM-dd'),
         endDate: format(range.to, 'yyyy-MM-dd'),
       });
-    } else if (!range.from && !range.to) {
+    } else if (!range?.from && !range?.to) {
       onFiltersChange({
         ...filters,
         startDate: undefined,
@@ -162,7 +163,7 @@ export function TransactionFilters({
   const clearAllFilters = () => {
     onFiltersChange({});
     onSearchChange('');
-    setDateRange({});
+    setDateRange(undefined);
   };
 
   const getActiveFiltersCount = () => {
@@ -279,7 +280,7 @@ export function TransactionFilters({
                   onClick={() => {
                     handleFilterChange('startDate', undefined);
                     handleFilterChange('endDate', undefined);
-                    setDateRange({});
+                    setDateRange(undefined);
                   }}
                 />
               </Badge>
@@ -396,6 +397,7 @@ export function TransactionFilters({
                       onSelect={handleDateRangeChange}
                       numberOfMonths={2}
                       locale={ptBR}
+                      className="p-3 pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>

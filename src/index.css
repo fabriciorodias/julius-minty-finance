@@ -1,96 +1,69 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Julius Design System - Cores em HSL */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Julius Brand Colors */
+    --julius-primary: 210 22% 22%; /* #2c3e50 - Cinza-azulado escuro */
+    --julius-primary-foreground: 0 0% 100%; /* Branco */
+    
+    --julius-secondary: 210 17% 98%; /* #f8f9fa - Cinza muito claro */
+    --julius-secondary-foreground: 210 22% 22%;
+    
+    --julius-accent: 145 63% 49%; /* #2ecc71 - Verde-menta */
+    --julius-accent-foreground: 0 0% 100%;
+    
+    --julius-muted: 210 14% 89%; /* #e9ecef - Cinza neutro */
+    --julius-muted-foreground: 215 16% 47%; /* #6c757d - Cinza médio */
+    
+    --julius-border: 210 14% 89%;
+    --julius-input: 210 14% 89%;
+    --julius-ring: 145 63% 49%;
+
+    /* Background colors */
+    --background: var(--julius-secondary);
+    --foreground: var(--julius-primary);
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: var(--julius-primary);
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: var(--julius-primary);
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: var(--julius-primary);
+    --primary-foreground: var(--julius-primary-foreground);
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: var(--julius-muted);
+    --secondary-foreground: var(--julius-primary);
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: var(--julius-muted);
+    --muted-foreground: var(--julius-muted-foreground);
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: var(--julius-accent);
+    --accent-foreground: var(--julius-accent-foreground);
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: var(--julius-border);
+    --input: var(--julius-input);
+    --ring: var(--julius-ring);
 
-    --radius: 0.5rem;
+    --radius: 0.75rem; /* Bordas mais arredondadas para visual moderno */
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar específico para Julius */
+    --sidebar-background: 0 0% 100%; /* Branco puro */
+    --sidebar-foreground: var(--julius-primary);
+    --sidebar-primary: var(--julius-accent);
+    --sidebar-primary-foreground: var(--julius-accent-foreground);
+    --sidebar-accent: var(--julius-secondary);
+    --sidebar-accent-foreground: var(--julius-primary);
+    --sidebar-border: var(--julius-border);
+    --sidebar-ring: var(--julius-ring);
   }
 }
 
@@ -100,6 +73,47 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-inter antialiased;
+  }
+
+  /* Scrollbar personalizada */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--julius-muted));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--julius-muted-foreground));
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--julius-primary));
+  }
+}
+
+/* Animações suaves para toda a aplicação */
+@layer components {
+  .julius-transition {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  .julius-hover-lift {
+    @apply julius-transition hover:translate-y-[-2px] hover:shadow-lg;
+  }
+
+  .julius-card {
+    @apply bg-card rounded-xl border border-border shadow-sm julius-transition;
+  }
+
+  .julius-button-primary {
+    @apply bg-accent text-accent-foreground hover:bg-accent/90 julius-transition;
+  }
+
+  .julius-button-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 julius-transition;
   }
 }

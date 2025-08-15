@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -18,7 +19,23 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				'inter': ['Inter', 'system-ui', 'sans-serif'],
+				'sans': ['Inter', 'system-ui', 'sans-serif'],
+			},
 			colors: {
+				// Julius brand colors
+				'julius-primary': 'hsl(var(--julius-primary))',
+				'julius-primary-foreground': 'hsl(var(--julius-primary-foreground))',
+				'julius-secondary': 'hsl(var(--julius-secondary))',
+				'julius-secondary-foreground': 'hsl(var(--julius-secondary-foreground))',
+				'julius-accent': 'hsl(var(--julius-accent))',
+				'julius-accent-foreground': 'hsl(var(--julius-accent-foreground))',
+				'julius-muted': 'hsl(var(--julius-muted))',
+				'julius-muted-foreground': 'hsl(var(--julius-muted-foreground))',
+				'julius-border': 'hsl(var(--julius-border))',
+
+				// Default shadcn colors
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
@@ -84,11 +101,29 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'slide-in': {
+					from: {
+						transform: 'translateX(-100%)'
+					},
+					to: {
+						transform: 'translateX(0)'
+					}
+				},
+				'fade-in': {
+					from: {
+						opacity: '0'
+					},
+					to: {
+						opacity: '1'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'slide-in': 'slide-in 0.3s ease-out',
+				'fade-in': 'fade-in 0.2s ease-out'
 			}
 		}
 	},

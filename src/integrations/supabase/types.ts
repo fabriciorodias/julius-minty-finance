@@ -214,6 +214,60 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category_id: string | null
+          created_at: string
+          credit_card_id: string | null
+          description: string
+          effective_date: string
+          event_date: string
+          id: string
+          installment_id: string | null
+          installment_number: number | null
+          status: string
+          total_installments: number | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          credit_card_id?: string | null
+          description: string
+          effective_date: string
+          event_date: string
+          id?: string
+          installment_id?: string | null
+          installment_number?: number | null
+          status?: string
+          total_installments?: number | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          credit_card_id?: string | null
+          description?: string
+          effective_date?: string
+          event_date?: string
+          id?: string
+          installment_id?: string | null
+          installment_number?: number | null
+          status?: string
+          total_installments?: number | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,32 +1,217 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { usePlans, PlanWithInstallments } from '@/hooks/usePlans';
+import { PlanCard } from '@/components/plans/PlanCard';
+import { CreatePlanModal } from '@/components/plans/CreatePlanModal';
+import { SettleInstallmentModal } from '@/components/plans/SettleInstallmentModal';
+import { WithdrawModal } from '@/components/plans/WithdrawModal';
+import { TimelineModal } from '@/components/plans/TimelineModal';
+import { Plus } from 'lucide-react';
 
 const Planos = () => {
+  const {
+    plans,
+    isLoading,
+    createPlan,
+    settleInstallment,
+    createWithdrawal,
+    updateInstallments,
+    isCreating,
+    isSettling,
+    isCreatingWithdrawal,
+    isUpdatingInstallments,
+  } = usePlans();
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<PlanWithInstallments | null>(null);
+
+  const handleViewTimeline = (plan: PlanWithInstallments) => {
+    setSelectedPlan(plan);
+    setIsTimelineModalOpen(true);
+  };
+
+  const handleSettleInstallment = (plan: PlanWithInstallments) => {
+    setSelectedPlan(plan);
+    setIsSettleModalOpen(true);
+  };
+
+  const handleWithdraw = (plan: PlanWithInstallments) => {
+    setSelectedPlan(plan);
+    setIsWithdrawModalOpen(true);
+  };
+
+  // Calculate monthly summary
+  const getCurrentMonthSummary = () => {
+    const currentDate = new Date();
+    const currentMonth = currentDate.toISOString().slice(0, 7); // YYYY-MM format
+    
+    let monthlyPlanAmount = 0;
+    plans.forEach(plan => {
+      const monthlyInstallment = plan.installments.find(
+        inst => inst.due_date.startsWith(currentMonth) && inst.status === 'pendente'
+      );
+      if (monthlyInstallment) {
+        monthlyPlanAmount += monthlyInstallment.planned_amount;
+      }
+    });
+
+    return monthlyPlanAmount;
+  };
+
+  const formatCurrency = (value: number) => 
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+  const monthlyPlanAmount = getCurrentMonthSummary();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-mint-text-primary">Meus Planos</h1>
+            <p className="text-mint-text-secondary mt-1">
+              Gerencie seus objetivos financeiros
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-mint-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-mint-text-primary">Meus Planos</h1>
-          <p className="text-mint-text-secondary mt-1 font-normal">
+          <p className="text-mint-text-secondary mt-1">
             Gerencie seus objetivos financeiros
           </p>
         </div>
+        <Button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Criar Novo Plano
+        </Button>
       </div>
 
+      {/* Monthly Summary */}
       <Card className="mint-card mint-gradient-light">
         <CardHeader>
           <CardTitle className="text-mint-text-primary flex items-center font-bold">
-            <span className="material-icons text-primary mr-2">construction</span>
-            Módulo em Desenvolvimento
+            <span className="material-icons text-mint-primary mr-2">assessment</span>
+            Resumo do Mês Atual
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-mint-text-secondary font-normal">
-            O módulo de Planos Financeiros está sendo desenvolvido. Aqui você poderá criar e 
-            acompanhar seus objetivos de economia, investimentos e metas financeiras.
-          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center">
+              <p className="text-sm text-mint-text-secondary">Parcelas dos Planos</p>
+              <p className="text-2xl font-bold text-mint-primary">
+                {formatCurrency(monthlyPlanAmount)}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-mint-text-secondary">Total de Planos</p>
+              <p className="text-2xl font-bold text-mint-text-primary">
+                {plans.length}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-mint-text-secondary">Planos Ativos</p>
+              <p className="text-2xl font-bold text-mint-text-primary">
+                {plans.filter(plan => 
+                  plan.installments.some(inst => inst.status === 'pendente')
+                ).length}
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Plans Grid */}
+      {plans.length === 0 ? (
+        <Card className="mint-card">
+          <CardContent className="py-12 text-center">
+            <div className="w-16 h-16 bg-mint-primary bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="material-icons text-mint-primary text-2xl">
+                flag
+              </span>
+            </div>
+            <h3 className="text-lg font-semibold text-mint-text-primary mb-2">
+              Nenhum plano criado ainda
+            </h3>
+            <p className="text-mint-text-secondary mb-6 max-w-md mx-auto">
+              Comece criando seu primeiro plano financeiro. Defina suas metas de poupança 
+              ou organize o pagamento de dívidas e financiamentos.
+            </p>
+            <Button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Criar Primeiro Plano
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {plans.map((plan) => (
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              onViewTimeline={handleViewTimeline}
+              onSettleInstallment={handleSettleInstallment}
+              onWithdraw={plan.type === 'poupanca' ? handleWithdraw : undefined}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Modals */}
+      <CreatePlanModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={createPlan}
+        isLoading={isCreating}
+      />
+
+      <SettleInstallmentModal
+        isOpen={isSettleModalOpen}
+        onClose={() => {
+          setIsSettleModalOpen(false);
+          setSelectedPlan(null);
+        }}
+        onSave={settleInstallment}
+        plan={selectedPlan}
+        isLoading={isSettling}
+      />
+
+      <WithdrawModal
+        isOpen={isWithdrawModalOpen}
+        onClose={() => {
+          setIsWithdrawModalOpen(false);
+          setSelectedPlan(null);
+        }}
+        onSave={createWithdrawal}
+        plan={selectedPlan}
+        isLoading={isCreatingWithdrawal}
+      />
+
+      <TimelineModal
+        isOpen={isTimelineModalOpen}
+        onClose={() => {
+          setIsTimelineModalOpen(false);
+          setSelectedPlan(null);
+        }}
+        onSave={updateInstallments}
+        plan={selectedPlan}
+        isLoading={isUpdatingInstallments}
+      />
     </div>
   );
 };

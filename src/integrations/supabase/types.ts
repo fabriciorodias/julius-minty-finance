@@ -187,6 +187,133 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_installments: {
+        Row: {
+          created_at: string
+          due_date: string
+          id: string
+          plan_id: string
+          planned_amount: number
+          settled_amount: number
+          settled_date: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          due_date: string
+          id?: string
+          plan_id: string
+          planned_amount: number
+          settled_amount?: number
+          settled_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string
+          id?: string
+          plan_id?: string
+          planned_amount?: number
+          settled_amount?: number
+          settled_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_installments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_withdrawals: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          notes: string | null
+          plan_id: string
+          user_id: string
+          withdrawal_date: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          plan_id: string
+          user_id: string
+          withdrawal_date: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          plan_id?: string
+          user_id?: string
+          withdrawal_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_withdrawals_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          image_url: string | null
+          name: string
+          notes: string | null
+          start_date: string
+          total_amount: number
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          image_url?: string | null
+          name: string
+          notes?: string | null
+          start_date: string
+          total_amount: number
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          notes?: string | null
+          start_date?: string
+          total_amount?: number
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

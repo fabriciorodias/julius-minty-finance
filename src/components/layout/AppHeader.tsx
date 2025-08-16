@@ -4,15 +4,16 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { UserMenu } from "@/components/layout/UserMenu";
 
 const pageTitle: Record<string, string> = {
-  "/dashboard": "Dashboards",
-  "/planos": "Meus Planos",
-  "/planejamento": "Planejamento e Controle",
+  "/dashboard": "Panorama",
+  "/planos": "Planos e Metas",
+  "/planejamento": "Orçamento",
   "/lancamentos": "Lançamentos",
   "/investimentos": "Investimentos",
-  "/entidades": "Gerenciar Entidades",
+  "/entidades": "Ajustes",
   "/tutoriais": "Tutoriais",
+  "/ferramentas": "Ferramentas",
   "/profile": "Meu Perfil",
-  "/": "Dashboard"
+  "/": "Panorama"
 };
 
 export function AppHeader() {

@@ -58,10 +58,10 @@ export function Categories() {
   };
 
   const toggleCollapsed = (categoryId: string) => {
-    setCollapsedCategories((prev: Record<string, boolean>): Record<string, boolean> => ({
-      ...prev,
-      [categoryId]: !prev[categoryId]
-    }));
+    setCollapsedCategories({
+      ...collapsedCategories,
+      [categoryId]: !collapsedCategories[categoryId]
+    });
   };
 
   const handleDragStart = (e: React.DragEvent, categoryId: string, type: 'receita' | 'despesa', parentId: string | null) => {

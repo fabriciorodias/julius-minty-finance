@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -121,7 +122,10 @@ export function useAccounts(institutionId?: string) {
   });
 
   const updateAccountMutation = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Account> & { id: string }) => {
+    mutationFn: async ({ id, initial_balance, balance_date, ...updates }: Partial<Account> & { id: string; initial_balance?: number; balance_date?: Date }) => {
+      console.log('Updating account with data:', { id, initial_balance, balance_date, updates });
+
+      // Update account data
       const { data, error } = await supabase
         .from('accounts')
         .update(updates)
@@ -129,7 +133,65 @@ export function useAccounts(institutionId?: string) {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Account update error:', error);
+        throw error;
+      }
+
+      console.log('Account updated successfully:', data);
+
+      // Handle initial balance update
+      if (initial_balance !== undefined) {
+        // Convert Date object to YYYY-MM-DD format
+        const formattedDate = balance_date instanceof Date 
+          ? balance_date.toISOString().split('T')[0]
+          : balance_date;
+
+        if (initial_balance && formattedDate) {
+          // Upsert the initial balance
+          console.log('Upserting initial balance:', {
+            user_id: user?.id,
+            account_id: id,
+            amount: initial_balance,
+            balance_date: formattedDate,
+          });
+
+          const { error: balanceError } = await supabase
+            .from('account_initial_balances')
+            .upsert({
+              user_id: user?.id,
+              account_id: id,
+              amount: initial_balance,
+              balance_date: formattedDate,
+            }, {
+              onConflict: 'account_id'
+            });
+
+          if (balanceError) {
+            console.error('Initial balance upsert error:', balanceError);
+            throw balanceError;
+          }
+
+          console.log('Initial balance upserted successfully');
+        } else if (initial_balance === 0 || !initial_balance) {
+          // Remove initial balance if set to 0 or empty
+          console.log('Removing initial balance for account:', id);
+
+          const { error: deleteError } = await supabase
+            .from('account_initial_balances')
+            .delete()
+            .eq('account_id', id)
+            .eq('user_id', user?.id);
+
+          if (deleteError) {
+            console.error('Initial balance delete error:', deleteError);
+            throw deleteError;
+          }
+
+          console.log('Initial balance removed successfully');
+        }
+      }
+
       return data;
     },
     onSuccess: () => {

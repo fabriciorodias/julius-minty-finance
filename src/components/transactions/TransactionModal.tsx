@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -42,6 +43,8 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useCreditCards } from '@/hooks/useCreditCards';
 import { useInstitutions } from '@/hooks/useInstitutions';
 import { CreateTransactionData, Transaction } from '@/hooks/useTransactions';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 
 const transactionSchema = z.object({
   type: z.enum(['receita', 'despesa']),
@@ -96,6 +99,8 @@ export function TransactionModal({
   transaction,
   isLoading = false,
 }: TransactionModalProps) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { categories } = useCategories();
   const { accounts } = useAccounts();
   const { creditCards } = useCreditCards();
@@ -131,6 +136,36 @@ export function TransactionModal({
   });
 
   const isEffective = form.watch('is_effective');
+  const transactionType = form.watch('type');
+
+  // Filter accounts and credit cards based on transaction type and status
+  const availableAccounts = accounts.filter(account => {
+    // For editing, show the current account even if inactive
+    if (transaction && transaction.account_id === account.id) {
+      return true;
+    }
+    // For new transactions, only show active on_budget accounts
+    return account.is_active && account.type === 'on_budget';
+  });
+
+  const availableCreditCards = creditCards.filter(card => {
+    // For editing, show the current card even if inactive
+    if (transaction && transaction.credit_card_id === card.id) {
+      return true;
+    }
+    // For new transactions, only show active credit cards
+    // Credit cards are typically used for expenses, but can be used for refunds (receitas)
+    return card.is_active;
+  });
+
+  // Force refresh data when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['credit_cards', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
+    }
+  }, [isOpen, queryClient, user?.id]);
 
   // Reset form properly when modal opens
   useEffect(() => {
@@ -208,6 +243,15 @@ export function TransactionModal({
   const parseInputDate = (dateString: string) => {
     const [year, month, day] = dateString.split('-').map(Number);
     return new Date(year, month - 1, day);
+  };
+
+  const handleDateSelect = (date: Date | undefined, fieldOnChange: (value: string) => void) => {
+    if (date) {
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      fieldOnChange(`${year}-${month}-${day}`);
+    }
   };
 
   return (
@@ -310,15 +354,9 @@ export function TransactionModal({
                       <Calendar
                         mode="single"
                         selected={field.value ? parseInputDate(field.value) : undefined}
-                        onSelect={(date) => {
-                          if (date) {
-                            const year = date.getFullYear();
-                            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                            const day = date.getDate().toString().padStart(2, '0');
-                            field.onChange(`${year}-${month}-${day}`);
-                          }
-                        }}
+                        onSelect={(date) => handleDateSelect(date, field.onChange)}
                         locale={ptBR}
+                        className="p-3 pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
@@ -402,9 +440,10 @@ export function TransactionModal({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {accounts.map((account) => (
+                        {availableAccounts.map((account) => (
                           <SelectItem key={account.id} value={account.id}>
                             {institutionMap[account.institution_id]} - {account.name}
+                            {!account.is_active && ' (Inativa)'}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -429,9 +468,10 @@ export function TransactionModal({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {creditCards.map((card) => (
+                        {availableCreditCards.map((card) => (
                           <SelectItem key={card.id} value={card.id}>
                             {institutionMap[card.institution_id]} - {card.name}
+                            {!card.is_active && ' (Inativo)'}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -491,15 +531,9 @@ export function TransactionModal({
                           <Calendar
                             mode="single"
                             selected={field.value ? parseInputDate(field.value) : undefined}
-                            onSelect={(date) => {
-                              if (date) {
-                                const year = date.getFullYear();
-                                const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                                const day = date.getDate().toString().padStart(2, '0');
-                                field.onChange(`${year}-${month}-${day}`);
-                              }
-                            }}
+                            onSelect={(date) => handleDateSelect(date, field.onChange)}
                             locale={ptBR}
+                            className="p-3 pointer-events-auto"
                           />
                         </PopoverContent>
                       </Popover>

@@ -23,17 +23,21 @@ export function useMonthlyBalance(selectedMonth: string) {
     queryFn: async (): Promise<MonthlyBalance> => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const startDate = selectedMonth;
-      const endDate = new Date(selectedMonth);
-      endDate.setMonth(endDate.getMonth() + 1);
-      const endDateStr = endDate.toISOString().slice(0, 10);
+      // Use local date formatting to avoid UTC conversion issues
+      const currentDate = new Date(selectedMonth);
+      const startDate = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-01`;
+      
+      const nextMonth = new Date(currentDate);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      const endDate = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-01`;
 
       const { data, error } = await supabase
         .from('transactions')
         .select('type, amount')
         .eq('user_id', user.id)
+        .eq('status', 'concluido')  // Only include completed transactions
         .gte('event_date', startDate)
-        .lt('event_date', endDateStr);
+        .lt('event_date', endDate);
 
       if (error) throw error;
 
@@ -67,6 +71,7 @@ export function useAnnualData(year: number) {
         .from('transactions')
         .select('type, amount, event_date')
         .eq('user_id', user.id)
+        .eq('status', 'concluido')  // Only include completed transactions
         .gte('event_date', `${year}-01-01`)
         .lte('event_date', `${year}-12-31`);
 

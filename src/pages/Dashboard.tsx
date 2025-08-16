@@ -7,10 +7,15 @@ import { BalanceSummary } from "@/components/dashboards/BalanceSummary";
 import { AnnualIncomeExpenseChart } from "@/components/dashboards/AnnualIncomeExpenseChart";
 import { PlannedVsActualChart } from "@/components/dashboards/PlannedVsActualChart";
 import { ExpenseDistributionPie } from "@/components/dashboards/ExpenseDistributionPie";
+import { InvestmentsSummary } from "@/components/dashboards/InvestmentsSummary";
+import { PortfolioCompositionChart } from "@/components/dashboards/PortfolioCompositionChart";
+import { EmergencyFundProgress } from "@/components/dashboards/EmergencyFundProgress";
 import { useMonthlyBalance, useAnnualData } from "@/hooks/dashboard/useMonthlyBalance";
 import { usePlannedVsActual } from "@/hooks/dashboard/usePlannedVsActual";
 import { useExpenseDistribution } from "@/hooks/dashboard/useExpenseDistribution";
 import { usePlansCommitment, usePendingPlans, useSavingsAccumulated } from "@/hooks/dashboard/usePlansDashboard";
+import { useInvestmentsDashboard } from "@/hooks/dashboard/useInvestmentsDashboard";
+import { useEmergencyFund } from "@/hooks/dashboard/useEmergencyFund";
 import { TrendingUp, Target, PiggyBank } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -22,6 +27,7 @@ const Dashboard = () => {
   });
 
   const year = parseInt(selectedMonth.slice(0, 4), 10);
+  const selectedMonthDate = new Date(selectedMonth);
 
   // Monthly Balance hooks
   const { data: monthlyBalance, isLoading: isBalanceLoading } = useMonthlyBalance(selectedMonth);
@@ -33,6 +39,10 @@ const Dashboard = () => {
   const { data: plansCommitment, isLoading: isCommitmentLoading } = usePlansCommitment(selectedMonth);
   const { data: pendingPlans, isLoading: isPendingLoading } = usePendingPlans(selectedMonth);
   const { data: savingsAccumulated, isLoading: isSavingsLoading } = useSavingsAccumulated();
+  const { data: emergencyFund, isLoading: isEmergencyLoading } = useEmergencyFund();
+
+  // Investments hooks
+  const { data: investmentsDashboard, isLoading: isInvestmentsLoading } = useInvestmentsDashboard(selectedMonthDate);
 
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -161,6 +171,11 @@ const Dashboard = () => {
             </Card>
           </div>
 
+          <EmergencyFundProgress 
+            data={emergencyFund || { targetAmount: 0, currentAmount: 0, progressPercentage: 0, monthlyTarget: 0, monthsRemaining: 0 }}
+            isLoading={isEmergencyLoading}
+          />
+
           <Card className="mint-card">
             <CardHeader>
               <CardTitle className="text-mint-text-primary">Montante Acumulado (Poupanças)</CardTitle>
@@ -191,20 +206,57 @@ const Dashboard = () => {
         </TabsContent>
 
         <TabsContent value="investments" className="space-y-6">
-          <Card className="mint-card mint-gradient-light">
-            <CardHeader>
-              <CardTitle className="text-mint-text-primary flex items-center font-bold">
-                <span className="material-icons text-primary mr-2">construction</span>
-                Módulo em Desenvolvimento
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-mint-text-secondary font-normal">
-                O dashboard de Investimentos será implementado junto com o módulo de investimentos. 
-                Aqui você poderá visualizar sua carteira, rendimentos e grau de independência financeira.
-              </p>
-            </CardContent>
-          </Card>
+          <p className="text-sm text-mint-text-secondary mb-4">
+            Dados referentes ao mês de {format(selectedMonthDate, "MMMM 'de' yyyy", { locale: ptBR })}
+          </p>
+
+          <InvestmentsSummary
+            totalPortfolio={investmentsDashboard?.totalPortfolio || 0}
+            monthlyReturn={investmentsDashboard?.monthlyReturn || 0}
+            returnPercentage={investmentsDashboard?.returnPercentage || 0}
+            financialIndependenceRatio={investmentsDashboard?.financialIndependenceRatio || 0}
+            isLoading={isInvestmentsLoading}
+          />
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <PortfolioCompositionChart 
+              data={investmentsDashboard?.portfolioComposition || []} 
+              isLoading={isInvestmentsLoading}
+            />
+
+            <Card className="mint-card">
+              <CardHeader>
+                <CardTitle className="text-mint-text-primary">Alocação por Instituição</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isInvestmentsLoading ? (
+                  <div className="h-80 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : investmentsDashboard?.institutionAllocation && investmentsDashboard.institutionAllocation.length > 0 ? (
+                  <div className="space-y-4">
+                    {investmentsDashboard.institutionAllocation.map((allocation, index) => (
+                      <div key={index} className="flex justify-between items-center p-3 bg-mint-surface rounded-lg">
+                        <span className="font-medium text-mint-text-primary">{allocation.institution}</span>
+                        <div className="text-right">
+                          <div className="font-semibold text-mint-text-primary">
+                            {formatCurrency(allocation.value)}
+                          </div>
+                          <div className="text-sm text-mint-text-secondary">
+                            {allocation.percentage.toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="h-80 flex items-center justify-center text-mint-text-secondary">
+                    Nenhum investimento encontrado
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

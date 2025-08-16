@@ -57,6 +57,7 @@ export function useAccounts(institutionId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
       toast({
         title: "Conta criada",
         description: "A conta foi criada com sucesso.",
@@ -85,6 +86,7 @@ export function useAccounts(institutionId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
       toast({
         title: "Conta atualizada",
         description: "A conta foi atualizada com sucesso.",
@@ -122,6 +124,7 @@ export function useAccounts(institutionId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
       toast({
         title: "Conta excluída",
         description: "A conta foi excluída com sucesso.",

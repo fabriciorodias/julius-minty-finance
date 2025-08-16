@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_initial_balances: {
+        Row: {
+          account_id: string
+          amount: number
+          balance_date: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          amount?: number
+          balance_date: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          balance_date?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       accounts: {
         Row: {
           created_at: string
@@ -578,6 +608,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_account_balances: {
+        Args: { p_as_of_date?: string }
+        Returns: {
+          account_id: string
+          current_balance: number
+        }[]
+      }
       get_monthly_budget_actuals: {
         Args: { p_month: string }
         Returns: {

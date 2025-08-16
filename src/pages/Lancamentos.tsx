@@ -6,6 +6,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useCreditCards } from '@/hooks/useCreditCards';
 import { useInstitutions } from '@/hooks/useInstitutions';
+import { useAccountBalances } from '@/hooks/useAccountBalances';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { TransactionModal } from '@/components/transactions/TransactionModal';
 import { InstallmentRecurringModal } from '@/components/transactions/InstallmentRecurringModal';
@@ -13,6 +14,7 @@ import { ImportTransactionsModal } from '@/components/transactions/ImportTransac
 import { InvoiceManagerModal } from '@/components/transactions/InvoiceManagerModal';
 import { TransactionFilters as FiltersComponent } from '@/components/transactions/TransactionFilters';
 import { TransactionsList } from '@/components/transactions/TransactionsList';
+import { AccountBalancesContainer } from '@/components/accounts/AccountBalancesContainer';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, CreditCard, AlertTriangle } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -36,6 +38,7 @@ export default function Lancamentos() {
   const { accounts } = useAccounts();
   const { creditCards } = useCreditCards();
   const { institutions } = useInstitutions();
+  const { balanceMap, isLoading: balancesLoading } = useAccountBalances();
 
   const {
     transactions,
@@ -74,12 +77,24 @@ export default function Lancamentos() {
   };
 
   const handleImportSuccess = () => {
-    // Invalidate and refetch transactions to show newly imported ones
+    // Invalidate and refetch transactions and account balances to show newly imported ones
     queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+    queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
     queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
     
     // Filter to show only uncategorized transactions after import
     setFilters({ ...filters, withoutCategory: true });
+  };
+
+  const handleSelectAccount = (accountId: string) => {
+    if (filters.accountId === accountId) {
+      // If the same account is clicked, remove the filter
+      const { accountId: _, ...newFilters } = filters;
+      setFilters(newFilters);
+    } else {
+      // Apply filter for the selected account
+      setFilters({ ...filters, accountId });
+    }
   };
 
   const filteredTransactions = useMemo(() => {
@@ -105,6 +120,13 @@ export default function Lancamentos() {
       console.error('Error loading transactions:', error);
     }
   }, [error]);
+
+  // Invalidate account balances when transactions change
+  useEffect(() => {
+    return () => {
+      queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
+    };
+  }, [transactions, queryClient, user?.id]);
 
   return (
     <div className="p-6 space-y-6">
@@ -132,6 +154,15 @@ export default function Lancamentos() {
           </Button>
         </div>
       </div>
+
+      {/* Account Balances Container */}
+      <AccountBalancesContainer
+        accounts={accounts}
+        balanceMap={balanceMap}
+        selectedAccountId={filters.accountId}
+        onSelectAccount={handleSelectAccount}
+        isLoading={balancesLoading}
+      />
 
       {/* Alert for uncategorized transactions */}
       {uncategorizedCount > 0 && (

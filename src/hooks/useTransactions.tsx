@@ -165,6 +165,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budget-actuals'], exact: false });
       toast({
@@ -196,6 +197,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budget-actuals'], exact: false });
       toast({
@@ -224,6 +226,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budget-actuals'], exact: false });
       toast({
@@ -252,6 +255,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
     },
     onSuccess: (_, ids) => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budget-actuals'], exact: false });
       toast({
@@ -309,6 +313,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budget-actuals'], exact: false });
       toast({

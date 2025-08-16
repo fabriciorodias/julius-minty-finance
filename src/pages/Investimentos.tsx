@@ -23,7 +23,12 @@ import { RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
 const Investimentos = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
+  
+  // Initialize with current month in YYYY-MM-01 format
+  const currentDate = new Date();
+  const currentMonthString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-01`;
+  
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthString);
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showBalanceModal, setShowBalanceModal] = useState(false);
@@ -40,10 +45,13 @@ const Investimentos = () => {
   const { upsertBalance, isUpdating: isUpdatingBalance } = useInvestmentBalances();
   const { data: currentBalances } = useCurrentBalances();
   
+  // Convert selectedMonth string to Date for dashboard hook
+  const selectedMonthDate = new Date(selectedMonth);
+  
   const { 
     data: dashboardData, 
     isLoading: dashboardLoading 
-  } = useInvestmentsDashboard(selectedMonth);
+  } = useInvestmentsDashboard(selectedMonthDate);
 
   // Real-time updates
   useEffect(() => {

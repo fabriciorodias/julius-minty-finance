@@ -60,6 +60,9 @@ export function useProvisionedTotals({ selectedAccountIds, dateFilters }: UsePro
       const startDate = dateFilters?.startDate || format(new Date(), 'yyyy-MM-dd');
       const endDate = dateFilters?.endDate || format(addDays(new Date(), 90), 'yyyy-MM-dd');
 
+      console.log('useProvisionedTotals: Date range', { startDate, endDate });
+      console.log('useProvisionedTotals: Selected accounts', selectedAccountIds);
+
       // Get initial balances for selected accounts
       const { data: initialBalances, error: initialError } = await supabase
         .from('account_initial_balances')
@@ -78,20 +81,25 @@ export function useProvisionedTotals({ selectedAccountIds, dateFilters }: UsePro
         return sum + (initialBalanceMap[accountId] || 0);
       }, 0);
 
-      // Get all transactions within date range (up to endDate)
+      console.log('useProvisionedTotals: Initial balance', totalInitialBalance);
+
+      // Get all transactions for selected accounts
       const { data: allTransactions, error: allError } = await supabase
         .from('transactions')
-        .select('type, amount, status, effective_date')
+        .select('type, amount, status, effective_date, event_date, description')
         .eq('user_id', user.id)
-        .in('account_id', selectedAccountIds)
-        .lte('effective_date', endDate);
+        .in('account_id', selectedAccountIds);
 
       if (allError) throw allError;
+
+      console.log('useProvisionedTotals: All transactions', allTransactions?.length || 0);
 
       // Calculate completed transactions (status = 'concluido' AND has effective_date)
       const completedTransactions = (allTransactions || []).filter(t => 
         t.status === 'concluido' && t.effective_date
       );
+      
+      console.log('useProvisionedTotals: Completed transactions', completedTransactions.length);
       
       const completedIncome = completedTransactions
         .filter(t => t.type === 'receita')
@@ -106,12 +114,19 @@ export function useProvisionedTotals({ selectedAccountIds, dateFilters }: UsePro
       // Main balance (Saldo Total) = initial balances + completed transactions
       const completedBalance = totalInitialBalance + completedTransactionsBalance;
 
-      // Calculate pending transactions within the date range
-      const pendingTransactions = (allTransactions || []).filter(t => 
-        t.status === 'pendente' && 
-        t.effective_date >= startDate && 
-        t.effective_date <= endDate
-      );
+      console.log('useProvisionedTotals: Completed balance', completedBalance);
+
+      // Calculate pending transactions - use event_date for date filtering if effective_date is not available
+      // and apply date range filter to both event_date and effective_date
+      const pendingTransactions = (allTransactions || []).filter(t => {
+        if (t.status !== 'pendente') return false;
+        
+        const dateToCheck = t.effective_date || t.event_date;
+        return dateToCheck >= startDate && dateToCheck <= endDate;
+      });
+
+      console.log('useProvisionedTotals: Pending transactions', pendingTransactions.length);
+      console.log('useProvisionedTotals: Pending transactions details:', pendingTransactions);
 
       const pendingIncome = pendingTransactions
         .filter(t => t.type === 'receita')
@@ -123,11 +138,23 @@ export function useProvisionedTotals({ selectedAccountIds, dateFilters }: UsePro
 
       const pendingNet = pendingIncome - pendingExpense;
 
+      console.log('useProvisionedTotals: Pending income', pendingIncome);
+      console.log('useProvisionedTotals: Pending expense', pendingExpense);
+      console.log('useProvisionedTotals: Pending net', pendingNet);
+
       // Provisioned balance = main balance + pending transactions
       const totalBalance = completedBalance + pendingNet;
 
       // Provisions = just the net pending transactions
       const provisionsAmount = pendingNet;
+
+      console.log('useProvisionedTotals: Final results', {
+        completedBalance,
+        totalBalance,
+        provisionsAmount,
+        pendingIncome,
+        pendingExpense
+      });
 
       return {
         pendingIncome,

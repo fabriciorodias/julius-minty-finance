@@ -211,7 +211,7 @@ export function TransactionFilters({
                     {accounts.map((account) => (
                       <SelectItem key={account.id} value={account.id}>
                         {institutionMap[account.institution_id]} - {account.name}
-                        {account.source_type === 'credit' && ' (Cartão)'}
+                        {account.type === 'credit' && ' (Cartão)'}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -88,9 +88,9 @@ export function ImportTransactionsModal({
   const availableAccounts = React.useMemo(() => {
     return accounts.filter(account => {
       if (watchImportType === 'account') {
-        return account.source_type === 'on_budget' || account.source_type === 'off_budget';
+        return account.type === 'on_budget' || account.type === 'off_budget';
       } else {
-        return account.source_type === 'credit';
+        return account.type === 'credit';
       }
     });
   }, [accounts, watchImportType]);

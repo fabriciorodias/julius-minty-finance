@@ -217,14 +217,14 @@ export function InstallmentRecurringModal({
                         value={field.value}
                         className="flex flex-row space-x-4"
                       >
-                        <FormItem className="flex items-center space-x-2" asChild>
+                        <div className="flex items-center space-x-2">
                           <RadioGroupItem value="receita" id="receita" />
-                        </FormItem>
-                        <label htmlFor="receita">Receita</label>
-                        <FormItem className="flex items-center space-x-2" asChild>
+                          <label htmlFor="receita">Receita</label>
+                        </div>
+                        <div className="flex items-center space-x-2">
                           <RadioGroupItem value="despesa" id="despesa" />
-                        </FormItem>
-                        <label htmlFor="despesa">Despesa</label>
+                          <label htmlFor="despesa">Despesa</label>
+                        </div>
                       </RadioGroup>
                       <FormMessage />
                     </FormItem>
@@ -240,7 +240,7 @@ export function InstallmentRecurringModal({
                       <FormControl>
                         <CurrencyInput
                           value={field.value}
-                          onValueChange={(value) => field.onChange(value || 0)}
+                          onChange={(value) => field.onChange(value || 0)}
                         />
                       </FormControl>
                       <FormMessage />
@@ -290,7 +290,7 @@ export function InstallmentRecurringModal({
                           {accounts.map((account) => (
                             <SelectItem key={account.id} value={account.id}>
                               {institutionMap[account.institution_id]} - {account.name}
-                              {account.source_type === 'credit' && ' (Cartão)'}
+                              {account.type === 'credit' && ' (Cartão)'}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -418,14 +418,14 @@ export function InstallmentRecurringModal({
                         value={field.value}
                         className="flex flex-row space-x-4"
                       >
-                        <FormItem className="flex items-center space-x-2" asChild>
+                        <div className="flex items-center space-x-2">
                           <RadioGroupItem value="receita" id="receita-recurring" />
-                        </FormItem>
-                        <label htmlFor="receita-recurring">Receita</label>
-                        <FormItem className="flex items-center space-x-2" asChild>
+                          <label htmlFor="receita-recurring">Receita</label>
+                        </div>
+                        <div className="flex items-center space-x-2">
                           <RadioGroupItem value="despesa" id="despesa-recurring" />
-                        </FormItem>
-                        <label htmlFor="despesa-recurring">Despesa</label>
+                          <label htmlFor="despesa-recurring">Despesa</label>
+                        </div>
                       </RadioGroup>
                       <FormMessage />
                     </FormItem>
@@ -441,7 +441,7 @@ export function InstallmentRecurringModal({
                       <FormControl>
                         <CurrencyInput
                           value={field.value}
-                          onValueChange={(value) => field.onChange(value || 0)}
+                          onChange={(value) => field.onChange(value || 0)}
                         />
                       </FormControl>
                       <FormMessage />
@@ -491,7 +491,7 @@ export function InstallmentRecurringModal({
                           {accounts.map((account) => (
                             <SelectItem key={account.id} value={account.id}>
                               {institutionMap[account.institution_id]} - {account.name}
-                              {account.source_type === 'credit' && ' (Cartão)'}
+                              {account.type === 'credit' && ' (Cartão)'}
                             </SelectItem>
                           ))}
                         </SelectContent>

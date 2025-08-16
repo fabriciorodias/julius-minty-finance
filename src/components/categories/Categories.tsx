@@ -2,8 +2,15 @@
 import { useState } from 'react';
 import { useCategories } from '@/hooks/useCategories';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit2, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, EyeOff, TrendingUp, TrendingDown, MoreVertical } from 'lucide-react';
 import { CategoryModal } from '@/components/entities/CategoryModal';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 export function Categories() {
   const [showModal, setShowModal] = useState(false);
@@ -30,39 +37,134 @@ export function Categories() {
     setSelectedCategory(null);
   };
 
+  const handleQuickToggleStatus = (category: any) => {
+    updateCategory({
+      id: category.id,
+      is_active: !category.is_active,
+    });
+  };
+
   const renderCategory = (category: any, level = 0) => (
     <div key={category.id} className="space-y-2">
       <div
-        className={`flex items-center justify-between p-3 bg-card rounded-lg border ${
-          !category.is_active ? 'opacity-50' : ''
-        }`}
-        style={{ marginLeft: level * 20 }}
+        className={cn(
+          "group flex items-center justify-between p-4 bg-card rounded-lg border transition-all duration-200 hover:shadow-sm",
+          !category.is_active && "opacity-60 bg-gray-50"
+        )}
+        style={{ marginLeft: level * 24 }}
       >
-        <div className="flex items-center space-x-2">
-          {!category.is_active && <EyeOff className="h-4 w-4 text-muted-foreground" />}
-          <div>
-            <h4 className="font-medium">{category.name}</h4>
-            <p className="text-sm text-muted-foreground capitalize">
-              {category.type}
-            </p>
+        <div className="flex items-center space-x-3 flex-1">
+          {/* Status Indicator */}
+          <div className="flex items-center gap-2">
+            {category.type === 'receita' ? (
+              <div className="flex items-center gap-1">
+                <TrendingUp className="h-4 w-4 text-green-600" />
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <TrendingDown className="h-4 w-4 text-red-600" />
+                <div className="w-2 h-2 rounded-full bg-red-500" />
+              </div>
+            )}
+          </div>
+
+          {/* Category Info */}
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h4 className={cn(
+                "font-medium text-sm",
+                !category.is_active && "line-through text-gray-500"
+              )}>
+                {category.name}
+              </h4>
+              {!category.is_active && (
+                <EyeOff className="h-3 w-3 text-gray-400" />
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-xs text-muted-foreground capitalize">
+                {category.type === 'receita' ? 'Receita' : 'Despesa'}
+                {level > 0 && ' • Subcategoria'}
+              </p>
+              {category.subcategories && category.subcategories.length > 0 && (
+                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                  {category.subcategories.length} subcategoria{category.subcategories.length > 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+
+        {/* Quick Actions */}
+        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Quick Edit */}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => handleEdit(category)}
+            className="h-8 w-8 p-0"
+            title="Editar categoria"
           >
-            <Edit2 className="h-4 w-4" />
+            <Edit2 className="h-3 w-3" />
           </Button>
+
+          {/* Quick Toggle Status */}
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => deleteCategorySafely(category.id)}
-            disabled={isDeleting}
+            onClick={() => handleQuickToggleStatus(category)}
+            className="h-8 w-8 p-0"
+            title={category.is_active ? "Desativar categoria" : "Ativar categoria"}
           >
-            <Trash2 className="h-4 w-4" />
+            {category.is_active ? (
+              <Eye className="h-3 w-3" />
+            ) : (
+              <EyeOff className="h-3 w-3" />
+            )}
           </Button>
+
+          {/* More Actions */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+              >
+                <MoreVertical className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleEdit(category)}>
+                <Edit2 className="h-4 w-4 mr-2" />
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleQuickToggleStatus(category)}
+              >
+                {category.is_active ? (
+                  <>
+                    <EyeOff className="h-4 w-4 mr-2" />
+                    Desativar
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ativar
+                  </>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => deleteCategorySafely(category.id)}
+                disabled={isDeleting}
+                className="text-red-600 focus:text-red-600"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       {category.subcategories?.map((sub: any) => renderCategory(sub, level + 1))}
@@ -70,8 +172,18 @@ export function Categories() {
   );
 
   if (isLoading) {
-    return <div>Carregando categorias...</div>;
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando categorias...</p>
+        </div>
+      </div>
+    );
   }
+
+  const despesaCategories = categories.filter((cat) => cat.type === 'despesa');
+  const receitaCategories = categories.filter((cat) => cat.type === 'receita');
 
   return (
     <div className="space-y-6">
@@ -79,30 +191,88 @@ export function Categories() {
         <div>
           <h2 className="text-2xl font-bold">Categorias</h2>
           <p className="text-muted-foreground">
-            Organize suas receitas e despesas em categorias
+            Organize suas receitas e despesas em categorias e subcategorias
           </p>
         </div>
-        <Button onClick={() => setShowModal(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Categoria
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => {
+              setSelectedCategory(null);
+              setShowModal(true);
+            }}
+            className="border-green-200 text-green-700 hover:bg-green-50"
+          >
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Nova Receita
+          </Button>
+          <Button 
+            onClick={() => {
+              setSelectedCategory(null);
+              setShowModal(true);
+            }}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            <TrendingDown className="h-4 w-4 mr-2" />
+            Nova Despesa
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          <h3 className="text-lg font-semibold mb-3 text-red-600">Despesas</h3>
-          <div className="space-y-2">
-            {categories
-              .filter((cat) => cat.type === 'despesa')
-              .map((category) => renderCategory(category))}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Despesas */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b border-red-200">
+            <TrendingDown className="h-5 w-5 text-red-600" />
+            <h3 className="text-lg font-semibold text-red-700">
+              Despesas ({despesaCategories.length})
+            </h3>
+          </div>
+          <div className="space-y-3">
+            {despesaCategories.length > 0 ? (
+              despesaCategories.map((category) => renderCategory(category))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <TrendingDown className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Nenhuma categoria de despesa criada</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => setShowModal(true)}
+                >
+                  Criar primeira categoria
+                </Button>
+              </div>
+            )}
           </div>
         </div>
-        <div>
-          <h3 className="text-lg font-semibold mb-3 text-green-600">Receitas</h3>
-          <div className="space-y-2">
-            {categories
-              .filter((cat) => cat.type === 'receita')
-              .map((category) => renderCategory(category))}
+
+        {/* Receitas */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 pb-2 border-b border-green-200">
+            <TrendingUp className="h-5 w-5 text-green-600" />
+            <h3 className="text-lg font-semibold text-green-700">
+              Receitas ({receitaCategories.length})
+            </h3>
+          </div>
+          <div className="space-y-3">
+            {receitaCategories.length > 0 ? (
+              receitaCategories.map((category) => renderCategory(category))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Nenhuma categoria de receita criada</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => setShowModal(true)}
+                >
+                  Criar primeira categoria
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

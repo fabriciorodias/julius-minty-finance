@@ -47,26 +47,32 @@ export type Database = {
       accounts: {
         Row: {
           created_at: string
+          credit_limit: number | null
           id: string
           institution_id: string
           is_active: boolean
           name: string
+          type: Database["public"]["Enums"]["account_type"]
           user_id: string
         }
         Insert: {
           created_at?: string
+          credit_limit?: number | null
           id?: string
           institution_id: string
           is_active?: boolean
           name: string
+          type?: Database["public"]["Enums"]["account_type"]
           user_id: string
         }
         Update: {
           created_at?: string
+          credit_limit?: number | null
           id?: string
           institution_id?: string
           is_active?: boolean
           name?: string
+          type?: Database["public"]["Enums"]["account_type"]
           user_id?: string
         }
         Relationships: [
@@ -626,7 +632,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      account_type: "on_budget" | "credit"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -753,6 +759,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      account_type: ["on_budget", "credit"],
+    },
   },
 } as const

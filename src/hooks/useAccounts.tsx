@@ -9,6 +9,8 @@ export interface Account {
   user_id: string;
   institution_id: string;
   name: string;
+  type: 'on_budget' | 'credit';
+  credit_limit?: number;
   is_active: boolean;
   created_at: string;
 }

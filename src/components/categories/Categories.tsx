@@ -32,6 +32,11 @@ export function Categories() {
     isDeleting,
   } = useCategories();
 
+  // Debug logs
+  console.log('Categories component: isLoading =', isLoading);
+  console.log('Categories component: categories =', categories);
+  console.log('Categories component: categories length =', categories?.length || 0);
+
   const handleEdit = (category: any) => {
     setSelectedCategory(category);
     setPreselectedType(null);
@@ -248,6 +253,7 @@ export function Categories() {
   };
 
   if (isLoading) {
+    console.log('Categories component: Showing loading state');
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
@@ -260,6 +266,9 @@ export function Categories() {
 
   const despesaCategories = categories.filter((cat) => cat.type === 'despesa');
   const receitaCategories = categories.filter((cat) => cat.type === 'receita');
+
+  console.log('Categories component: despesaCategories =', despesaCategories);
+  console.log('Categories component: receitaCategories =', receitaCategories);
 
   return (
     <div className="space-y-6">

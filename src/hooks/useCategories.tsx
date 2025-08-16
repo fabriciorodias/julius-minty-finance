@@ -22,8 +22,14 @@ export function useCategories() {
   const { data: categories = [], isLoading, error } = useQuery({
     queryKey: ['categories', user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      console.log('useCategories: Starting query, user ID:', user?.id);
       
+      if (!user?.id) {
+        console.log('useCategories: No user ID, returning empty array');
+        return [];
+      }
+      
+      console.log('useCategories: Fetching categories from Supabase...');
       const { data, error } = await supabase
         .from('categories')
         .select('*')
@@ -31,13 +37,34 @@ export function useCategories() {
         .order('sort_index', { ascending: true })
         .order('name', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('useCategories: Supabase error:', error);
+        throw error;
+      }
+
+      console.log('useCategories: Raw data from Supabase:', data);
+      console.log('useCategories: Number of categories found:', data?.length || 0);
+
+      if (!data || data.length === 0) {
+        console.log('useCategories: No categories found, returning empty array');
+        return [];
+      }
 
       // Organizar categorias em hierarquia
       const categoriesMap = new Map<string, Category>();
       const rootCategories: Category[] = [];
 
-      data.forEach(category => {
+      console.log('useCategories: Processing categories...');
+
+      data.forEach((category, index) => {
+        console.log(`useCategories: Processing category ${index + 1}:`, {
+          id: category.id,
+          name: category.name,
+          type: category.type,
+          parent_id: category.parent_id,
+          sort_index: (category as any).sort_index
+        });
+
         categoriesMap.set(category.id, { 
           ...category, 
           type: category.type as 'receita' | 'despesa',
@@ -46,16 +73,26 @@ export function useCategories() {
         });
       });
 
+      console.log('useCategories: Categories map created, size:', categoriesMap.size);
+
       data.forEach(category => {
         if (category.parent_id) {
           const parent = categoriesMap.get(category.parent_id);
           if (parent) {
             parent.subcategories!.push(categoriesMap.get(category.id)!);
+            console.log(`useCategories: Added subcategory ${category.name} to parent ${parent.name}`);
+          } else {
+            console.warn(`useCategories: Parent not found for category ${category.name}, parent_id: ${category.parent_id}`);
           }
         } else {
-          rootCategories.push(categoriesMap.get(category.id)!);
+          const rootCategory = categoriesMap.get(category.id)!;
+          rootCategories.push(rootCategory);
+          console.log(`useCategories: Added root category: ${category.name}`);
         }
       });
+
+      console.log('useCategories: Final processed categories:', rootCategories);
+      console.log('useCategories: Root categories count:', rootCategories.length);
 
       return rootCategories;
     },

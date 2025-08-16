@@ -41,6 +41,7 @@ export function useCategories() {
         categoriesMap.set(category.id, { 
           ...category, 
           type: category.type as 'receita' | 'despesa',
+          sort_index: category.sort_index || 0,
           subcategories: [] 
         });
       });
@@ -75,12 +76,15 @@ export function useCategories() {
         .order('sort_index', { ascending: false })
         .limit(1);
 
-      const nextSortIndex = maxSortData && maxSortData.length > 0 ? maxSortData[0].sort_index + 1 : 0;
+      const nextSortIndex = maxSortData && maxSortData.length > 0 ? (maxSortData[0].sort_index || 0) + 1 : 0;
 
       const { data, error } = await supabase
         .from('categories')
         .insert({
-          ...categoryData,
+          name: categoryData.name,
+          type: categoryData.type,
+          parent_id: categoryData.parent_id,
+          is_active: categoryData.is_active,
           user_id: user.id,
           sort_index: nextSortIndex,
         })
@@ -108,9 +112,12 @@ export function useCategories() {
 
   const updateCategoryMutation = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Category> & { id: string }) => {
+      // Filter out properties that shouldn't be updated directly
+      const { subcategories, ...updateData } = updates;
+      
       const { data, error } = await supabase
         .from('categories')
-        .update(updates)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();

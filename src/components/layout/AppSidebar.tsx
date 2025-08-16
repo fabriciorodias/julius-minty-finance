@@ -93,9 +93,9 @@ export function AppSidebar() {
   );
 
   return (
-    <Sidebar className={`${isCollapsed ? "w-16" : "w-64"} border-r-0 mint-gradient-green relative overflow-hidden`}>
+    <Sidebar collapsible="icon" className="border-r-0 mint-gradient-green">
       {/* Subtle gradient overlay for depth */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-black/10 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-black/10 pointer-events-none z-0" />
       
       <SidebarHeader className="p-6 border-b border-white border-opacity-20 relative z-10">
         <div className="flex items-center">

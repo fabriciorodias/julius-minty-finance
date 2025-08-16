@@ -1,10 +1,8 @@
-
 import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatCurrency } from '@/lib/utils';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useInstitutions } from '@/hooks/useInstitutions';
 import { useTransactions, Transaction } from '@/hooks/useTransactions';
@@ -20,6 +18,10 @@ export function InvoiceManagerModal({ isOpen, onClose }: InvoiceManagerModalProp
   const { accounts } = useAccounts();
   const { institutions } = useInstitutions();
   const { transactions } = useTransactions();
+
+  // Local currency formatting function
+  const formatCurrency = (value: number) => 
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
   // Create institution map for lookup
   const institutionMap = useMemo(() => 

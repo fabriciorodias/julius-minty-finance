@@ -1,294 +1,144 @@
-
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import React, { useState, useMemo } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useForm } from 'react-hook-form';
+import { useToast } from "@/components/ui/use-toast"
 import { useAccounts } from '@/hooks/useAccounts';
 import { useInstitutions } from '@/hooks/useInstitutions';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-import { Upload, FileText } from 'lucide-react';
-
-const importSchema = z.object({
-  importType: z.enum(['account', 'credit_card']),
-  sourceId: z.string().min(1, 'Selecione uma conta ou cartão'),
-  file: z.instanceof(File).refine((file) => {
-    const allowedTypes = [
-      'text/csv',
-      'application/x-ofx',
-      'text/plain'
-    ];
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    return allowedTypes.includes(file.type) || 
-           ['csv', 'ofx'].includes(fileExtension || '');
-  }, 'Apenas arquivos CSV e OFX são suportados'),
-});
-
-type ImportFormData = z.infer<typeof importSchema>;
 
 interface ImportTransactionsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onImport: (data: { source_account_id: string; csv_file: File }) => Promise<void>;
+  isLoading: boolean;
 }
 
-export function ImportTransactionsModal({
-  isOpen,
-  onClose,
-  onSuccess,
-}: ImportTransactionsModalProps) {
-  const [isUploading, setIsUploading] = useState(false);
+interface AccountOption {
+  value: string;
+  label: string;
+  type: string;
+}
+
+export function ImportTransactionsModal({ isOpen, onClose, onImport, isLoading }: ImportTransactionsModalProps) {
+  const [csvFile, setCsvFile] = useState<File | null>(null);
   const { accounts } = useAccounts();
   const { institutions } = useInstitutions();
+  const { toast } = useToast()
 
-  const form = useForm<ImportFormData>({
-    resolver: zodResolver(importSchema),
-    defaultValues: {
-      importType: 'account',
-      sourceId: '',
-      file: undefined,
-    },
-  });
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<{ source_account_id: string; csv_file: File }>();
 
-  // Create institution map for lookup
-  const institutionMap = React.useMemo(() => 
+  const institutionMap = useMemo(() => 
     institutions.reduce((acc, institution) => {
       acc[institution.id] = institution.name;
       return acc;
     }, {} as Record<string, string>), 
   [institutions]);
 
-  const watchImportType = form.watch('importType');
+  const sourceOptions = accounts
+    .filter(account => account.type === 'checking' || account.type === 'savings' || account.type === 'credit')
+    .map(account => ({
+      value: account.id,
+      label: `${institutionMap[account.institution_id] || 'Instituição'} - ${account.name}`,
+      type: account.type
+    }));
 
-  // Filter accounts based on import type
-  const availableAccounts = React.useMemo(() => {
-    return accounts.filter(account => {
-      if (watchImportType === 'account') {
-        return account.type === 'on_budget' || account.type === 'off_budget';
-      } else {
-        return account.type === 'credit';
-      }
-    });
-  }, [accounts, watchImportType]);
-
-  const handleSubmit = async (data: ImportFormData) => {
-    setIsUploading(true);
-    
-    try {
-      const formData = new FormData();
-      formData.append('file', data.file);
-      formData.append('importType', data.importType);
-      formData.append('sourceId', data.sourceId);
-
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error('Usuário não autenticado');
-      }
-
-      const SUPABASE_URL = "https://kdmalulbcqnothgxyrnc.supabase.co";
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/import-transactions`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: formData,
-      });
-
-      console.log('Import response status:', response.status);
-      console.log('Import response headers:', Object.fromEntries(response.headers.entries()));
-
-      let result;
-      const contentType = response.headers.get('content-type');
-      
-      if (contentType && contentType.includes('application/json')) {
-        result = await response.json();
-      } else {
-        const textResponse = await response.text();
-        console.error('Non-JSON response:', textResponse);
-        throw new Error(`Erro no servidor: ${response.status} ${response.statusText}`);
-      }
-
-      if (!response.ok) {
-        throw new Error(result.error || `Erro HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      toast({
-        title: "Importação concluída",
-        description: `${result.count} transações importadas com sucesso`,
-      });
-
-      onSuccess();
-      onClose();
-      form.reset();
-    } catch (error) {
-      console.error('Import error:', error);
-      toast({
-        title: "Erro na importação",
-        description: error instanceof Error ? error.message : "Não foi possível importar o arquivo",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setCsvFile(file);
+      setValue('csv_file', file);
     }
   };
 
-  const handleClose = () => {
-    if (!isUploading) {
-      onClose();
-      form.reset();
+  const handleSaveInternal = async (data: { source_account_id: string; csv_file: File }) => {
+    if (!csvFile) {
+      toast({
+        title: "Nenhum arquivo CSV selecionado.",
+        description: "Por favor, selecione um arquivo para importar.",
+        variant: "destructive",
+      })
+      return;
     }
+
+    await onImport({
+      ...data,
+      csv_file: csvFile,
+    });
+    onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Importar Extratos/Faturas</DialogTitle>
-          <DialogDescription>
-            Envie um arquivo CSV ou OFX do seu banco para importar lançamentos automaticamente.
-          </DialogDescription>
+          <DialogTitle className="text-mint-text-primary font-bold">Importar Transações via CSV</DialogTitle>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="importType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de Importação</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="account">Extrato de Conta</SelectItem>
-                      <SelectItem value="credit_card">Fatura de Cartão</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <form onSubmit={handleSubmit(handleSaveInternal)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="source_account_id" className="text-mint-text-primary font-medium">
+              Conta de Origem
+            </Label>
+            <Select onValueChange={(value) => setValue('source_account_id', value)}>
+              <SelectTrigger className="mint-input">
+                <SelectValue placeholder="Selecione a conta" />
+              </SelectTrigger>
+              <SelectContent>
+                {sourceOptions.map((option: AccountOption) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.source_account_id && (
+              <p className="text-sm text-red-500">Conta de origem é obrigatória</p>
+            )}
+          </div>
 
-            <FormField
-              control={form.control}
-              name="sourceId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {watchImportType === 'account' ? 'Conta' : 'Cartão de Crédito'}
-                  </FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={`Selecione ${watchImportType === 'account' ? 'uma conta' : 'um cartão'}`} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {availableAccounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {institutionMap[account.institution_id]} - {account.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+          <div className="space-y-2">
+            <Label htmlFor="csv_file" className="text-mint-text-primary font-medium">
+              Arquivo CSV
+            </Label>
+            <Input
+              id="csv_file"
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              className="mint-input"
             />
+            {errors.csv_file && (
+              <p className="text-sm text-red-500">Arquivo CSV é obrigatório</p>
+            )}
+            {!csvFile && (
+              <p className="text-sm text-mint-text-secondary">
+                Selecione um arquivo CSV para importar as transações.
+              </p>
+            )}
+          </div>
 
-            <FormField
-              control={form.control}
-              name="file"
-              render={({ field: { onChange, value, ...field } }) => (
-                <FormItem>
-                  <FormLabel>Arquivo</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        type="file"
-                        accept=".csv,.ofx"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            onChange(file);
-                          }
-                        }}
-                        {...field}
-                      />
-                      {value && (
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <FileText className="h-4 w-4 mr-1" />
-                          {value.name}
-                        </div>
-                      )}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                  <div className="text-xs text-muted-foreground">
-                    Formatos suportados: CSV, OFX
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                disabled={isUploading}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={isUploading}
-                className="flex items-center gap-2"
-              >
-                {isUploading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Importando...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="h-4 w-4" />
-                    Importar
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isLoading}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={isLoading || !csvFile}
+              className="flex-1"
+            >
+              {isLoading ? 'Importando...' : 'Importar'}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,7 +68,7 @@ const Planejamento = () => {
           console.log('Transaction change detected:', payload);
           
           // Check if the transaction affects the current month
-          const eventDate = payload.new?.event_date || payload.old?.event_date;
+          const eventDate = (payload.new as any)?.event_date || (payload.old as any)?.event_date;
           if (eventDate && eventDate >= startDateStr && eventDate < endDateStr) {
             console.log('Invalidating budget-actuals for current month');
             queryClient.invalidateQueries({ 
@@ -88,7 +89,7 @@ const Planejamento = () => {
           console.log('Budget change detected:', payload);
           
           // Check if the budget affects the current month
-          const budgetMonth = payload.new?.month || payload.old?.month;
+          const budgetMonth = (payload.new as any)?.month || (payload.old as any)?.month;
           if (budgetMonth === currentMonth) {
             console.log('Invalidating budget-actuals and budgets for current month');
             queryClient.invalidateQueries({ 

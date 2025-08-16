@@ -18,7 +18,8 @@ import { TransactionModal } from '@/components/investments/TransactionModal';
 import { BalanceUpdateModal } from '@/components/investments/BalanceUpdateModal';
 import { InvestmentPortfolioChart } from '@/components/investments/InvestmentPortfolioChart';
 import { MonthSelector } from '@/components/planning/MonthSelector';
-import { RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
+import { DeleteConfirmationDialog } from '@/components/transactions/DeleteConfirmationDialog';
+import { RefreshCw, TrendingUp, TrendingDown, Trash2 } from 'lucide-react';
 
 const Investimentos = () => {
   const { user } = useAuth();
@@ -32,13 +33,16 @@ const Investimentos = () => {
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showBalanceModal, setShowBalanceModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedInvestment, setSelectedInvestment] = useState<any>(null);
 
   const { 
     investments, 
     isLoading: investmentsLoading, 
     createInvestment, 
-    isCreating 
+    isCreating,
+    deleteInvestment,
+    isDeleting
   } = useInvestments();
   
   const { createTransaction, isCreating: isCreatingTransaction } = useInvestmentTransactions();
@@ -123,6 +127,19 @@ const Investimentos = () => {
   const handleOpenBalanceModal = (investment: any) => {
     setSelectedInvestment(investment);
     setShowBalanceModal(true);
+  };
+
+  const handleOpenDeleteDialog = (investment: any) => {
+    setSelectedInvestment(investment);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteInvestment = () => {
+    if (selectedInvestment) {
+      deleteInvestment(selectedInvestment.id);
+      setShowDeleteDialog(false);
+      setSelectedInvestment(null);
+    }
   };
 
   const handleRefresh = () => {
@@ -405,6 +422,14 @@ const Investimentos = () => {
                             <span className="material-icons text-sm mr-1">account_balance</span>
                             Atualizar Saldo
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenDeleteDialog(investment)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -451,6 +476,18 @@ const Investimentos = () => {
           />
         </>
       )}
+
+      <DeleteConfirmationDialog
+        isOpen={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setSelectedInvestment(null);
+        }}
+        onConfirm={handleDeleteInvestment}
+        title="Excluir Investimento"
+        description={`Tem certeza que deseja excluir o investimento "${selectedInvestment?.name}"? Esta ação não pode ser desfeita e também excluirá todas as transações e saldos relacionados.`}
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

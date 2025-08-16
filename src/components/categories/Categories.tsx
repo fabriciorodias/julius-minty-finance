@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useCategories } from '@/hooks/useCategories';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit2, Trash2, Eye, EyeOff, TrendingUp, TrendingDown, MoreVertical, ChevronRight, ChevronDown, GripVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, EyeOff, TrendingUp, TrendingDown, MoreVertical, ChevronRight, ChevronDown } from 'lucide-react';
 import { CategoryModal } from '@/components/entities/CategoryModal';
 import {
   DropdownMenu,
@@ -26,7 +26,6 @@ export function Categories() {
     createCategory,
     updateCategory,
     deleteCategorySafely,
-    updateCategoryOrder,
     isCreating,
     isUpdating,
     isDeleting,
@@ -69,28 +68,6 @@ export function Categories() {
     });
   };
 
-  const handleDragStart = (e: React.DragEvent, categoryId: string, type: 'receita' | 'despesa', parentId: string | null) => {
-    e.dataTransfer.setData('text/plain', JSON.stringify({
-      categoryId,
-      type,
-      parentId
-    }));
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e: React.DragEvent, dropCategoryId: string, dropType: 'receita' | 'despesa', dropParentId: string | null) => {
-    e.preventDefault();
-    const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
-    
-    // Only allow reordering within the same type and parent group
-    if (dragData.type === dropType && dragData.parentId === dropParentId && dragData.categoryId !== dropCategoryId) {
-      updateCategoryOrder(dragData.categoryId, dropCategoryId);
-    }
-  };
-
   const renderCategory = (category: any, level = 0) => {
     const isCollapsed = collapsedCategories[category.id];
     const hasSubcategories = category.subcategories && category.subcategories.length > 0;
@@ -99,19 +76,12 @@ export function Categories() {
       <div key={category.id} className="space-y-2">
         <div
           className={cn(
-            "group flex items-center justify-between p-4 bg-card rounded-lg border transition-all duration-200 hover:shadow-sm cursor-move",
+            "group flex items-center justify-between p-4 bg-card rounded-lg border transition-all duration-200 hover:shadow-sm",
             !category.is_active && "opacity-60 bg-gray-50"
           )}
           style={{ marginLeft: level * 24 }}
-          draggable
-          onDragStart={(e) => handleDragStart(e, category.id, category.type, category.parent_id)}
-          onDragOver={handleDragOver}
-          onDrop={(e) => handleDrop(e, category.id, category.type, category.parent_id)}
         >
           <div className="flex items-center space-x-3 flex-1">
-            {/* Drag Handle */}
-            <GripVertical className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-            
             {/* Collapse/Expand Button */}
             {hasSubcategories && (
               <Button

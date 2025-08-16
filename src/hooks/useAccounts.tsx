@@ -99,8 +99,20 @@ export function useAccounts(institutionId?: string) {
     },
   });
 
-  const deleteAccountMutation = useMutation({
+  const deleteAccountSafelyMutation = useMutation({
     mutationFn: async (id: string) => {
+      // Verificar se há lançamentos associados
+      const { data: transactions } = await supabase
+        .from('transactions')
+        .select('id')
+        .eq('account_id', id)
+        .limit(1);
+
+      if (transactions && transactions.length > 0) {
+        throw new Error('HAS_TRANSACTIONS');
+      }
+
+      // Se não há dependências, proceder com a exclusão
       const { error } = await supabase
         .from('accounts')
         .delete()
@@ -115,12 +127,28 @@ export function useAccounts(institutionId?: string) {
         description: "A conta foi excluída com sucesso.",
       });
     },
-    onError: (error) => {
-      toast({
-        title: "Erro ao excluir conta",
-        description: "Não foi possível excluir a conta. Verifique se não há lançamentos associados.",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      console.error('Error deleting account:', error);
+      
+      if (error.message === 'HAS_TRANSACTIONS') {
+        toast({
+          title: "Não é possível excluir a conta",
+          description: "Esta conta possui lançamentos associados. Desative-a para manter o histórico ou remova os lançamentos primeiro.",
+          variant: "destructive",
+        });
+      } else if (error.code === '23503') {
+        toast({
+          title: "Não é possível excluir a conta",
+          description: "Esta conta possui lançamentos associados. Desative-a para manter o histórico.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro ao excluir conta",
+          description: "Não foi possível excluir a conta. Tente novamente.",
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -130,9 +158,10 @@ export function useAccounts(institutionId?: string) {
     error,
     createAccount: createAccountMutation.mutate,
     updateAccount: updateAccountMutation.mutate,
-    deleteAccount: deleteAccountMutation.mutate,
+    deleteAccount: deleteAccountSafelyMutation.mutate,
+    deleteAccountSafely: deleteAccountSafelyMutation.mutate,
     isCreating: createAccountMutation.isPending,
     isUpdating: updateAccountMutation.isPending,
-    isDeleting: deleteAccountMutation.isPending,
+    isDeleting: deleteAccountSafelyMutation.isPending,
   };
 }

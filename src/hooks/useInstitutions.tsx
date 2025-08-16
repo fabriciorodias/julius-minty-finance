@@ -93,8 +93,42 @@ export function useInstitutions() {
     },
   });
 
-  const deleteInstitutionMutation = useMutation({
+  const deleteInstitutionSafelyMutation = useMutation({
     mutationFn: async (id: string) => {
+      // Verificar se há contas associadas
+      const { data: accounts } = await supabase
+        .from('accounts')
+        .select('id')
+        .eq('institution_id', id)
+        .limit(1);
+
+      if (accounts && accounts.length > 0) {
+        throw new Error('HAS_ACCOUNTS');
+      }
+
+      // Verificar se há cartões de crédito associados
+      const { data: creditCards } = await supabase
+        .from('credit_cards')
+        .select('id')
+        .eq('institution_id', id)
+        .limit(1);
+
+      if (creditCards && creditCards.length > 0) {
+        throw new Error('HAS_CREDIT_CARDS');
+      }
+
+      // Verificar se há investimentos associados
+      const { data: investments } = await supabase
+        .from('investments')
+        .select('id')
+        .eq('institution_id', id)
+        .limit(1);
+
+      if (investments && investments.length > 0) {
+        throw new Error('HAS_INVESTMENTS');
+      }
+
+      // Se não há dependências, proceder com a exclusão
       const { error } = await supabase
         .from('institutions')
         .delete()
@@ -109,12 +143,40 @@ export function useInstitutions() {
         description: "A instituição foi excluída com sucesso.",
       });
     },
-    onError: (error) => {
-      toast({
-        title: "Erro ao excluir instituição",
-        description: "Não foi possível excluir a instituição. Verifique se não há contas ou cartões associados.",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      console.error('Error deleting institution:', error);
+      
+      if (error.message === 'HAS_ACCOUNTS') {
+        toast({
+          title: "Não é possível excluir a instituição",
+          description: "Esta instituição possui contas associadas. Desative-a para manter o histórico ou remova as contas primeiro.",
+          variant: "destructive",
+        });
+      } else if (error.message === 'HAS_CREDIT_CARDS') {
+        toast({
+          title: "Não é possível excluir a instituição",
+          description: "Esta instituição possui cartões de crédito associados. Desative-a para manter o histórico ou remova os cartões primeiro.",
+          variant: "destructive",
+        });
+      } else if (error.message === 'HAS_INVESTMENTS') {
+        toast({
+          title: "Não é possível excluir a instituição",
+          description: "Esta instituição possui investimentos associados. Desative-a para manter o histórico ou remova os investimentos primeiro.",
+          variant: "destructive",
+        });
+      } else if (error.code === '23503') {
+        toast({
+          title: "Não é possível excluir a instituição",
+          description: "Esta instituição possui registros associados. Desative-a para manter o histórico.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro ao excluir instituição",
+          description: "Não foi possível excluir a instituição. Tente novamente.",
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -124,9 +186,10 @@ export function useInstitutions() {
     error,
     createInstitution: createInstitutionMutation.mutate,
     updateInstitution: updateInstitutionMutation.mutate,
-    deleteInstitution: deleteInstitutionMutation.mutate,
+    deleteInstitution: deleteInstitutionSafelyMutation.mutate,
+    deleteInstitutionSafely: deleteInstitutionSafelyMutation.mutate,
     isCreating: createInstitutionMutation.isPending,
     isUpdating: updateInstitutionMutation.isPending,
-    isDeleting: deleteInstitutionMutation.isPending,
+    isDeleting: deleteInstitutionSafelyMutation.isPending,
   };
 }

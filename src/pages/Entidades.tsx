@@ -23,9 +23,9 @@ const Entidades = () => {
   const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, type: '', id: '', name: '' });
 
   const { categories, createCategory, updateCategory, deleteCategorySafely, isCreating, isUpdating, isDeleting } = useCategories();
-  const { institutions, createInstitution, updateInstitution, deleteInstitution } = useInstitutions();
-  const { accounts, createAccount, updateAccount, deleteAccount } = useAccounts();
-  const { creditCards, createCreditCard, updateCreditCard, deleteCreditCard } = useCreditCards();
+  const { institutions, createInstitution, updateInstitution, deleteInstitutionSafely } = useInstitutions();
+  const { accounts, createAccount, updateAccount, deleteAccountSafely } = useAccounts();
+  const { creditCards, createCreditCard, updateCreditCard, deleteCreditCardSafely } = useCreditCards();
 
   const handleDelete = () => {
     switch (deleteDialog.type) {
@@ -33,13 +33,13 @@ const Entidades = () => {
         deleteCategorySafely(deleteDialog.id);
         break;
       case 'institution':
-        deleteInstitution(deleteDialog.id);
+        deleteInstitutionSafely(deleteDialog.id);
         break;
       case 'account':
-        deleteAccount(deleteDialog.id);
+        deleteAccountSafely(deleteDialog.id);
         break;
       case 'creditCard':
-        deleteCreditCard(deleteDialog.id);
+        deleteCreditCardSafely(deleteDialog.id);
         break;
     }
     setDeleteDialog({ isOpen: false, type: '', id: '', name: '' });

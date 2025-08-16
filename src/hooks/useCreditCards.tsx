@@ -100,8 +100,20 @@ export function useCreditCards() {
     },
   });
 
-  const deleteCreditCardMutation = useMutation({
+  const deleteCreditCardSafelyMutation = useMutation({
     mutationFn: async (id: string) => {
+      // Verificar se há lançamentos associados
+      const { data: transactions } = await supabase
+        .from('transactions')
+        .select('id')
+        .eq('credit_card_id', id)
+        .limit(1);
+
+      if (transactions && transactions.length > 0) {
+        throw new Error('HAS_TRANSACTIONS');
+      }
+
+      // Se não há dependências, proceder com a exclusão
       const { error } = await supabase
         .from('credit_cards')
         .delete()
@@ -116,12 +128,28 @@ export function useCreditCards() {
         description: "O cartão foi excluído com sucesso.",
       });
     },
-    onError: (error) => {
-      toast({
-        title: "Erro ao excluir cartão",
-        description: "Não foi possível excluir o cartão. Verifique se não há lançamentos associados.",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      console.error('Error deleting credit card:', error);
+      
+      if (error.message === 'HAS_TRANSACTIONS') {
+        toast({
+          title: "Não é possível excluir o cartão",
+          description: "Este cartão possui lançamentos associados. Desative-o para manter o histórico ou remova os lançamentos primeiro.",
+          variant: "destructive",
+        });
+      } else if (error.code === '23503') {
+        toast({
+          title: "Não é possível excluir o cartão",
+          description: "Este cartão possui lançamentos associados. Desative-o para manter o histórico.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro ao excluir cartão",
+          description: "Não foi possível excluir o cartão. Tente novamente.",
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -131,9 +159,10 @@ export function useCreditCards() {
     error,
     createCreditCard: createCreditCardMutation.mutate,
     updateCreditCard: updateCreditCardMutation.mutate,
-    deleteCreditCard: deleteCreditCardMutation.mutate,
+    deleteCreditCard: deleteCreditCardSafelyMutation.mutate,
+    deleteCreditCardSafely: deleteCreditCardSafelyMutation.mutate,
     isCreating: createCreditCardMutation.isPending,
     isUpdating: updateCreditCardMutation.isPending,
-    isDeleting: deleteCreditCardMutation.isPending,
+    isDeleting: deleteCreditCardSafelyMutation.isPending,
   };
 }

@@ -42,20 +42,39 @@ export function useAccounts(institutionId?: string) {
   });
 
   const createAccountMutation = useMutation({
-    mutationFn: async (accountData: Omit<Account, 'id' | 'user_id' | 'created_at'>) => {
+    mutationFn: async (accountData: any) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
+      // Separate account data from initial balance data
+      const { initial_balance, balance_date, ...cleanAccountData } = accountData;
+
+      // Insert the account first
+      const { data: newAccount, error: accountError } = await supabase
         .from('accounts')
         .insert({
-          ...accountData,
+          ...cleanAccountData,
           user_id: user.id,
         })
         .select()
         .single();
 
-      if (error) throw error;
-      return data;
+      if (accountError) throw accountError;
+
+      // If there's an initial balance, insert it into account_initial_balances
+      if (initial_balance && balance_date) {
+        const { error: balanceError } = await supabase
+          .from('account_initial_balances')
+          .upsert({
+            user_id: user.id,
+            account_id: newAccount.id,
+            amount: initial_balance,
+            balance_date: balance_date,
+          });
+
+        if (balanceError) throw balanceError;
+      }
+
+      return newAccount;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
@@ -65,10 +84,11 @@ export function useAccounts(institutionId?: string) {
         description: "A conta foi criada com sucesso.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Error creating account:', error);
       toast({
         title: "Erro ao criar conta",
-        description: "Não foi possível criar a conta. Tente novamente.",
+        description: error.message || "Não foi possível criar a conta. Tente novamente.",
         variant: "destructive",
       });
     },
@@ -94,10 +114,11 @@ export function useAccounts(institutionId?: string) {
         description: "A conta foi atualizada com sucesso.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Error updating account:', error);
       toast({
         title: "Erro ao atualizar conta",
-        description: "Não foi possível atualizar a conta. Tente novamente.",
+        description: error.message || "Não foi possível atualizar a conta. Tente novamente.",
         variant: "destructive",
       });
     },
@@ -150,7 +171,7 @@ export function useAccounts(institutionId?: string) {
       } else {
         toast({
           title: "Erro ao excluir conta",
-          description: "Não foi possível excluir a conta. Tente novamente.",
+          description: error.message || "Não foi possível excluir a conta. Tente novamente.",
           variant: "destructive",
         });
       }

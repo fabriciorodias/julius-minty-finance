@@ -327,48 +327,67 @@ function parseOFX(content: string): ParsedTransaction[] {
 function parseDate(dateStr: string): string {
   if (!dateStr) return new Date().toISOString().slice(0, 10)
   
-  // Try to parse various date formats and return YYYY-MM-DD
-  let date = new Date(dateStr)
-  if (!isNaN(date.getTime())) {
-    return date.toISOString().slice(0, 10)
-  }
+  console.log('Parsing date:', dateStr)
   
-  // Try DD/MM/YYYY format (Brazilian)
+  // Try DD/MM/YYYY format first (Brazilian format)
   let parts = dateStr.split('/')
   if (parts.length === 3) {
     const day = parseInt(parts[0])
-    const month = parseInt(parts[1]) - 1
+    const month = parseInt(parts[1]) - 1  // Month is 0-indexed in Date constructor
     const year = parseInt(parts[2])
-    date = new Date(year, month, day)
-    if (!isNaN(date.getTime())) {
-      return date.toISOString().slice(0, 10)
+    
+    // Validate Brazilian date format (DD/MM/YYYY)
+    if (day >= 1 && day <= 31 && month >= 0 && month <= 11 && year >= 1900) {
+      const date = new Date(year, month, day)
+      if (!isNaN(date.getTime())) {
+        const result = date.toISOString().slice(0, 10)
+        console.log(`Parsed Brazilian date ${dateStr} -> ${result}`)
+        return result
+      }
     }
   }
   
-  // Try DD-MM-YYYY format
+  // Try DD-MM-YYYY format (Brazilian with dash)
   parts = dateStr.split('-')
   if (parts.length === 3) {
-    // Try DD-MM-YYYY first
+    // First try DD-MM-YYYY (Brazilian format)
     let day = parseInt(parts[0])
     let month = parseInt(parts[1]) - 1
     let year = parseInt(parts[2])
     
     if (year < 100) year += 2000 // Handle 2-digit years
     
-    date = new Date(year, month, day)
-    if (!isNaN(date.getTime()) && day <= 31 && month + 1 <= 12) {
-      return date.toISOString().slice(0, 10)
+    // Validate as Brazilian format first
+    if (day >= 1 && day <= 31 && month >= 0 && month <= 11 && year >= 1900) {
+      const date = new Date(year, month, day)
+      if (!isNaN(date.getTime())) {
+        const result = date.toISOString().slice(0, 10)
+        console.log(`Parsed Brazilian date with dash ${dateStr} -> ${result}`)
+        return result
+      }
     }
     
-    // Try YYYY-MM-DD format
+    // If Brazilian format fails, try YYYY-MM-DD format
     year = parseInt(parts[0])
     month = parseInt(parts[1]) - 1
     day = parseInt(parts[2])
     
-    date = new Date(year, month, day)
-    if (!isNaN(date.getTime())) {
-      return date.toISOString().slice(0, 10)
+    if (year >= 1900 && month >= 0 && month <= 11 && day >= 1 && day <= 31) {
+      const date = new Date(year, month, day)
+      if (!isNaN(date.getTime())) {
+        const result = date.toISOString().slice(0, 10)
+        console.log(`Parsed ISO date ${dateStr} -> ${result}`)
+        return result
+      }
     }
+  }
+  
+  // Try to parse as a standard date string
+  const date = new Date(dateStr)
+  if (!isNaN(date.getTime())) {
+    const result = date.toISOString().slice(0, 10)
+    console.log(`Parsed standard date ${dateStr} -> ${result}`)
+    return result
   }
   
   console.warn('Could not parse date:', dateStr)

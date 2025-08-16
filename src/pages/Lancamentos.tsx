@@ -15,8 +15,13 @@ import { TransactionFilters as FiltersComponent } from '@/components/transaction
 import { TransactionsList } from '@/components/transactions/TransactionsList';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, CreditCard, AlertTriangle } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Lancamentos() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  
   // Persist filters in localStorage
   const [filters, setFilters] = useLocalStorage<TransactionFilters>('transaction-filters', {});
   const [searchTerm, setSearchTerm] = useLocalStorage<string>('transaction-search', '');
@@ -69,6 +74,10 @@ export default function Lancamentos() {
   };
 
   const handleImportSuccess = () => {
+    // Invalidate and refetch transactions to show newly imported ones
+    queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+    queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
+    
     // Filter to show only uncategorized transactions after import
     setFilters({ ...filters, withoutCategory: true });
   };

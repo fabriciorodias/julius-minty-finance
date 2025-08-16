@@ -195,6 +195,7 @@ export default function Lancamentos() {
             accounts={accounts}
             institutions={institutions}
             balanceMap={balanceMap}
+            dateFilters={dateFilters}
           />
 
           {/* Header with Add Button and Quick Filters */}

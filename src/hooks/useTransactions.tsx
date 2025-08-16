@@ -173,6 +173,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
       queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budget-actuals'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['provisioned-totals', user?.id], exact: false });
       toast({
         title: "Lançamento criado",
         description: "O lançamento foi criado com sucesso.",
@@ -205,6 +206,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
       queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budget-actuals'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['provisioned-totals', user?.id], exact: false });
       toast({
         title: "Lançamento atualizado",
         description: "O lançamento foi atualizado com sucesso.",
@@ -234,6 +236,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
       queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budget-actuals'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['provisioned-totals', user?.id], exact: false });
       toast({
         title: "Lançamento excluído",
         description: "O lançamento foi excluído com sucesso.",
@@ -263,6 +266,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
       queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budget-actuals'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['provisioned-totals', user?.id], exact: false });
       toast({
         title: "Lançamentos excluídos",
         description: `${ids.length} lançamento${ids.length > 1 ? 's foram excluídos' : ' foi excluído'} com sucesso.`,
@@ -321,6 +325,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
       queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budget-actuals'], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['provisioned-totals', user?.id], exact: false });
       toast({
         title: "Lançamentos parcelados criados",
         description: "Todos os lançamentos parcelados foram criados com sucesso.",

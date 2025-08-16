@@ -16,7 +16,6 @@ import { format, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TransactionWithRelations } from '@/hooks/useTransactions';
 import { Account } from '@/hooks/useAccounts';
-import { CreditCard } from '@/hooks/useCreditCards';
 import { Institution } from '@/hooks/useInstitutions';
 import { BulkActionsBar } from './BulkActionsBar';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
@@ -24,7 +23,6 @@ import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 interface TransactionsListProps {
   transactions: TransactionWithRelations[];
   accounts: Account[];
-  creditCards: CreditCard[];
   institutions: Institution[];
   isLoading: boolean;
   onEdit: (transaction: TransactionWithRelations) => void;
@@ -37,7 +35,6 @@ interface TransactionsListProps {
 export function TransactionsList({
   transactions,
   accounts,
-  creditCards,
   institutions,
   isLoading,
   onEdit,
@@ -63,10 +60,6 @@ export function TransactionsList({
     if (transaction.accounts) {
       const account = accounts.find(a => a.id === transaction.account_id);
       return `${institutionMap[account?.institution_id || '']} - ${transaction.accounts.name}`;
-    }
-    if (transaction.credit_cards) {
-      const card = creditCards.find(c => c.id === transaction.credit_card_id);
-      return `${institutionMap[card?.institution_id || '']} - ${transaction.credit_cards.name}`;
     }
     return '-';
   };

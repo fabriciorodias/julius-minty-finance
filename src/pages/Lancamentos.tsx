@@ -1,9 +1,9 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTransactions, TransactionFilters, TransactionWithRelations, CreateTransactionData } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
 import { useAccounts } from '@/hooks/useAccounts';
-import { useCreditCards } from '@/hooks/useCreditCards';
 import { useInstitutions } from '@/hooks/useInstitutions';
 import { useAccountBalances } from '@/hooks/useAccountBalances';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -35,7 +35,6 @@ export default function Lancamentos() {
 
   const { categories } = useCategories();
   const { accounts } = useAccounts();
-  const { creditCards } = useCreditCards();
   const { institutions } = useInstitutions();
   const { balanceMap, isLoading: balancesLoading } = useAccountBalances();
 
@@ -190,7 +189,6 @@ export default function Lancamentos() {
         onSearchChange={setSearchTerm}
         categories={categories}
         accounts={accounts}
-        creditCards={creditCards}
         institutions={institutions}
       />
 
@@ -198,7 +196,6 @@ export default function Lancamentos() {
       <TransactionsList
         transactions={filteredTransactions}
         accounts={accounts}
-        creditCards={creditCards}
         institutions={institutions}
         isLoading={isLoading}
         onEdit={handleEdit}

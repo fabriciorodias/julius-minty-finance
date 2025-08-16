@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,10 +17,13 @@ interface InvestmentModalProps {
 }
 
 export function InvestmentModal({ isOpen, onClose, onSave, isLoading }: InvestmentModalProps) {
-  const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<CreateInvestmentData>();
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<CreateInvestmentData>();
   const { institutions } = useInstitutions();
 
+  const selectedType = watch('type');
+
   const handleSaveInternal = (data: CreateInvestmentData) => {
+    console.log('Form data being submitted:', data);
     onSave(data);
     reset();
     onClose();
@@ -42,6 +45,9 @@ export function InvestmentModal({ isOpen, onClose, onSave, isLoading }: Investme
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="text-mint-text-primary font-bold">Adicionar Investimento</DialogTitle>
+          <DialogDescription className="text-mint-text-secondary">
+            Preencha os dados do seu novo investimento
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(handleSaveInternal)} className="space-y-4">
@@ -64,7 +70,7 @@ export function InvestmentModal({ isOpen, onClose, onSave, isLoading }: Investme
             <Label htmlFor="type" className="text-mint-text-primary font-medium">
               Tipo de Investimento
             </Label>
-            <Select onValueChange={(value) => setValue('type', value as any)}>
+            <Select onValueChange={(value) => setValue('type', value as any, { shouldValidate: true })}>
               <SelectTrigger className="mint-input">
                 <SelectValue placeholder="Selecione o tipo" />
               </SelectTrigger>
@@ -76,8 +82,14 @@ export function InvestmentModal({ isOpen, onClose, onSave, isLoading }: Investme
                 ))}
               </SelectContent>
             </Select>
+            {/* Hidden input to ensure type is validated */}
+            <input
+              type="hidden"
+              {...register('type', { required: 'Tipo é obrigatório' })}
+              value={selectedType || ''}
+            />
             {errors.type && (
-              <p className="text-sm text-red-500">Tipo é obrigatório</p>
+              <p className="text-sm text-red-500">{errors.type.message}</p>
             )}
           </div>
 
@@ -119,7 +131,9 @@ export function InvestmentModal({ isOpen, onClose, onSave, isLoading }: Investme
             <Input
               id="due_date"
               type="date"
-              {...register('due_date')}
+              {...register('due_date', {
+                setValueAs: (value) => value === '' ? undefined : value
+              })}
               className="mint-input"
             />
           </div>
@@ -136,7 +150,8 @@ export function InvestmentModal({ isOpen, onClose, onSave, isLoading }: Investme
                 min="0"
                 {...register('initial_amount', { 
                   required: 'Valor inicial é obrigatório',
-                  min: { value: 0.01, message: 'Valor deve ser maior que zero' }
+                  min: { value: 0.01, message: 'Valor deve ser maior que zero' },
+                  valueAsNumber: true
                 })}
                 placeholder="0,00"
                 className="mint-input"

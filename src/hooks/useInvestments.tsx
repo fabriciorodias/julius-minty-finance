@@ -81,19 +81,36 @@ export function useInvestments() {
     mutationFn: async (investmentData: CreateInvestmentData) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const { initial_amount, initial_date, ...investmentFields } = investmentData;
+      const { initial_amount, initial_date, due_date, ...investmentFields } = investmentData;
+
+      // Sanitize and prepare data
+      const sanitizedData = {
+        ...investmentFields,
+        user_id: user.id,
+        // Only include due_date if it's not empty
+        ...(due_date && due_date.trim() !== '' ? { due_date } : {}),
+      };
+
+      console.log('Creating investment with data:', sanitizedData);
 
       // Create investment
       const { data: investment, error: investmentError } = await supabase
         .from('investments')
-        .insert({
-          ...investmentFields,
-          user_id: user.id,
-        })
+        .insert(sanitizedData)
         .select()
         .single();
 
-      if (investmentError) throw investmentError;
+      if (investmentError) {
+        console.error('Investment creation error:', investmentError);
+        throw investmentError;
+      }
+
+      console.log('Investment created:', investment);
+
+      // Convert initial_amount to number
+      const amountAsNumber = typeof initial_amount === 'string' 
+        ? parseFloat(initial_amount) 
+        : initial_amount;
 
       // Create initial transaction
       const { error: transactionError } = await supabase
@@ -102,26 +119,34 @@ export function useInvestments() {
           investment_id: investment.id,
           user_id: user.id,
           type: 'aporte',
-          amount: initial_amount,
+          amount: amountAsNumber,
           transaction_date: initial_date,
         });
 
-      if (transactionError) throw transactionError;
+      if (transactionError) {
+        console.error('Transaction creation error:', transactionError);
+        throw transactionError;
+      }
 
-      // Create initial balance
-      const monthStart = new Date(initial_date);
-      monthStart.setDate(1);
+      // Create initial balance with proper month formatting (YYYY-MM-01)
+      const initialDate = new Date(initial_date);
+      const monthFormatted = `${initialDate.getFullYear()}-${String(initialDate.getMonth() + 1).padStart(2, '0')}-01`;
       
+      console.log('Creating balance for month:', monthFormatted);
+
       const { error: balanceError } = await supabase
         .from('investment_balances')
         .insert({
           investment_id: investment.id,
           user_id: user.id,
-          month: monthStart.toISOString().split('T')[0],
-          balance: initial_amount,
+          month: monthFormatted,
+          balance: amountAsNumber,
         });
 
-      if (balanceError) throw balanceError;
+      if (balanceError) {
+        console.error('Balance creation error:', balanceError);
+        throw balanceError;
+      }
 
       return investment;
     },

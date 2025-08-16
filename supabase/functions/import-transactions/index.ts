@@ -31,6 +31,7 @@ serve(async (req) => {
     } = await supabaseClient.auth.getUser()
 
     if (userError || !user) {
+      console.error('User authentication error:', userError)
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -42,29 +43,37 @@ serve(async (req) => {
     const importType = formData.get('importType') as string // 'account' or 'credit_card'
     const sourceId = formData.get('sourceId') as string
 
+    console.log('Import request:', { fileName: file?.name, importType, sourceId, fileSize: file?.size })
+
     if (!file || !importType || !sourceId) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Arquivo, tipo de importação e origem são obrigatórios' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Upload file to storage
-    const fileName = `${user.id}/${Date.now()}-${file.name}`
-    const { error: uploadError } = await supabaseClient.storage
-      .from('imports')
-      .upload(fileName, file)
-
-    if (uploadError) {
+    // Process the file directly in memory (no need for storage upload)
+    const fileContent = await file.text()
+    console.log('File content length:', fileContent.length)
+    
+    let transactions;
+    try {
+      transactions = await parseFile(fileContent, file.type, file.name)
+      console.log('Parsed transactions count:', transactions.length)
+    } catch (parseError) {
+      console.error('Parse error:', parseError)
       return new Response(
-        JSON.stringify({ error: 'Failed to upload file' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: `Erro ao processar arquivo: ${parseError.message}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Process the file based on its type
-    const fileContent = await file.text()
-    const transactions = await parseFile(fileContent, file.type, file.name)
+    if (transactions.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'Nenhuma transação válida encontrada no arquivo' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     // Insert transactions into database
     const transactionsToInsert = transactions.map(transaction => ({
@@ -80,22 +89,22 @@ serve(async (req) => {
       type: transaction.amount >= 0 ? 'receita' : 'despesa',
     }))
 
+    console.log('Inserting transactions:', transactionsToInsert.length)
+
     const { data, error: insertError } = await supabaseClient
       .from('transactions')
       .insert(transactionsToInsert)
       .select()
 
     if (insertError) {
-      // Clean up uploaded file on error
-      await supabaseClient.storage.from('imports').remove([fileName])
+      console.error('Insert error:', insertError)
       return new Response(
-        JSON.stringify({ error: 'Failed to insert transactions' }),
+        JSON.stringify({ error: 'Erro ao salvar transações no banco de dados' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Clean up uploaded file after successful processing
-    await supabaseClient.storage.from('imports').remove([fileName])
+    console.log('Successfully inserted transactions:', data.length)
 
     return new Response(
       JSON.stringify({ 
@@ -109,7 +118,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Import error:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Erro interno do servidor' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
@@ -124,51 +133,162 @@ interface ParsedTransaction {
 async function parseFile(content: string, mimeType: string, fileName: string): Promise<ParsedTransaction[]> {
   const extension = fileName.split('.').pop()?.toLowerCase()
 
-  if (extension === 'csv' || mimeType.includes('csv')) {
+  if (extension === 'csv' || mimeType.includes('csv') || mimeType === 'text/plain') {
     return parseCSV(content)
   } else if (extension === 'ofx' || mimeType.includes('ofx')) {
     return parseOFX(content)
-  } else if (extension === 'xlsx' || extension === 'xls' || mimeType.includes('excel') || mimeType.includes('spreadsheet')) {
-    // For Excel files, we'll need to handle them as CSV for now
-    // In a real implementation, you'd use a library like xlsx
-    return parseCSV(content)
   }
 
-  throw new Error('Unsupported file format')
+  throw new Error('Formato de arquivo não suportado. Use CSV ou OFX.')
 }
 
 function parseCSV(content: string): ParsedTransaction[] {
-  const lines = content.split('\n')
-  const transactions: ParsedTransaction[] = []
+  console.log('Parsing CSV content...')
+  
+  // Remove BOM if present
+  if (content.charCodeAt(0) === 0xFEFF) {
+    content = content.slice(1)
+  }
 
-  // Skip header row
+  const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0)
+  
+  if (lines.length < 2) {
+    throw new Error('Arquivo CSV deve ter pelo menos um cabeçalho e uma linha de dados')
+  }
+
+  const transactions: ParsedTransaction[] = []
+  
+  // Detect delimiter by counting occurrences in first line
+  const firstLine = lines[0]
+  const commaCount = (firstLine.match(/,/g) || []).length
+  const semicolonCount = (firstLine.match(/;/g) || []).length
+  const delimiter = semicolonCount > commaCount ? ';' : ','
+  
+  console.log('Detected delimiter:', delimiter)
+  
+  // Parse header to find column indices
+  const header = lines[0].toLowerCase().split(delimiter).map(col => col.replace(/"/g, '').trim())
+  console.log('CSV header:', header)
+  
+  // Column mapping
+  const dateColumns = ['date', 'data', 'dt_posted', 'data de lançamento', 'data lancamento']
+  const descColumns = ['description', 'descricao', 'descrição', 'memo', 'histórico', 'historico', 'name', 'estabelecimento']
+  const amountColumns = ['amount', 'valor', 'valor_total', 'valor da operação', 'trnamt']
+  const creditColumns = ['credit', 'credito', 'crédito', 'entrada']
+  const debitColumns = ['debit', 'debito', 'débito', 'saida', 'saída']
+
+  let dateIndex = -1, descIndex = -1, amountIndex = -1, creditIndex = -1, debitIndex = -1
+
+  header.forEach((col, index) => {
+    if (dateColumns.some(dc => col.includes(dc))) dateIndex = index
+    if (descColumns.some(dc => col.includes(dc))) descIndex = index
+    if (amountColumns.some(ac => col.includes(ac))) amountIndex = index
+    if (creditColumns.some(cc => col.includes(cc))) creditIndex = index
+    if (debitColumns.some(dc => col.includes(dc))) debitIndex = index
+  })
+
+  // Fallback to positional if no headers matched
+  if (dateIndex === -1) dateIndex = 0
+  if (descIndex === -1) descIndex = 1
+  if (amountIndex === -1 && creditIndex === -1 && debitIndex === -1) amountIndex = 2
+
+  console.log('Column indices:', { dateIndex, descIndex, amountIndex, creditIndex, debitIndex })
+
+  // Process data rows
   for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim()
+    const line = lines[i]
     if (!line) continue
 
-    const columns = line.split(',').map(col => col.replace(/"/g, '').trim())
+    const columns = line.split(delimiter).map(col => col.replace(/"/g, '').trim())
     
-    if (columns.length >= 3) {
-      // Assuming format: date, description, amount
-      // You may need to adjust this based on your CSV format
-      const date = parseDate(columns[0])
-      const description = columns[1] || 'Transação importada'
-      const amount = parseFloat(columns[2]) || 0
+    if (columns.length < Math.max(dateIndex + 1, descIndex + 1, amountIndex + 1, creditIndex + 1, debitIndex + 1)) {
+      console.warn(`Line ${i + 1} has insufficient columns:`, columns)
+      continue
+    }
 
-      if (date && description && !isNaN(amount)) {
+    try {
+      const date = parseDate(columns[dateIndex] || '')
+      const description = columns[descIndex] || 'Transação importada'
+      
+      let amount = 0
+      
+      // Handle separate credit/debit columns
+      if (creditIndex >= 0 && debitIndex >= 0) {
+        const creditValue = parseAmount(columns[creditIndex] || '0')
+        const debitValue = parseAmount(columns[debitIndex] || '0')
+        amount = creditValue - debitValue
+      } else if (creditIndex >= 0) {
+        amount = parseAmount(columns[creditIndex] || '0')
+      } else if (debitIndex >= 0) {
+        amount = -parseAmount(columns[debitIndex] || '0')
+      } else if (amountIndex >= 0) {
+        amount = parseAmount(columns[amountIndex] || '0')
+      }
+
+      if (date && description && !isNaN(amount) && amount !== 0) {
         transactions.push({
           date,
           description,
           amount
         })
+      } else {
+        console.warn(`Skipping invalid transaction on line ${i + 1}:`, { date, description, amount })
       }
+    } catch (error) {
+      console.warn(`Error parsing line ${i + 1}:`, error.message)
     }
   }
 
+  console.log(`Parsed ${transactions.length} transactions from CSV`)
   return transactions
 }
 
+function parseAmount(amountStr: string): number {
+  if (!amountStr || amountStr.trim() === '') return 0
+  
+  // Handle Brazilian format: remove thousand separators and convert comma to dot
+  let cleaned = amountStr.trim()
+  
+  // Remove currency symbols and extra spaces
+  cleaned = cleaned.replace(/[R$\s]/g, '')
+  
+  // Handle formats like "1.234,56" (Brazilian) vs "1,234.56" (US)
+  // If there's both comma and dot, determine which is decimal separator
+  const hasComma = cleaned.includes(',')
+  const hasDot = cleaned.includes('.')
+  
+  if (hasComma && hasDot) {
+    // Both present - last one is decimal separator
+    const lastCommaIndex = cleaned.lastIndexOf(',')
+    const lastDotIndex = cleaned.lastIndexOf('.')
+    
+    if (lastCommaIndex > lastDotIndex) {
+      // Comma is decimal separator (Brazilian format)
+      cleaned = cleaned.replace(/\./g, '').replace(',', '.')
+    } else {
+      // Dot is decimal separator (US format)
+      cleaned = cleaned.replace(/,/g, '')
+    }
+  } else if (hasComma && !hasDot) {
+    // Only comma - check if it's decimal separator
+    const commaIndex = cleaned.lastIndexOf(',')
+    const afterComma = cleaned.substring(commaIndex + 1)
+    
+    if (afterComma.length <= 2 && /^\d+$/.test(afterComma)) {
+      // Likely decimal separator
+      cleaned = cleaned.replace(',', '.')
+    } else {
+      // Likely thousand separator
+      cleaned = cleaned.replace(/,/g, '')
+    }
+  }
+  
+  const parsed = parseFloat(cleaned)
+  return isNaN(parsed) ? 0 : parsed
+}
+
 function parseOFX(content: string): ParsedTransaction[] {
+  console.log('Parsing OFX content...')
   const transactions: ParsedTransaction[] = []
   
   // Simple OFX parsing - in production you'd use a proper OFX parser
@@ -196,28 +316,62 @@ function parseOFX(content: string): ParsedTransaction[] {
     }
   }
 
+  if (transactions.length === 0) {
+    throw new Error('Nenhuma transação encontrada no arquivo OFX')
+  }
+
+  console.log(`Parsed ${transactions.length} transactions from OFX`)
   return transactions
 }
 
 function parseDate(dateStr: string): string {
+  if (!dateStr) return new Date().toISOString().slice(0, 10)
+  
   // Try to parse various date formats and return YYYY-MM-DD
-  const date = new Date(dateStr)
+  let date = new Date(dateStr)
   if (!isNaN(date.getTime())) {
     return date.toISOString().slice(0, 10)
   }
   
-  // Try DD/MM/YYYY format
-  const parts = dateStr.split('/')
+  // Try DD/MM/YYYY format (Brazilian)
+  let parts = dateStr.split('/')
   if (parts.length === 3) {
     const day = parseInt(parts[0])
     const month = parseInt(parts[1]) - 1
     const year = parseInt(parts[2])
-    const parsedDate = new Date(year, month, day)
-    if (!isNaN(parsedDate.getTime())) {
-      return parsedDate.toISOString().slice(0, 10)
+    date = new Date(year, month, day)
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().slice(0, 10)
     }
   }
   
+  // Try DD-MM-YYYY format
+  parts = dateStr.split('-')
+  if (parts.length === 3) {
+    // Try DD-MM-YYYY first
+    let day = parseInt(parts[0])
+    let month = parseInt(parts[1]) - 1
+    let year = parseInt(parts[2])
+    
+    if (year < 100) year += 2000 // Handle 2-digit years
+    
+    date = new Date(year, month, day)
+    if (!isNaN(date.getTime()) && day <= 31 && month + 1 <= 12) {
+      return date.toISOString().slice(0, 10)
+    }
+    
+    // Try YYYY-MM-DD format
+    year = parseInt(parts[0])
+    month = parseInt(parts[1]) - 1
+    day = parseInt(parts[2])
+    
+    date = new Date(year, month, day)
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().slice(0, 10)
+    }
+  }
+  
+  console.warn('Could not parse date:', dateStr)
   return new Date().toISOString().slice(0, 10) // fallback to today
 }
 

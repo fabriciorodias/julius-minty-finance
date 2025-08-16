@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -30,7 +31,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useCreditCards } from '@/hooks/useCreditCards';
 import { useInstitutions } from '@/hooks/useInstitutions';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { Upload, FileText } from 'lucide-react';
 
 const importSchema = z.object({
@@ -39,14 +40,13 @@ const importSchema = z.object({
   file: z.instanceof(File).refine((file) => {
     const allowedTypes = [
       'text/csv',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/x-ofx',
-      'application/pdf'
+      'text/plain'
     ];
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
     return allowedTypes.includes(file.type) || 
-           ['csv', 'xls', 'xlsx', 'ofx', 'pdf'].includes(file.name.split('.').pop()?.toLowerCase() || '');
-  }, 'Tipo de arquivo não suportado'),
+           ['csv', 'ofx'].includes(fileExtension || '');
+  }, 'Apenas arquivos CSV e OFX são suportados'),
 });
 
 type ImportFormData = z.infer<typeof importSchema>;
@@ -101,7 +101,8 @@ export function ImportTransactionsModal({
         throw new Error('Usuário não autenticado');
       }
 
-      const response = await fetch('/functions/v1/import-transactions', {
+      const SUPABASE_URL = "https://kdmalulbcqnothgxyrnc.supabase.co";
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/import-transactions`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -109,15 +110,27 @@ export function ImportTransactionsModal({
         body: formData,
       });
 
-      const result = await response.json();
+      console.log('Import response status:', response.status);
+      console.log('Import response headers:', Object.fromEntries(response.headers.entries()));
+
+      let result;
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
+        result = await response.json();
+      } else {
+        const textResponse = await response.text();
+        console.error('Non-JSON response:', textResponse);
+        throw new Error(`Erro no servidor: ${response.status} ${response.statusText}`);
+      }
 
       if (!response.ok) {
-        throw new Error(result.error || 'Erro ao importar arquivo');
+        throw new Error(result.error || `Erro HTTP ${response.status}: ${response.statusText}`);
       }
 
       toast({
         title: "Importação concluída",
-        description: result.message,
+        description: `${result.count} transações importadas com sucesso`,
       });
 
       onSuccess();
@@ -147,6 +160,9 @@ export function ImportTransactionsModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Importar Extratos/Faturas</DialogTitle>
+          <DialogDescription>
+            Envie um arquivo CSV ou OFX do seu banco para importar lançamentos automaticamente.
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -217,7 +233,7 @@ export function ImportTransactionsModal({
                     <div className="flex items-center space-x-2">
                       <Input
                         type="file"
-                        accept=".csv,.xls,.xlsx,.ofx,.pdf"
+                        accept=".csv,.ofx"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
@@ -236,7 +252,7 @@ export function ImportTransactionsModal({
                   </FormControl>
                   <FormMessage />
                   <div className="text-xs text-muted-foreground">
-                    Formatos suportados: CSV, XLS, XLSX, OFX, PDF (beta)
+                    Formatos suportados: CSV, OFX
                   </div>
                 </FormItem>
               )}

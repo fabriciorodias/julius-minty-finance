@@ -60,31 +60,35 @@ export function useProvisionedTotals({ selectedAccountIds, dateFilters }: UsePro
       const startDate = dateFilters?.startDate || format(new Date(), 'yyyy-MM-dd');
       const endDate = dateFilters?.endDate || format(addDays(new Date(), 90), 'yyyy-MM-dd');
 
-      // Get all transactions (both pending and completed) within date range
-      let allTransactionsQuery = supabase
+      // Get initial balances for selected accounts
+      const { data: initialBalances, error: initialError } = await supabase
+        .from('account_initial_balances')
+        .select('account_id, balance')
+        .eq('user_id', user.id)
+        .in('account_id', selectedAccountIds);
+
+      if (initialError) throw initialError;
+
+      const initialBalanceMap = (initialBalances || []).reduce((acc, balance) => {
+        acc[balance.account_id] = balance.balance;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const totalInitialBalance = selectedAccountIds.reduce((sum, accountId) => {
+        return sum + (initialBalanceMap[accountId] || 0);
+      }, 0);
+
+      // Get all transactions within date range (up to endDate)
+      const { data: allTransactions, error: allError } = await supabase
         .from('transactions')
         .select('type, amount, status, effective_date')
         .eq('user_id', user.id)
         .in('account_id', selectedAccountIds)
-        .gte('effective_date', startDate)
         .lte('effective_date', endDate);
 
-      const { data: allTransactions, error: allError } = await allTransactionsQuery;
       if (allError) throw allError;
 
-      // Calculate pending transactions (status = 'pendente')
-      const pendingTransactions = (allTransactions || []).filter(t => t.status === 'pendente');
-      const pendingIncome = pendingTransactions
-        .filter(t => t.type === 'receita')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-      const pendingExpense = pendingTransactions
-        .filter(t => t.type === 'despesa')
-        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-      const pendingNet = pendingIncome - pendingExpense;
-
-      // Calculate completed transactions balance (status = 'concluido' AND has effective_date)
+      // Calculate completed transactions (status = 'concluido' AND has effective_date)
       const completedTransactions = (allTransactions || []).filter(t => 
         t.status === 'concluido' && t.effective_date
       );
@@ -97,21 +101,33 @@ export function useProvisionedTotals({ selectedAccountIds, dateFilters }: UsePro
         .filter(t => t.type === 'despesa')
         .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-      const completedBalance = completedIncome - completedExpense;
+      const completedTransactionsBalance = completedIncome - completedExpense;
 
-      // Calculate total balance (all transactions regardless of status)
-      const totalIncome = (allTransactions || [])
+      // Main balance (Saldo Total) = initial balances + completed transactions
+      const completedBalance = totalInitialBalance + completedTransactionsBalance;
+
+      // Calculate pending transactions within the date range
+      const pendingTransactions = (allTransactions || []).filter(t => 
+        t.status === 'pendente' && 
+        t.effective_date >= startDate && 
+        t.effective_date <= endDate
+      );
+
+      const pendingIncome = pendingTransactions
         .filter(t => t.type === 'receita')
         .reduce((sum, t) => sum + t.amount, 0);
 
-      const totalExpense = (allTransactions || [])
+      const pendingExpense = pendingTransactions
         .filter(t => t.type === 'despesa')
         .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-      const totalBalance = totalIncome - totalExpense;
+      const pendingNet = pendingIncome - pendingExpense;
 
-      // Provisions is the difference between total and completed
-      const provisionsAmount = totalBalance - completedBalance;
+      // Provisioned balance = main balance + pending transactions
+      const totalBalance = completedBalance + pendingNet;
+
+      // Provisions = just the net pending transactions
+      const provisionsAmount = pendingNet;
 
       return {
         pendingIncome,

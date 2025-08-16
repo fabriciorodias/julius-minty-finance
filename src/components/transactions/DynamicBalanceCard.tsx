@@ -38,11 +38,6 @@ export function DynamicBalanceCard({
     return acc;
   }, {} as Record<string, string>);
 
-  // This is the current balance from account balances (completed transactions only)
-  const currentAccountBalance = selectedAccountIds.reduce((sum, accountId) => {
-    return sum + (balanceMap[accountId] || 0);
-  }, 0);
-
   const { 
     completedBalance,
     totalBalance,
@@ -90,9 +85,9 @@ export function DynamicBalanceCard({
   };
 
   const getIcon = () => {
-    if (currentAccountBalance > 0) {
+    if (completedBalance > 0) {
       return <TrendingUp className="h-5 w-5 text-green-600" />;
-    } else if (currentAccountBalance < 0) {
+    } else if (completedBalance < 0) {
       return <TrendingDown className="h-5 w-5 text-red-600" />;
     }
     return <Wallet className="h-5 w-5 text-muted-foreground" />;
@@ -118,7 +113,7 @@ export function DynamicBalanceCard({
               </TooltipTrigger>
               <TooltipContent>
                 <p className="text-xs">
-                  Saldo considerando apenas transações concluídas
+                  Saldo considerando saldos iniciais + transações concluídas
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -126,12 +121,16 @@ export function DynamicBalanceCard({
           {getIcon()}
         </CardHeader>
         <CardContent className="space-y-3">
-          {/* Saldo Principal (apenas transações concluídas) */}
-          <div className={`text-2xl font-bold ${getBalanceColor(currentAccountBalance)}`}>
-            {formatCurrency(currentAccountBalance)}
-          </div>
+          {/* Saldo Principal (saldos iniciais + transações concluídas) */}
+          {isLoadingProvisioned ? (
+            <Skeleton className="h-8 w-40" />
+          ) : (
+            <div className={`text-2xl font-bold ${getBalanceColor(completedBalance)}`}>
+              {formatCurrency(completedBalance)}
+            </div>
+          )}
           
-          {/* Saldo com Provisão (todas as transações) */}
+          {/* Saldo com Provisão (saldo principal + transações pendentes) */}
           <div className="flex items-center gap-2">
             {isLoadingProvisioned ? (
               <Skeleton className="h-4 w-48" />
@@ -149,7 +148,7 @@ export function DynamicBalanceCard({
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="text-xs">
-                      Saldo considerando todas as transações (pendentes e concluídas)
+                      Saldo total + impacto das transações pendentes
                       {dateRange.startDate && (
                         <>
                           <br />
@@ -163,7 +162,7 @@ export function DynamicBalanceCard({
             )}
           </div>
 
-          {/* Provisões (diferença entre saldo total e saldo concluído) */}
+          {/* Provisões (soma líquida das transações pendentes) */}
           {!isLoadingProvisioned && (
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
@@ -178,9 +177,9 @@ export function DynamicBalanceCard({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="text-xs">
-                    Diferença entre saldo com provisão e saldo concluído
+                    Soma líquida das transações pendentes
                     <br />
-                    Representa o impacto das transações pendentes
+                    (Receitas pendentes - Despesas pendentes)
                   </p>
                 </TooltipContent>
               </Tooltip>

@@ -83,6 +83,7 @@ export function useBudgets(month?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['budget-actuals'], exact: false });
       toast({
         title: 'Sucesso',
         description: 'Orçamento criado com sucesso!',
@@ -111,6 +112,7 @@ export function useBudgets(month?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['budget-actuals'], exact: false });
       toast({
         title: 'Sucesso',
         description: 'Orçamento atualizado com sucesso!',
@@ -136,6 +138,7 @@ export function useBudgets(month?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['budget-actuals'], exact: false });
       toast({
         title: 'Sucesso',
         description: 'Orçamento excluído com sucesso!',
@@ -186,6 +189,7 @@ export function useBudgets(month?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['budget-actuals'], exact: false });
       toast({
         title: 'Sucesso',
         description: 'Orçamento fixo criado para todo o ano!',
@@ -232,6 +236,7 @@ export function useBudgets(month?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['budget-actuals'], exact: false });
       toast({
         title: 'Sucesso',
         description: 'Orçamento variável criado para todo o ano!',

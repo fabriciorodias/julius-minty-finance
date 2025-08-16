@@ -32,5 +32,8 @@ export function useBudgetActuals(selectedMonth: string) {
       }));
     },
     enabled: !!user?.id,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 }

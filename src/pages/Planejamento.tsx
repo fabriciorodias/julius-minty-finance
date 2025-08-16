@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +9,9 @@ import { useBudgets } from '@/hooks/useBudgets';
 import { useBudgetActuals } from '@/hooks/useBudgetActuals';
 import { BudgetModal } from '@/components/planning/BudgetModal';
 import { MonthSelector } from '@/components/planning/MonthSelector';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const Planejamento = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -30,9 +32,81 @@ const Planejamento = () => {
   const { categories, isLoading: categoriesLoading } = useCategories();
   const { budgets, createFixedBudget, createVariableBudget, getYearlyBudgets, isCreatingFixed, isCreatingVariable } = useBudgets(currentMonth);
   const { data: budgetActuals, isLoading: budgetActualsLoading } = useBudgetActuals(currentMonth);
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Extract year from string to avoid timezone issues
   const currentYear = parseInt(currentMonth.slice(0, 4), 10);
+
+  // Setup Realtime subscriptions for automatic updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    console.log('Setting up Realtime subscriptions for budget actuals');
+
+    // Calculate month boundaries
+    const monthStart = new Date(currentMonth);
+    const monthEnd = new Date(currentMonth);
+    monthEnd.setMonth(monthEnd.getMonth() + 1);
+    
+    const startDateStr = monthStart.toISOString().slice(0, 10);
+    const endDateStr = monthEnd.toISOString().slice(0, 10);
+
+    // Subscribe to transactions changes
+    const transactionsChannel = supabase
+      .channel('transactions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'transactions',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Transaction change detected:', payload);
+          
+          // Check if the transaction affects the current month
+          const eventDate = payload.new?.event_date || payload.old?.event_date;
+          if (eventDate && eventDate >= startDateStr && eventDate < endDateStr) {
+            console.log('Invalidating budget-actuals for current month');
+            queryClient.invalidateQueries({ 
+              queryKey: ['budget-actuals', user.id, currentMonth] 
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'budgets',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Budget change detected:', payload);
+          
+          // Check if the budget affects the current month
+          const budgetMonth = payload.new?.month || payload.old?.month;
+          if (budgetMonth === currentMonth) {
+            console.log('Invalidating budget-actuals and budgets for current month');
+            queryClient.invalidateQueries({ 
+              queryKey: ['budget-actuals', user.id, currentMonth] 
+            });
+            queryClient.invalidateQueries({ 
+              queryKey: ['budgets', user.id, currentMonth] 
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up Realtime subscriptions');
+      supabase.removeChannel(transactionsChannel);
+    };
+  }, [user?.id, currentMonth, queryClient]);
 
   // Separar categorias por tipo
   const receitas = categories.filter(cat => cat.type === 'receita');

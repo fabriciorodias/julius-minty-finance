@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { useBudgets } from '@/hooks/useBudgets';
 import { useBudgetActuals } from '@/hooks/useBudgetActuals';
 import { BudgetModal } from '@/components/planning/BudgetModal';
 import { MonthSelector } from '@/components/planning/MonthSelector';
+import { RealizedTransactionsHover } from '@/components/planning/RealizedTransactionsHover';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -273,6 +273,17 @@ const Planejamento = () => {
     }).format(value);
   };
 
+  // Helper function to get all category IDs for hover
+  const getCategoryIds = (category: Category): string[] => {
+    if (!category.subcategories || category.subcategories.length === 0) {
+      return [category.id];
+    }
+    
+    return category.subcategories.reduce((ids: string[], sub) => {
+      return [...ids, ...getCategoryIds(sub)];
+    }, []);
+  };
+
   const CategoryRow = ({ category, type }: { category: Category; type: 'receita' | 'despesa' }) => {
     const hasSubcategories = category.subcategories && category.subcategories.length > 0;
     const budgeted = hasSubcategories ? getSubcategoriesTotal(category) : getBudgetedAmount(category.id);
@@ -281,6 +292,7 @@ const Planejamento = () => {
     const hasExceeded = type === 'despesa' && realized > budgeted && budgeted > 0;
     const isEditable = !hasSubcategories;
     const isExpanded = expandedCategories.has(category.id);
+    const categoryIds = getCategoryIds(category);
 
     if (hasSubcategories) {
       // Categoria-pai com subcategorias
@@ -315,7 +327,12 @@ const Planejamento = () => {
             <td className={`py-4 px-2 text-center font-bold text-base ${
               hasExceeded ? 'text-red-600' : 'text-mint-text-primary'
             }`}>
-              {formatCurrency(realized)}
+              <RealizedTransactionsHover
+                categoryIds={categoryIds}
+                selectedMonth={currentMonth}
+              >
+                {formatCurrency(realized)}
+              </RealizedTransactionsHover>
             </td>
             <td className={`py-4 px-2 text-center font-bold text-base ${
               hasExceeded ? 'text-red-600' : 
@@ -374,7 +391,12 @@ const Planejamento = () => {
           <td className={`py-3 px-2 text-center font-medium ${
             hasExceeded ? 'text-red-600' : 'text-mint-text-primary'
           }`}>
-            {formatCurrency(realized)}
+            <RealizedTransactionsHover
+              categoryIds={categoryIds}
+              selectedMonth={currentMonth}
+            >
+              {formatCurrency(realized)}
+            </RealizedTransactionsHover>
           </td>
           <td className={`py-3 px-2 text-center font-medium ${
             hasExceeded ? 'text-red-600' : 
@@ -413,6 +435,7 @@ const Planejamento = () => {
     const realized = getRealizedAmount(category.id);
     const difference = getDifference(category, type);
     const hasExceeded = type === 'despesa' && realized > budgeted && budgeted > 0;
+    const categoryIds = getCategoryIds(category);
 
     return (
       <tr className={`hover:bg-mint-hover/50 ${!isLast ? 'border-b border-mint-border/20' : ''}`}>
@@ -437,7 +460,12 @@ const Planejamento = () => {
         <td className={`py-3 px-2 text-center font-medium text-sm ${
           hasExceeded ? 'text-red-600' : 'text-mint-text-primary'
         }`}>
-          {formatCurrency(realized)}
+          <RealizedTransactionsHover
+            categoryIds={categoryIds}
+            selectedMonth={currentMonth}
+          >
+            {formatCurrency(realized)}
+          </RealizedTransactionsHover>
         </td>
         <td className={`py-3 px-2 text-center font-medium text-sm ${
           hasExceeded ? 'text-red-600' : 
@@ -462,6 +490,21 @@ const Planejamento = () => {
     );
   };
 
+  // Helper function to get all leaf category IDs from a list of categories
+  const getAllLeafCategoryIds = (categoriesList: Category[]): string[] => {
+    const leafIds: string[] = [];
+    
+    categoriesList.forEach(category => {
+      if (!category.subcategories || category.subcategories.length === 0) {
+        leafIds.push(category.id);
+      } else {
+        leafIds.push(...getAllLeafCategoryIds(category.subcategories));
+      }
+    });
+    
+    return leafIds;
+  };
+
   const CategoryTable = ({ title, categoriesList, type }: { 
     title: string; 
     categoriesList: Category[]; 
@@ -473,6 +516,7 @@ const Planejamento = () => {
     const iconColor = type === 'receita' ? 'text-green-600' : 'text-red-600';
     const bgColor = type === 'receita' ? 'bg-green-50' : 'bg-red-50';
     const borderColor = type === 'receita' ? 'border-green-200' : 'border-red-200';
+    const allLeafCategoryIds = getAllLeafCategoryIds(categoriesList);
 
     return (
       <Card className="mint-card">
@@ -511,7 +555,14 @@ const Planejamento = () => {
               </div>
               <div className="text-center">
                 <p className="text-sm font-medium text-mint-text-secondary mb-1">Total Realizado</p>
-                <p className="text-lg font-bold text-mint-text-primary">{formatCurrency(totalRealized)}</p>
+                <p className="text-lg font-bold text-mint-text-primary">
+                  <RealizedTransactionsHover
+                    categoryIds={allLeafCategoryIds}
+                    selectedMonth={currentMonth}
+                  >
+                    {formatCurrency(totalRealized)}
+                  </RealizedTransactionsHover>
+                </p>
               </div>
               <div className="text-center">
                 <p className="text-sm font-medium text-mint-text-secondary mb-1">Diferença</p>

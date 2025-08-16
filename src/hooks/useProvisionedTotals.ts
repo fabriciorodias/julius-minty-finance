@@ -63,14 +63,14 @@ export function useProvisionedTotals({ selectedAccountIds, dateFilters }: UsePro
       // Get initial balances for selected accounts
       const { data: initialBalances, error: initialError } = await supabase
         .from('account_initial_balances')
-        .select('account_id, balance')
+        .select('account_id, amount')
         .eq('user_id', user.id)
         .in('account_id', selectedAccountIds);
 
       if (initialError) throw initialError;
 
       const initialBalanceMap = (initialBalances || []).reduce((acc, balance) => {
-        acc[balance.account_id] = balance.balance;
+        acc[balance.account_id] = balance.amount;
         return acc;
       }, {} as Record<string, number>);
 

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -40,7 +39,6 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useCategories } from '@/hooks/useCategories';
 import { useAccounts } from '@/hooks/useAccounts';
-import { useCreditCards } from '@/hooks/useCreditCards';
 import { useInstitutions } from '@/hooks/useInstitutions';
 import { CreateTransactionData, Transaction } from '@/hooks/useTransactions';
 import { useQueryClient } from '@tanstack/react-query';
@@ -56,18 +54,11 @@ const transactionSchema = z.object({
   category_id: z.string().optional(),
   source_type: z.enum(['account', 'credit_card']),
   account_id: z.string().optional(),
-  credit_card_id: z.string().optional(),
 }).refine((data) => {
-  if (data.source_type === 'account') {
-    return !!data.account_id;
-  }
-  if (data.source_type === 'credit_card') {
-    return !!data.credit_card_id;
-  }
-  return false;
+  return !!data.account_id;
 }, {
   message: 'Selecione uma conta ou cartão de crédito',
-  path: ['source_type'],
+  path: ['account_id'],
 }).refine((data) => {
   if (data.is_effective) {
     return !!data.effective_date;
@@ -103,7 +94,6 @@ export function TransactionModal({
   const queryClient = useQueryClient();
   const { categories } = useCategories();
   const { accounts } = useAccounts();
-  const { creditCards } = useCreditCards();
   const { institutions } = useInstitutions();
 
   // State for controlling date picker popovers
@@ -135,30 +125,27 @@ export function TransactionModal({
       category_id: undefined,
       source_type: 'account',
       account_id: undefined,
-      credit_card_id: undefined,
     },
   });
 
   const isEffective = form.watch('is_effective');
-  const transactionType = form.watch('type');
+  const sourceType = form.watch('source_type');
 
-  // Filter accounts and credit cards based on transaction type and status
+  // Filter accounts based on source type and status
   const availableAccounts = accounts.filter(account => {
     // For editing, show the current account even if inactive
     if (transaction && transaction.account_id === account.id) {
       return true;
     }
-    // For new transactions, only show active on_budget accounts
-    return account.is_active && account.type === 'on_budget';
-  });
-
-  const availableCreditCards = creditCards.filter(card => {
-    // For editing, show the current card even if inactive
-    if (transaction && transaction.credit_card_id === card.id) {
-      return true;
+    
+    // Filter by source type and active status
+    if (sourceType === 'account') {
+      return account.is_active && account.type === 'on_budget';
+    } else if (sourceType === 'credit_card') {
+      return account.is_active && account.type === 'credit';
     }
-    // For new transactions, only show active credit cards
-    return card.is_active;
+    
+    return false;
   });
 
   // Force refresh data when modal opens
@@ -166,11 +153,10 @@ export function TransactionModal({
     if (isOpen) {
       console.log('Modal opened, refreshing data...');
       queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['credit_cards', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
       
-      // Force immediate refetch of credit cards
-      queryClient.refetchQueries({ queryKey: ['credit_cards', user?.id] });
+      // Force immediate refetch of accounts
+      queryClient.refetchQueries({ queryKey: ['accounts', user?.id] });
     }
   }, [isOpen, queryClient, user?.id]);
 
@@ -178,6 +164,10 @@ export function TransactionModal({
   useEffect(() => {
     if (isOpen) {
       if (transaction) {
+        // Determine source type based on account type
+        const transactionAccount = accounts.find(acc => acc.id === transaction.account_id);
+        const sourceType = transactionAccount?.type === 'credit' ? 'credit_card' : 'account';
+        
         // Editing existing transaction
         form.reset({
           type: transaction.type,
@@ -187,9 +177,8 @@ export function TransactionModal({
           is_effective: transaction.status === 'concluido',
           effective_date: transaction.effective_date || '',
           category_id: transaction.category_id || undefined,
-          source_type: transaction.account_id ? 'account' : 'credit_card',
+          source_type: sourceType,
           account_id: transaction.account_id || undefined,
-          credit_card_id: transaction.credit_card_id || undefined,
         });
       } else {
         // Creating new transaction - always reset to clean state
@@ -203,11 +192,10 @@ export function TransactionModal({
           category_id: undefined,
           source_type: 'account',
           account_id: undefined,
-          credit_card_id: undefined,
         });
       }
     }
-  }, [isOpen, transaction, form]);
+  }, [isOpen, transaction, form, accounts]);
 
   const handleSubmit = (data: TransactionFormData, saveAndNew: boolean = false) => {
     const amount = parseFloat(data.amount);
@@ -221,8 +209,8 @@ export function TransactionModal({
       effective_date: data.is_effective ? data.effective_date : undefined,
       category_id: data.category_id,
       status: data.is_effective ? 'concluido' : 'pendente',
-      account_id: data.source_type === 'account' ? data.account_id : undefined,
-      credit_card_id: data.source_type === 'credit_card' ? data.credit_card_id : undefined,
+      account_id: data.account_id,
+      credit_card_id: undefined, // Always undefined now
     };
 
     onSave(transactionData);
@@ -238,8 +226,7 @@ export function TransactionModal({
         effective_date: '',
         category_id: undefined,
         source_type: data.source_type, // Keep the same source type
-        account_id: data.source_type === 'account' ? data.account_id : undefined,
-        credit_card_id: data.source_type === 'credit_card' ? data.credit_card_id : undefined,
+        account_id: data.account_id, // Keep the same account
       });
     } else {
       // Close modal for regular save or when editing
@@ -409,12 +396,8 @@ export function TransactionModal({
                     <RadioGroup
                       onValueChange={(value) => {
                         field.onChange(value);
-                        // Limpar o campo não selecionado
-                        if (value === 'account') {
-                          form.setValue('credit_card_id', undefined);
-                        } else {
-                          form.setValue('account_id', undefined);
-                        }
+                        // Clear account selection when switching source type
+                        form.setValue('account_id', undefined);
                       }}
                       value={field.value}
                       className="flex space-x-4"
@@ -434,67 +417,45 @@ export function TransactionModal({
               )}
             />
 
-            {form.watch('source_type') === 'account' && (
-              <FormField
-                control={form.control}
-                name="account_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Conta</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma conta" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {availableAccounts.map((account) => (
+            <FormField
+              control={form.control}
+              name="account_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    {sourceType === 'credit_card' ? 'Cartão de Crédito' : 'Conta'}
+                  </FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={
+                          sourceType === 'credit_card' 
+                            ? "Selecione um cartão" 
+                            : "Selecione uma conta"
+                        } />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {availableAccounts.length === 0 ? (
+                        <SelectItem value="no-accounts" disabled>
+                          {sourceType === 'credit_card' 
+                            ? 'Nenhum cartão ativo encontrado' 
+                            : 'Nenhuma conta ativa encontrada'}
+                        </SelectItem>
+                      ) : (
+                        availableAccounts.map((account) => (
                           <SelectItem key={account.id} value={account.id}>
                             {institutionMap[account.institution_id] || 'Instituição'} - {account.name}
                             {!account.is_active && ' (Inativa)'}
                           </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {form.watch('source_type') === 'credit_card' && (
-              <FormField
-                control={form.control}
-                name="credit_card_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cartão de Crédito</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um cartão" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {availableCreditCards.length === 0 ? (
-                          <SelectItem value="no-cards" disabled>
-                            Nenhum cartão ativo encontrado
-                          </SelectItem>
-                        ) : (
-                          availableCreditCards.map((card) => (
-                            <SelectItem key={card.id} value={card.id}>
-                              {institutionMap[card.institution_id] || 'Instituição'} - {card.name}
-                              {!card.is_active && ' (Inativo)'}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="flex items-center space-x-4">
               <FormField

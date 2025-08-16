@@ -112,89 +112,6 @@ export function useCategories() {
     enabled: !!user?.id,
   });
 
-  const createCategoryMutation = useMutation({
-    mutationFn: async (categoryData: Omit<Category, 'id' | 'user_id' | 'created_at' | 'subcategories' | 'display_order'>) => {
-      if (!user?.id) throw new Error('User not authenticated');
-
-      // Get the next display_order for this group (type + parent_id)
-      const { data: existingCategories, error: countError } = await supabase
-        .from('categories')
-        .select('display_order')
-        .eq('user_id', user.id)
-        .eq('type', categoryData.type)
-        .eq('parent_id', categoryData.parent_id || null)
-        .order('display_order', { ascending: false })
-        .limit(1);
-
-      if (countError) throw countError;
-
-      const nextDisplayOrder = existingCategories && existingCategories.length > 0 
-        ? existingCategories[0].display_order + 1 
-        : 0;
-
-      const { data, error } = await supabase
-        .from('categories')
-        .insert({
-          name: categoryData.name,
-          type: categoryData.type,
-          parent_id: categoryData.parent_id,
-          is_active: categoryData.is_active,
-          user_id: user.id,
-          display_order: nextDisplayOrder,
-        } as any)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
-      toast({
-        title: "Categoria criada",
-        description: "A categoria foi criada com sucesso.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Erro ao criar categoria",
-        description: "Não foi possível criar a categoria. Tente novamente.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateCategoryMutation = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Category> & { id: string }) => {
-      // Filter out properties that shouldn't be updated directly
-      const { subcategories, ...updateData } = updates;
-      
-      const { data, error } = await supabase
-        .from('categories')
-        .update(updateData as any)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
-      toast({
-        title: "Categoria atualizada",
-        description: "A categoria foi atualizada com sucesso.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Erro ao atualizar categoria",
-        description: "Não foi possível atualizar a categoria. Tente novamente.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const moveCategoryMutation = useMutation({
     mutationFn: async ({ categoryId, direction }: { categoryId: string; direction: 'up' | 'down' }) => {
       if (!user?.id) throw new Error('User not authenticated');
@@ -210,19 +127,31 @@ export function useCategories() {
         .single();
 
       if (categoryError || !categoryToMove) {
+        console.error('Category error:', categoryError);
         throw new Error('Category not found');
       }
 
+      console.log('Category to move:', categoryToMove);
+
       // Get all categories in the same group (same type and parent_id)
-      const { data: siblingCategories, error: siblingsError } = await supabase
+      // Handle null parent_id correctly for root categories
+      let query = supabase
         .from('categories')
         .select('*')
         .eq('user_id', user.id)
-        .eq('type', categoryToMove.type)
-        .eq('parent_id', categoryToMove.parent_id || null)
+        .eq('type', categoryToMove.type);
+
+      if (categoryToMove.parent_id === null) {
+        query = query.is('parent_id', null);
+      } else {
+        query = query.eq('parent_id', categoryToMove.parent_id);
+      }
+
+      const { data: siblingCategories, error: siblingsError } = await query
         .order('display_order', { ascending: true });
 
       if (siblingsError || !siblingCategories) {
+        console.error('Siblings error:', siblingsError);
         throw new Error('Failed to fetch sibling categories');
       }
 
@@ -419,6 +348,96 @@ export function useCategories() {
       });
     }
   };
+
+  const createCategoryMutation = useMutation({
+    mutationFn: async (categoryData: Omit<Category, 'id' | 'user_id' | 'created_at' | 'subcategories' | 'display_order'>) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      // Get the next display_order for this group (type + parent_id)
+      let query = supabase
+        .from('categories')
+        .select('display_order')
+        .eq('user_id', user.id)
+        .eq('type', categoryData.type);
+
+      if (categoryData.parent_id === null) {
+        query = query.is('parent_id', null);
+      } else {
+        query = query.eq('parent_id', categoryData.parent_id);
+      }
+
+      const { data: existingCategories, error: countError } = await query
+        .order('display_order', { ascending: false })
+        .limit(1);
+
+      if (countError) throw countError;
+
+      const nextDisplayOrder = existingCategories && existingCategories.length > 0 
+        ? existingCategories[0].display_order + 1 
+        : 0;
+
+      const { data, error } = await supabase
+        .from('categories')
+        .insert({
+          name: categoryData.name,
+          type: categoryData.type,
+          parent_id: categoryData.parent_id,
+          is_active: categoryData.is_active,
+          user_id: user.id,
+          display_order: nextDisplayOrder,
+        } as any)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
+      toast({
+        title: "Categoria criada",
+        description: "A categoria foi criada com sucesso.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao criar categoria",
+        description: "Não foi possível criar a categoria. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateCategoryMutation = useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<Category> & { id: string }) => {
+      // Filter out properties that shouldn't be updated directly
+      const { subcategories, ...updateData } = updates;
+      
+      const { data, error } = await supabase
+        .from('categories')
+        .update(updateData as any)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
+      toast({
+        title: "Categoria atualizada",
+        description: "A categoria foi atualizada com sucesso.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao atualizar categoria",
+        description: "Não foi possível atualizar a categoria. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
 
   return {
     categories,

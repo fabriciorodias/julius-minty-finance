@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { PlusCircle, Edit2, ChevronDown, ChevronRight, TrendingUp, TrendingDown } from "lucide-react";
 import { useCategories, Category } from '@/hooks/useCategories';
 import { useBudgets } from '@/hooks/useBudgets';
+import { useBudgetActuals } from '@/hooks/useBudgetActuals';
 import { BudgetModal } from '@/components/planning/BudgetModal';
 import { MonthSelector } from '@/components/planning/MonthSelector';
 
@@ -27,6 +29,7 @@ const Planejamento = () => {
   
   const { categories, isLoading: categoriesLoading } = useCategories();
   const { budgets, createFixedBudget, createVariableBudget, getYearlyBudgets, isCreatingFixed, isCreatingVariable } = useBudgets(currentMonth);
+  const { data: budgetActuals, isLoading: budgetActualsLoading } = useBudgetActuals(currentMonth);
 
   // Extract year from string to avoid timezone issues
   const currentYear = parseInt(currentMonth.slice(0, 4), 10);
@@ -37,8 +40,8 @@ const Planejamento = () => {
 
   // Função para obter o valor orçado de uma categoria no mês atual
   const getBudgetedAmount = (categoryId: string): number => {
-    const budget = budgets.find(b => b.category_id === categoryId && b.month === currentMonth);
-    return budget?.budgeted_amount || 0;
+    const budgetActual = budgetActuals?.find(ba => ba.category_id === categoryId);
+    return budgetActual?.budgeted_amount || 0;
   };
 
   // Função para calcular a soma dos orçamentos das subcategorias
@@ -52,9 +55,10 @@ const Planejamento = () => {
     }, 0);
   };
 
-  // Por enquanto, valores realizados são zero (serão implementados com o módulo de lançamentos)
+  // Função para obter o valor realizado de uma categoria no mês atual
   const getRealizedAmount = (categoryId: string): number => {
-    return 0; // Placeholder - será implementado com transactions
+    const budgetActual = budgetActuals?.find(ba => ba.category_id === categoryId);
+    return budgetActual?.actual_amount || 0;
   };
 
   // Função para calcular a soma dos valores realizados das subcategorias
@@ -472,7 +476,7 @@ const Planejamento = () => {
     );
   };
 
-  if (categoriesLoading) {
+  if (categoriesLoading || budgetActualsLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -484,7 +488,7 @@ const Planejamento = () => {
           </div>
         </div>
         <div className="text-center py-8">
-          <p className="text-mint-text-secondary">Carregando categorias...</p>
+          <p className="text-mint-text-secondary">Carregando dados...</p>
         </div>
       </div>
     );

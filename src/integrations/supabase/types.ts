@@ -578,7 +578,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_monthly_budget_actuals: {
+        Args: { p_month: string }
+        Returns: {
+          actual_amount: number
+          budgeted_amount: number
+          category_id: string
+          category_type: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

@@ -94,7 +94,7 @@ export function CashFlowModal({
             <div className="flex items-center gap-2">
               <Checkbox
                 checked={showTotal}
-                onCheckedChange={setShowTotal}
+                onCheckedChange={(checked) => setShowTotal(checked === true)}
                 id="total-line"
               />
               <Badge 
@@ -116,7 +116,13 @@ export function CashFlowModal({
               <div key={account.id} className="flex items-center gap-2">
                 <Checkbox
                   checked={visibleAccounts.has(account.id)}
-                  onCheckedChange={() => toggleAccountVisibility(account.id)}
+                  onCheckedChange={(checked) => {
+                    if (checked === true) {
+                      toggleAccountVisibility(account.id);
+                    } else if (checked === false) {
+                      toggleAccountVisibility(account.id);
+                    }
+                  }}
                   id={`account-${account.id}`}
                 />
                 <Badge 

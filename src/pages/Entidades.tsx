@@ -14,6 +14,7 @@ const Entidades = () => {
   const [showCreditCardModal, setShowCreditCardModal] = useState(false);
   const [selectedInstitution, setSelectedInstitution] = useState(null);
   const [selectedCreditCard, setSelectedCreditCard] = useState(null);
+  const [institutionModalFromAccount, setInstitutionModalFromAccount] = useState(false);
 
   const {
     institutions,
@@ -50,6 +51,25 @@ const Entidades = () => {
     isDeleting: deletingCreditCard,
   } = useCreditCards();
 
+  const handleCreateInstitutionFromAccount = () => {
+    setInstitutionModalFromAccount(true);
+    setShowInstitutionModal(true);
+  };
+
+  const handleInstitutionModalClose = () => {
+    setShowInstitutionModal(false);
+    setSelectedInstitution(null);
+    setInstitutionModalFromAccount(false);
+  };
+
+  const handleInstitutionSubmit = (institutionData: any) => {
+    if (selectedInstitution) {
+      updateInstitution(institutionData);
+    } else {
+      createInstitution(institutionData);
+    }
+  };
+
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
@@ -75,6 +95,7 @@ const Entidades = () => {
             onCreateAccount={createAccount}
             onUpdateAccount={updateAccount}
             onDeleteAccount={deleteAccount}
+            onCreateInstitution={handleCreateInstitutionFromAccount}
             isLoading={accountsLoading}
             isCreating={creatingAccount}
             isUpdating={updatingAccount}
@@ -126,19 +147,6 @@ const Entidades = () => {
               </div>
             ))}
           </div>
-
-          <InstitutionModal
-            isOpen={showInstitutionModal}
-            onClose={() => {
-              setShowInstitutionModal(false);
-              setSelectedInstitution(null);
-            }}
-            onSubmit={
-              selectedInstitution ? updateInstitution : createInstitution
-            }
-            institution={selectedInstitution}
-            isLoading={creatingInstitution || updatingInstitution}
-          />
         </TabsContent>
 
         <TabsContent value="credit-cards" className="space-y-6">
@@ -202,6 +210,14 @@ const Entidades = () => {
           <Categories />
         </TabsContent>
       </Tabs>
+
+      <InstitutionModal
+        isOpen={showInstitutionModal}
+        onClose={handleInstitutionModalClose}
+        onSubmit={handleInstitutionSubmit}
+        institution={selectedInstitution}
+        isLoading={creatingInstitution || updatingInstitution}
+      />
     </div>
   );
 };

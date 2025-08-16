@@ -1,26 +1,26 @@
-
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Progress } from '@/components/ui/progress';
+import { Plus, Edit2, Trash2, CreditCard, Wallet, Eye, EyeOff } from 'lucide-react';
+import { AccountModal } from './AccountModal';
 import { Account } from '@/hooks/useAccounts';
 import { Institution } from '@/hooks/useInstitutions';
-import { AccountModal } from './AccountModal';
-import { DeleteConfirmationDialog } from '@/components/transactions/DeleteConfirmationDialog';
-import { CreditCard, Wallet, MoreVertical, Edit, Trash2, Plus } from 'lucide-react';
+import { AccountBalance } from '@/hooks/useAccountBalances';
 
 interface AccountsListProps {
   accounts: Account[];
   institutions: Institution[];
-  accountBalances: { account_id: string; current_balance: number }[];
-  onCreateAccount: (data: any) => void;
-  onUpdateAccount: (data: any) => void;
-  onDeleteAccount: (id: string) => void;
-  isLoading: boolean;
-  isCreating: boolean;
-  isUpdating: boolean;
-  isDeleting: boolean;
+  accountBalances: AccountBalance[];
+  onCreateAccount: (accountData: any) => void;
+  onUpdateAccount: (accountData: any) => void;
+  onDeleteAccount: (accountId: string) => void;
+  onCreateInstitution?: () => void;
+  isLoading?: boolean;
+  isCreating?: boolean;
+  isUpdating?: boolean;
+  isDeleting?: boolean;
 }
 
 export function AccountsList({
@@ -30,26 +30,41 @@ export function AccountsList({
   onCreateAccount,
   onUpdateAccount,
   onDeleteAccount,
+  onCreateInstitution,
   isLoading,
   isCreating,
   isUpdating,
   isDeleting
 }: AccountsListProps) {
-  const [showAccountModal, setShowAccountModal] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState<Account | undefined>();
 
-  const budgetAccounts = accounts.filter(account => account.type === 'on_budget' && account.is_active);
-  const creditAccounts = accounts.filter(account => account.type === 'credit' && account.is_active);
+  const handleEdit = (account: Account) => {
+    setSelectedAccount(account);
+    setShowModal(true);
+  };
 
-  const getAccountBalance = (accountId: string) => {
-    const balance = accountBalances.find(b => b.account_id === accountId);
-    return balance?.current_balance || 0;
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedAccount(undefined);
+  };
+
+  const handleSubmit = (accountData: any) => {
+    if (selectedAccount) {
+      onUpdateAccount(accountData);
+    } else {
+      onCreateAccount(accountData);
+    }
   };
 
   const getInstitutionName = (institutionId: string) => {
-    const institution = institutions.find(i => i.id === institutionId);
-    return institution?.name || 'N/A';
+    const institution = institutions.find(inst => inst.id === institutionId);
+    return institution?.name || 'Instituição não encontrada';
+  };
+
+  const getAccountBalance = (accountId: string) => {
+    const balance = accountBalances.find(bal => bal.account_id === accountId);
+    return balance?.current_balance || 0;
   };
 
   const formatCurrency = (amount: number) => {
@@ -59,41 +74,30 @@ export function AccountsList({
     }).format(amount);
   };
 
-  const handleEditAccount = (account: Account) => {
-    setSelectedAccount(account);
-    setShowAccountModal(true);
+  const getCreditUtilization = (account: Account) => {
+    if (account.type !== 'credit' || !account.credit_limit) return 0;
+    const balance = Math.abs(getAccountBalance(account.id));
+    return (balance / account.credit_limit) * 100;
   };
 
-  const handleDeleteAccount = (account: Account) => {
-    setSelectedAccount(account);
-    setShowDeleteDialog(true);
-  };
+  const budgetAccounts = accounts.filter(account => account.type === 'on_budget');
+  const creditAccounts = accounts.filter(account => account.type === 'credit');
 
-  const handleConfirmDelete = () => {
-    if (selectedAccount) {
-      onDeleteAccount(selectedAccount.id);
-      setShowDeleteDialog(false);
-      setSelectedAccount(null);
-    }
-  };
-
-  const getCreditCardStatus = (balance: number, limit?: number) => {
-    if (!limit) return { available: 0, used: Math.abs(balance) };
-    const used = Math.abs(balance);
-    const available = Math.max(0, limit - used);
-    return { available, used };
-  };
+  if (isLoading) {
+    return <div>Carregando contas...</div>;
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header com botão de adicionar */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Contas</h2>
-          <p className="text-muted-foreground">Gerencie suas contas de orçamento e cartões de crédito</p>
+          <p className="text-muted-foreground">
+            Gerencie suas contas bancárias e cartões de crédito
+          </p>
         </div>
-        <Button onClick={() => setShowAccountModal(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
+        <Button onClick={() => setShowModal(true)}>
+          <Plus className="h-4 w-4 mr-2" />
           Nova Conta
         </Button>
       </div>
@@ -101,179 +105,153 @@ export function AccountsList({
       {/* Contas de Orçamento */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <Wallet className="h-5 w-5 text-green-600" />
+          <Wallet className="h-5 w-5 text-blue-600" />
           <h3 className="text-lg font-semibold">Contas de Orçamento</h3>
           <Badge variant="secondary">{budgetAccounts.length}</Badge>
         </div>
         
-        {budgetAccounts.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              Nenhuma conta de orçamento cadastrada
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {budgetAccounts.map((account) => {
-              const balance = getAccountBalance(account.id);
-              return (
-                <Card key={account.id} className="relative">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-base">{account.name}</CardTitle>
-                        <CardDescription>{getInstitutionName(account.institution_id)}</CardDescription>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditAccount(account)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteAccount(account)}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {budgetAccounts.map((account) => {
+            const balance = getAccountBalance(account.id);
+            return (
+              <Card key={account.id} className={!account.is_active ? 'opacity-50' : ''}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        {!account.is_active && <EyeOff className="h-4 w-4 text-muted-foreground" />}
+                        {account.name}
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        {getInstitutionName(account.institution_id)}
+                      </p>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {formatCurrency(balance)}
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(account)}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onDeleteAccount(account.id)}
+                        disabled={isDeleting}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Saldo</span>
+                      <span className={`font-semibold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(balance)}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       </div>
 
       {/* Cartões de Crédito */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <CreditCard className="h-5 w-5 text-blue-600" />
+          <CreditCard className="h-5 w-5 text-purple-600" />
           <h3 className="text-lg font-semibold">Cartões de Crédito</h3>
           <Badge variant="secondary">{creditAccounts.length}</Badge>
         </div>
         
-        {creditAccounts.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              Nenhum cartão de crédito cadastrado
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {creditAccounts.map((account) => {
-              const balance = getAccountBalance(account.id);
-              const { available, used } = getCreditCardStatus(balance, account.credit_limit);
-              const utilizationPercent = account.credit_limit ? (used / account.credit_limit) * 100 : 0;
-              
-              return (
-                <Card key={account.id} className="relative">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-base">{account.name}</CardTitle>
-                        <CardDescription>{getInstitutionName(account.institution_id)}</CardDescription>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditAccount(account)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteAccount(account)}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {creditAccounts.map((account) => {
+            const balance = Math.abs(getAccountBalance(account.id));
+            const utilization = getCreditUtilization(account);
+            const availableCredit = (account.credit_limit || 0) - balance;
+            
+            return (
+              <Card key={account.id} className={!account.is_active ? 'opacity-50' : ''}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        {!account.is_active && <EyeOff className="h-4 w-4 text-muted-foreground" />}
+                        {account.name}
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        {getInstitutionName(account.institution_id)}
+                      </p>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div>
-                      <div className="flex justify-between text-sm text-muted-foreground mb-1">
-                        <span>Fatura Atual</span>
-                        <span>Limite</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className={`text-lg font-bold ${used > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          {formatCurrency(used)}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {formatCurrency(account.credit_limit || 0)}
-                        </span>
-                      </div>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(account)}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onDeleteAccount(account.id)}
+                        disabled={isDeleting}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                    
-                    {account.credit_limit && (
-                      <div>
-                        <div className="flex justify-between text-sm text-muted-foreground mb-1">
-                          <span>Disponível</span>
-                          <span>{utilizationPercent.toFixed(0)}% usado</span>
-                        </div>
-                        <div className="text-lg font-bold text-green-600">
-                          {formatCurrency(available)}
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                          <div 
-                            className={`h-2 rounded-full ${utilizationPercent > 80 ? 'bg-red-500' : utilizationPercent > 60 ? 'bg-yellow-500' : 'bg-green-500'}`}
-                            style={{ width: `${Math.min(utilizationPercent, 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Utilizado</span>
+                      <span className="font-medium">{formatCurrency(balance)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Disponível</span>
+                      <span className="font-medium text-green-600">
+                        {formatCurrency(availableCredit)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Limite</span>
+                      <span className="font-medium">{formatCurrency(account.credit_limit || 0)}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-muted-foreground">Utilização</span>
+                      <span className={`font-medium ${utilization > 80 ? 'text-red-600' : utilization > 50 ? 'text-yellow-600' : 'text-green-600'}`}>
+                        {utilization.toFixed(1)}%
+                      </span>
+                    </div>
+                    <Progress 
+                      value={utilization} 
+                      className="h-2"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Modal de Conta */}
       <AccountModal
-        isOpen={showAccountModal}
-        onClose={() => {
-          setShowAccountModal(false);
-          setSelectedAccount(null);
-        }}
-        onSubmit={selectedAccount ? onUpdateAccount : onCreateAccount}
+        isOpen={showModal}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmit}
         account={selectedAccount}
         institutions={institutions}
         isLoading={isCreating || isUpdating}
-      />
-
-      {/* Dialog de Confirmação de Exclusão */}
-      <DeleteConfirmationDialog
-        isOpen={showDeleteDialog}
-        onClose={() => {
-          setShowDeleteDialog(false);
-          setSelectedAccount(null);
-        }}
-        onConfirm={handleConfirmDelete}
-        title="Excluir Conta"
-        description={`Tem certeza que deseja excluir a conta "${selectedAccount?.name}"? Esta ação não pode ser desfeita.`}
-        isLoading={isDeleting}
+        onCreateInstitution={onCreateInstitution}
       />
     </div>
   );

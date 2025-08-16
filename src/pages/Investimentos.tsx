@@ -43,7 +43,7 @@ const Investimentos = () => {
   
   const { createTransaction, isCreating: isCreatingTransaction } = useInvestmentTransactions();
   const { upsertBalance, isUpdating: isUpdatingBalance } = useInvestmentBalances();
-  const { data: currentBalances } = useCurrentBalances();
+  const { data: currentBalances } = useCurrentBalances(selectedMonth);
   
   // Convert selectedMonth string to Date for dashboard hook
   const selectedMonthDate = new Date(selectedMonth);
@@ -134,6 +134,11 @@ const Investimentos = () => {
     return currentBalances?.find(b => b.investment_id === investmentId);
   };
 
+  const formatSelectedMonth = () => {
+    const date = new Date(selectedMonth);
+    return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  };
+
   if (investmentsLoading) {
     return (
       <div className="space-y-6">
@@ -189,6 +194,13 @@ const Investimentos = () => {
             Adicionar Investimento
           </Button>
         </div>
+      </div>
+
+      {/* Month indicator */}
+      <div className="text-center">
+        <p className="text-sm text-mint-text-secondary">
+          Dados referentes a {formatSelectedMonth()}
+        </p>
       </div>
 
       {/* Dashboard KPIs */}
@@ -322,8 +334,8 @@ const Investimentos = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
                   <TableHead>Saldo Atual</TableHead>
+                  <TableHead>Nome</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Instituição</TableHead>
                   <TableHead>Status</TableHead>
@@ -335,14 +347,6 @@ const Investimentos = () => {
                   const balance = getCurrentBalance(investment.id);
                   return (
                     <TableRow key={investment.id}>
-                      <TableCell className="font-medium">
-                        {investment.name}
-                        {investment.issuer && (
-                          <div className="text-sm text-mint-text-secondary">
-                            {investment.issuer}
-                          </div>
-                        )}
-                      </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">
@@ -361,6 +365,14 @@ const Investimentos = () => {
                             </div>
                           )}
                         </div>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {investment.name}
+                        {investment.issuer && (
+                          <div className="text-sm text-mint-text-secondary">
+                            {investment.issuer}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge variant={getTypeColor(investment.type) as any}>

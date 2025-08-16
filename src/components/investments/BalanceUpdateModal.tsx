@@ -47,10 +47,9 @@ export function BalanceUpdateModal({
     onClose();
   };
 
-  // Default to current month
-  const currentMonth = new Date();
-  currentMonth.setDate(1);
-  const defaultMonth = currentMonth.toISOString().split('T')[0];
+  // Use local date formatting to avoid UTC conversion issues
+  const currentDate = new Date();
+  const defaultMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-01`;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>

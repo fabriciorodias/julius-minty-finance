@@ -10,21 +10,21 @@ export interface CurrentBalance {
   percentage_change: number;
 }
 
-export function useCurrentBalances() {
+export function useCurrentBalances(selectedMonth?: string) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['current-balances', user?.id],
+    queryKey: ['current-balances', user?.id, selectedMonth],
     queryFn: async (): Promise<CurrentBalance[]> => {
-      if (!user?.id) return [];
+      if (!user?.id || !selectedMonth) return [];
 
-      const currentMonth = new Date();
-      currentMonth.setDate(1);
-      const currentMonthStr = currentMonth.toISOString().split('T')[0];
+      // Use local date formatting to avoid UTC conversion issues
+      const currentDate = new Date(selectedMonth);
+      const currentMonthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-01`;
 
-      const previousMonth = new Date(currentMonth);
-      previousMonth.setMonth(previousMonth.getMonth() - 1);
-      const previousMonthStr = previousMonth.toISOString().split('T')[0];
+      const previousDate = new Date(currentDate);
+      previousDate.setMonth(previousDate.getMonth() - 1);
+      const previousMonthStr = `${previousDate.getFullYear()}-${String(previousDate.getMonth() + 1).padStart(2, '0')}-01`;
 
       // Get current month balances
       const { data: currentBalances, error: currentError } = await supabase
@@ -65,6 +65,6 @@ export function useCurrentBalances() {
 
       return result;
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!selectedMonth,
   });
 }

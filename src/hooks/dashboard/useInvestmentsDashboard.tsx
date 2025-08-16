@@ -37,11 +37,12 @@ export function useInvestmentsDashboard(selectedMonth: Date) {
         };
       }
 
+      // Use local date formatting to avoid UTC conversion issues
       const currentMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1);
       const previousMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() - 1, 1);
       
-      const currentMonthStr = currentMonth.toISOString().split('T')[0];
-      const previousMonthStr = previousMonth.toISOString().split('T')[0];
+      const currentMonthStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-01`;
+      const previousMonthStr = `${previousMonth.getFullYear()}-${String(previousMonth.getMonth() + 1).padStart(2, '0')}-01`;
 
       // Get current month balances with investment details
       const { data: currentBalances, error: currentError } = await supabase
@@ -70,12 +71,15 @@ export function useInvestmentsDashboard(selectedMonth: Date) {
       if (previousError) throw previousError;
 
       // Get transactions for the selected month
+      const nextMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1);
+      const nextMonthStr = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-01`;
+
       const { data: transactions, error: transactionsError } = await supabase
         .from('investment_transactions')
         .select('investment_id, type, amount')
         .eq('user_id', user.id)
         .gte('transaction_date', currentMonthStr)
-        .lt('transaction_date', new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1).toISOString().split('T')[0]);
+        .lt('transaction_date', nextMonthStr);
 
       if (transactionsError) throw transactionsError;
 

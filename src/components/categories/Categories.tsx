@@ -1,7 +1,8 @@
+
 import { useState } from 'react';
 import { useCategories } from '@/hooks/useCategories';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit2, Trash2, Eye, EyeOff, TrendingUp, TrendingDown, MoreVertical, ChevronRight, ChevronDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, EyeOff, TrendingUp, TrendingDown, MoreVertical, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { CategoryModal } from '@/components/entities/CategoryModal';
 import {
   DropdownMenu,
@@ -26,9 +27,11 @@ export function Categories() {
     createCategory,
     updateCategory,
     deleteCategorySafely,
+    moveCategory,
     isCreating,
     isUpdating,
     isDeleting,
+    isMoving,
   } = useCategories();
 
   // Debug logs
@@ -68,7 +71,21 @@ export function Categories() {
     });
   };
 
-  const renderCategory = (category: any, level = 0) => {
+  const handleMoveCategory = (categoryId: string, direction: 'up' | 'down') => {
+    moveCategory({ categoryId, direction });
+  };
+
+  const canMoveUp = (category: any, siblings: any[]) => {
+    const currentIndex = siblings.findIndex(cat => cat.id === category.id);
+    return currentIndex > 0;
+  };
+
+  const canMoveDown = (category: any, siblings: any[]) => {
+    const currentIndex = siblings.findIndex(cat => cat.id === category.id);
+    return currentIndex >= 0 && currentIndex < siblings.length - 1;
+  };
+
+  const renderCategory = (category: any, level = 0, siblings: any[] = []) => {
     const isCollapsed = collapsedCategories[category.id];
     const hasSubcategories = category.subcategories && category.subcategories.length > 0;
 
@@ -142,6 +159,34 @@ export function Categories() {
 
           {/* Quick Actions */}
           <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Move Up Button */}
+            {canMoveUp(category, siblings) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleMoveCategory(category.id, 'up')}
+                className="h-8 w-8 p-0"
+                title="Mover para cima"
+                disabled={isMoving}
+              >
+                <ChevronUp className="h-3 w-3" />
+              </Button>
+            )}
+
+            {/* Move Down Button */}
+            {canMoveDown(category, siblings) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleMoveCategory(category.id, 'down')}
+                className="h-8 w-8 p-0"
+                title="Mover para baixo"
+                disabled={isMoving}
+              >
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            )}
+
             {/* Quick Edit */}
             <Button
               variant="ghost"
@@ -215,7 +260,7 @@ export function Categories() {
         {/* Render subcategories if not collapsed */}
         {hasSubcategories && !isCollapsed && (
           <div className="space-y-2">
-            {category.subcategories.map((sub: any) => renderCategory(sub, level + 1))}
+            {category.subcategories.map((sub: any) => renderCategory(sub, level + 1, category.subcategories))}
           </div>
         )}
       </div>
@@ -279,7 +324,7 @@ export function Categories() {
           </div>
           <div className="space-y-3">
             {despesaCategories.length > 0 ? (
-              despesaCategories.map((category) => renderCategory(category))
+              despesaCategories.map((category) => renderCategory(category, 0, despesaCategories))
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <TrendingDown className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -307,7 +352,7 @@ export function Categories() {
           </div>
           <div className="space-y-3">
             {receitaCategories.length > 0 ? (
-              receitaCategories.map((category) => renderCategory(category))
+              receitaCategories.map((category) => renderCategory(category, 0, receitaCategories))
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -338,3 +383,4 @@ export function Categories() {
     </div>
   );
 }
+

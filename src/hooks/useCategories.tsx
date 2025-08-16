@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,6 +11,7 @@ export interface Category {
   type: 'receita' | 'despesa';
   is_active: boolean;
   created_at: string;
+  display_order: number;
   subcategories?: Category[];
 }
 
@@ -34,7 +34,7 @@ export function useCategories() {
         .from('categories')
         .select('*')
         .eq('user_id', user.id)
-        .order('name', { ascending: true });
+        .order('display_order', { ascending: true });
 
       if (error) {
         console.error('useCategories: Supabase error:', error);
@@ -60,7 +60,8 @@ export function useCategories() {
           id: category.id,
           name: category.name,
           type: category.type,
-          parent_id: category.parent_id
+          parent_id: category.parent_id,
+          display_order: category.display_order
         });
 
         categoriesMap.set(category.id, { 
@@ -88,6 +89,21 @@ export function useCategories() {
         }
       });
 
+      // Sort root categories by display_order within their type
+      rootCategories.sort((a, b) => {
+        if (a.type !== b.type) {
+          return a.type === 'despesa' ? -1 : 1; // despesas first
+        }
+        return a.display_order - b.display_order;
+      });
+
+      // Sort subcategories by display_order
+      rootCategories.forEach(rootCategory => {
+        if (rootCategory.subcategories) {
+          rootCategory.subcategories.sort((a, b) => a.display_order - b.display_order);
+        }
+      });
+
       console.log('useCategories: Final processed categories:', rootCategories);
       console.log('useCategories: Root categories count:', rootCategories.length);
 
@@ -97,8 +113,24 @@ export function useCategories() {
   });
 
   const createCategoryMutation = useMutation({
-    mutationFn: async (categoryData: Omit<Category, 'id' | 'user_id' | 'created_at' | 'subcategories'>) => {
+    mutationFn: async (categoryData: Omit<Category, 'id' | 'user_id' | 'created_at' | 'subcategories' | 'display_order'>) => {
       if (!user?.id) throw new Error('User not authenticated');
+
+      // Get the next display_order for this group (type + parent_id)
+      const { data: existingCategories, error: countError } = await supabase
+        .from('categories')
+        .select('display_order')
+        .eq('user_id', user.id)
+        .eq('type', categoryData.type)
+        .eq('parent_id', categoryData.parent_id || null)
+        .order('display_order', { ascending: false })
+        .limit(1);
+
+      if (countError) throw countError;
+
+      const nextDisplayOrder = existingCategories && existingCategories.length > 0 
+        ? existingCategories[0].display_order + 1 
+        : 0;
 
       const { data, error } = await supabase
         .from('categories')
@@ -108,6 +140,7 @@ export function useCategories() {
           parent_id: categoryData.parent_id,
           is_active: categoryData.is_active,
           user_id: user.id,
+          display_order: nextDisplayOrder,
         } as any)
         .select()
         .single();
@@ -157,6 +190,96 @@ export function useCategories() {
       toast({
         title: "Erro ao atualizar categoria",
         description: "Não foi possível atualizar a categoria. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const moveCategoryMutation = useMutation({
+    mutationFn: async ({ categoryId, direction }: { categoryId: string; direction: 'up' | 'down' }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      console.log(`Moving category ${categoryId} ${direction}`);
+
+      // Get the category to move
+      const { data: categoryToMove, error: categoryError } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('id', categoryId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (categoryError || !categoryToMove) {
+        throw new Error('Category not found');
+      }
+
+      // Get all categories in the same group (same type and parent_id)
+      const { data: siblingCategories, error: siblingsError } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('type', categoryToMove.type)
+        .eq('parent_id', categoryToMove.parent_id || null)
+        .order('display_order', { ascending: true });
+
+      if (siblingsError || !siblingCategories) {
+        throw new Error('Failed to fetch sibling categories');
+      }
+
+      console.log('Sibling categories:', siblingCategories);
+
+      const currentIndex = siblingCategories.findIndex(cat => cat.id === categoryId);
+      if (currentIndex === -1) {
+        throw new Error('Category not found in siblings');
+      }
+
+      let targetIndex: number;
+      if (direction === 'up') {
+        targetIndex = currentIndex - 1;
+      } else {
+        targetIndex = currentIndex + 1;
+      }
+
+      // Check if move is valid
+      if (targetIndex < 0 || targetIndex >= siblingCategories.length) {
+        throw new Error('Cannot move category in that direction');
+      }
+
+      console.log(`Moving from index ${currentIndex} to ${targetIndex}`);
+
+      // Swap display_order values
+      const categoryToSwap = siblingCategories[targetIndex];
+      const tempOrder = categoryToMove.display_order;
+
+      // Update both categories
+      const { error: updateError1 } = await supabase
+        .from('categories')
+        .update({ display_order: categoryToSwap.display_order })
+        .eq('id', categoryId);
+
+      if (updateError1) throw updateError1;
+
+      const { error: updateError2 } = await supabase
+        .from('categories')
+        .update({ display_order: tempOrder })
+        .eq('id', categoryToSwap.id);
+
+      if (updateError2) throw updateError2;
+
+      console.log('Categories reordered successfully');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
+      toast({
+        title: "Categoria reordenada",
+        description: "A ordem da categoria foi atualizada com sucesso.",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error moving category:', error);
+      toast({
+        title: "Erro ao reordenar categoria",
+        description: error.message || "Não foi possível reordenar a categoria. Tente novamente.",
         variant: "destructive",
       });
     },
@@ -305,8 +428,10 @@ export function useCategories() {
     updateCategory: updateCategoryMutation.mutate,
     deleteCategory: deleteCategoryMutation.mutate,
     deleteCategorySafely,
+    moveCategory: moveCategoryMutation.mutate,
     isCreating: createCategoryMutation.isPending,
     isUpdating: updateCategoryMutation.isPending,
     isDeleting: deleteCategoryMutation.isPending,
+    isMoving: moveCategoryMutation.isPending,
   };
 }

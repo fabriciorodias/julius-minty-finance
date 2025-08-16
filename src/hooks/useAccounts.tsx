@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,8 +44,13 @@ export function useAccounts(institutionId?: string) {
     mutationFn: async (accountData: any) => {
       if (!user?.id) throw new Error('User not authenticated');
 
+      console.log('Creating account with data:', accountData);
+
       // Separate account data from initial balance data
       const { initial_balance, balance_date, ...cleanAccountData } = accountData;
+
+      console.log('Clean account data:', cleanAccountData);
+      console.log('Initial balance data:', { initial_balance, balance_date });
 
       // Insert the account first
       const { data: newAccount, error: accountError } = await supabase
@@ -58,20 +62,42 @@ export function useAccounts(institutionId?: string) {
         .select()
         .single();
 
-      if (accountError) throw accountError;
+      if (accountError) {
+        console.error('Account creation error:', accountError);
+        throw accountError;
+      }
+
+      console.log('Account created successfully:', newAccount);
 
       // If there's an initial balance, insert it into account_initial_balances
       if (initial_balance && balance_date) {
+        // Convert Date object to YYYY-MM-DD format
+        const formattedDate = balance_date instanceof Date 
+          ? balance_date.toISOString().split('T')[0]
+          : balance_date;
+
+        console.log('Inserting initial balance:', {
+          user_id: user.id,
+          account_id: newAccount.id,
+          amount: initial_balance,
+          balance_date: formattedDate,
+        });
+
         const { error: balanceError } = await supabase
           .from('account_initial_balances')
-          .upsert({
+          .insert({
             user_id: user.id,
             account_id: newAccount.id,
             amount: initial_balance,
-            balance_date: balance_date,
+            balance_date: formattedDate,
           });
 
-        if (balanceError) throw balanceError;
+        if (balanceError) {
+          console.error('Initial balance creation error:', balanceError);
+          throw balanceError;
+        }
+
+        console.log('Initial balance created successfully');
       }
 
       return newAccount;

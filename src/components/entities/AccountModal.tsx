@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { Account } from '@/hooks/useAccounts';
 import { Institution } from '@/hooks/useInstitutions';
+import { useAccountInitialBalance } from '@/hooks/useAccountInitialBalance';
 
 interface AccountModalProps {
   isOpen: boolean;
@@ -25,7 +25,6 @@ interface AccountModalProps {
   institutions: Institution[];
   isLoading?: boolean;
   onCreateInstitution?: () => void;
-  initialBalance?: { amount: number; balance_date: string } | null;
 }
 
 export function AccountModal({ 
@@ -35,9 +34,10 @@ export function AccountModal({
   account, 
   institutions, 
   isLoading,
-  onCreateInstitution,
-  initialBalance 
+  onCreateInstitution
 }: AccountModalProps) {
+  const { data: initialBalance } = useAccountInitialBalance(account?.id);
+  
   const [formData, setFormData] = useState({
     name: '',
     institution_id: '',
@@ -55,10 +55,10 @@ export function AccountModal({
         institution_id: account.institution_id,
         type: account.type,
         credit_limit: account.credit_limit?.toString() || '',
-        initial_balance: initialBalance?.amount?.toLocaleString('pt-BR', {
+        initial_balance: initialBalance?.amount ? Math.abs(initialBalance.amount).toLocaleString('pt-BR', {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
-        }) || '',
+        }) : '',
         balance_date: initialBalance?.balance_date ? new Date(initialBalance.balance_date) : undefined,
         is_active: account.is_active,
       });
@@ -111,7 +111,7 @@ export function AccountModal({
   const isFormValid = formData.name && 
     formData.institution_id && 
     (formData.type === 'on_budget' || (formData.type === 'credit' && formData.credit_limit)) &&
-    (!formData.initial_balance || formData.balance_date); // Se tem saldo inicial, deve ter data
+    (!formData.initial_balance || formData.balance_date);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

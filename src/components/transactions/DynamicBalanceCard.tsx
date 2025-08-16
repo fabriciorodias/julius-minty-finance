@@ -38,22 +38,23 @@ export function DynamicBalanceCard({
     return acc;
   }, {} as Record<string, string>);
 
-  const totalBalance = selectedAccountIds.reduce((sum, accountId) => {
+  // This is the current balance from account balances (completed transactions only)
+  const currentAccountBalance = selectedAccountIds.reduce((sum, accountId) => {
     return sum + (balanceMap[accountId] || 0);
   }, 0);
 
   const { 
+    completedBalance,
+    totalBalance,
+    provisionsAmount,
     pendingIncome, 
     pendingExpense, 
-    pendingNet, 
     dateRange,
     isLoading: isLoadingProvisioned 
   } = useProvisionedTotals({ 
     selectedAccountIds, 
     dateFilters 
   });
-
-  const balanceWithProvision = totalBalance + pendingNet;
 
   const formatCurrency = (amount: number) => {
     return Intl.NumberFormat('pt-BR', {
@@ -89,9 +90,9 @@ export function DynamicBalanceCard({
   };
 
   const getIcon = () => {
-    if (totalBalance > 0) {
+    if (currentAccountBalance > 0) {
       return <TrendingUp className="h-5 w-5 text-green-600" />;
-    } else if (totalBalance < 0) {
+    } else if (currentAccountBalance < 0) {
       return <TrendingDown className="h-5 w-5 text-red-600" />;
     }
     return <Wallet className="h-5 w-5 text-muted-foreground" />;
@@ -107,18 +108,30 @@ export function DynamicBalanceCard({
     <TooltipProvider>
       <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            {getCardTitle()}
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {getCardTitle()}
+            </CardTitle>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-3 w-3 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">
+                  Saldo considerando apenas transações concluídas
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
           {getIcon()}
         </CardHeader>
         <CardContent className="space-y-3">
-          {/* Saldo Principal */}
-          <div className={`text-2xl font-bold ${getBalanceColor(totalBalance)}`}>
-            {formatCurrency(totalBalance)}
+          {/* Saldo Principal (apenas transações concluídas) */}
+          <div className={`text-2xl font-bold ${getBalanceColor(currentAccountBalance)}`}>
+            {formatCurrency(currentAccountBalance)}
           </div>
           
-          {/* Saldo com Provisão */}
+          {/* Saldo com Provisão (todas as transações) */}
           <div className="flex items-center gap-2">
             {isLoadingProvisioned ? (
               <Skeleton className="h-4 w-48" />
@@ -127,8 +140,8 @@ export function DynamicBalanceCard({
                 <span className="text-sm text-muted-foreground">
                   Saldo c/ provisão:
                 </span>
-                <span className={`text-sm font-medium ${getBalanceColor(balanceWithProvision)}`}>
-                  {formatCurrency(balanceWithProvision)}
+                <span className={`text-sm font-medium ${getBalanceColor(totalBalance)}`}>
+                  {formatCurrency(totalBalance)}
                 </span>
                 <Tooltip>
                   <TooltipTrigger>
@@ -136,7 +149,7 @@ export function DynamicBalanceCard({
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="text-xs">
-                      Saldo atual considerando transações pendentes
+                      Saldo considerando todas as transações (pendentes e concluídas)
                       {dateRange.startDate && (
                         <>
                           <br />
@@ -150,26 +163,43 @@ export function DynamicBalanceCard({
             )}
           </div>
 
+          {/* Provisões (diferença entre saldo total e saldo concluído) */}
+          {!isLoadingProvisioned && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                Provisões:
+              </span>
+              <span className={`text-sm font-medium ${getBalanceColor(provisionsAmount)}`}>
+                {formatCurrency(provisionsAmount)}
+              </span>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-3 w-3 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">
+                    Diferença entre saldo com provisão e saldo concluído
+                    <br />
+                    Representa o impacto das transações pendentes
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          )}
+
           {/* Mini informações em badges */}
           {!isLoadingProvisioned && (pendingIncome > 0 || pendingExpense > 0) && (
             <div className="flex flex-wrap gap-1">
               {pendingIncome > 0 && (
                 <Badge variant="outline" className="text-xs text-green-600 border-green-200 bg-green-50">
-                  + Entradas: {formatCurrency(pendingIncome)}
+                  + Entradas pendentes: {formatCurrency(pendingIncome)}
                 </Badge>
               )}
               {pendingExpense > 0 && (
                 <Badge variant="outline" className="text-xs text-red-600 border-red-200 bg-red-50">
-                  - Saídas: {formatCurrency(pendingExpense)}
+                  - Saídas pendentes: {formatCurrency(pendingExpense)}
                 </Badge>
               )}
-            </div>
-          )}
-
-          {/* Total Provisionado */}
-          {!isLoadingProvisioned && pendingExpense > 0 && (
-            <div className="text-xs text-muted-foreground">
-              Total provisionado (saídas): <span className="font-medium text-red-600">{formatCurrency(pendingExpense)}</span>
             </div>
           )}
 

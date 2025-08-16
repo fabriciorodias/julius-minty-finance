@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,6 +19,7 @@ interface CategoryModalProps {
   onSubmit: (categoryData: any) => void;
   category?: Category;
   categories: Category[];
+  preselectedType?: 'receita' | 'despesa' | null;
   isLoading?: boolean;
 }
 
@@ -29,6 +29,7 @@ export function CategoryModal({
   onSubmit, 
   category, 
   categories, 
+  preselectedType,
   isLoading 
 }: CategoryModalProps) {
   const form = useForm<CategoryFormData>({
@@ -58,13 +59,13 @@ export function CategoryModal({
       } else {
         form.reset({
           name: '',
-          type: 'despesa',
+          type: preselectedType || 'despesa',
           parent_id: null,
           is_active: true,
         });
       }
     }
-  }, [category, isOpen, form]);
+  }, [category, isOpen, preselectedType, form]);
 
   // Check for duplicate names
   const checkDuplicateName = (name: string, type: 'receita' | 'despesa') => {

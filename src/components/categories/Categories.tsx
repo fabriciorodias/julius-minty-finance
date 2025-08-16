@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useCategories } from '@/hooks/useCategories';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit2, Trash2, Eye, EyeOff, TrendingUp, TrendingDown, MoreVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, EyeOff, TrendingUp, TrendingDown, MoreVertical, ChevronRight, ChevronDown, GripVertical } from 'lucide-react';
 import { CategoryModal } from '@/components/entities/CategoryModal';
 import {
   DropdownMenu,
@@ -11,10 +11,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 export function Categories() {
   const [showModal, setShowModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [preselectedType, setPreselectedType] = useState<'receita' | 'despesa' | null>(null);
+  
+  // Local storage for collapsed states
+  const [collapsedCategories, setCollapsedCategories] = useLocalStorage<Record<string, boolean>>('collapsed-categories', {});
 
   const {
     categories,
@@ -22,6 +27,7 @@ export function Categories() {
     createCategory,
     updateCategory,
     deleteCategorySafely,
+    updateCategoryOrder,
     isCreating,
     isUpdating,
     isDeleting,
@@ -29,12 +35,14 @@ export function Categories() {
 
   const handleEdit = (category: any) => {
     setSelectedCategory(category);
+    setPreselectedType(null);
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedCategory(null);
+    setPreselectedType(null);
   };
 
   const handleQuickToggleStatus = (category: any) => {
@@ -44,132 +52,201 @@ export function Categories() {
     });
   };
 
-  const renderCategory = (category: any, level = 0) => (
-    <div key={category.id} className="space-y-2">
-      <div
-        className={cn(
-          "group flex items-center justify-between p-4 bg-card rounded-lg border transition-all duration-200 hover:shadow-sm",
-          !category.is_active && "opacity-60 bg-gray-50"
-        )}
-        style={{ marginLeft: level * 24 }}
-      >
-        <div className="flex items-center space-x-3 flex-1">
-          {/* Status Indicator */}
-          <div className="flex items-center gap-2">
-            {category.type === 'receita' ? (
-              <div className="flex items-center gap-1">
-                <TrendingUp className="h-4 w-4 text-green-600" />
-                <div className="w-2 h-2 rounded-full bg-green-500" />
-              </div>
-            ) : (
-              <div className="flex items-center gap-1">
-                <TrendingDown className="h-4 w-4 text-red-600" />
-                <div className="w-2 h-2 rounded-full bg-red-500" />
-              </div>
-            )}
-          </div>
+  const handleNewCategory = (type: 'receita' | 'despesa') => {
+    setSelectedCategory(null);
+    setPreselectedType(type);
+    setShowModal(true);
+  };
 
-          {/* Category Info */}
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h4 className={cn(
-                "font-medium text-sm",
-                !category.is_active && "line-through text-gray-500"
-              )}>
-                {category.name}
-              </h4>
-              {!category.is_active && (
-                <EyeOff className="h-3 w-3 text-gray-400" />
-              )}
-            </div>
-            <div className="flex items-center gap-2 mt-1">
-              <p className="text-xs text-muted-foreground capitalize">
-                {category.type === 'receita' ? 'Receita' : 'Despesa'}
-                {level > 0 && ' • Subcategoria'}
-              </p>
-              {category.subcategories && category.subcategories.length > 0 && (
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                  {category.subcategories.length} subcategoria{category.subcategories.length > 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
+  const toggleCollapsed = (categoryId: string) => {
+    setCollapsedCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
+  };
 
-        {/* Quick Actions */}
-        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {/* Quick Edit */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleEdit(category)}
-            className="h-8 w-8 p-0"
-            title="Editar categoria"
-          >
-            <Edit2 className="h-3 w-3" />
-          </Button>
+  const handleDragStart = (e: React.DragEvent, categoryId: string, type: 'receita' | 'despesa', parentId: string | null) => {
+    e.dataTransfer.setData('text/plain', JSON.stringify({
+      categoryId,
+      type,
+      parentId
+    }));
+  };
 
-          {/* Quick Toggle Status */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleQuickToggleStatus(category)}
-            className="h-8 w-8 p-0"
-            title={category.is_active ? "Desativar categoria" : "Ativar categoria"}
-          >
-            {category.is_active ? (
-              <Eye className="h-3 w-3" />
-            ) : (
-              <EyeOff className="h-3 w-3" />
-            )}
-          </Button>
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
 
-          {/* More Actions */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+  const handleDrop = (e: React.DragEvent, dropCategoryId: string, dropType: 'receita' | 'despesa', dropParentId: string | null) => {
+    e.preventDefault();
+    const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
+    
+    // Only allow reordering within the same type and parent group
+    if (dragData.type === dropType && dragData.parentId === dropParentId && dragData.categoryId !== dropCategoryId) {
+      updateCategoryOrder(dragData.categoryId, dropCategoryId);
+    }
+  };
+
+  const renderCategory = (category: any, level = 0) => {
+    const isCollapsed = collapsedCategories[category.id];
+    const hasSubcategories = category.subcategories && category.subcategories.length > 0;
+
+    return (
+      <div key={category.id} className="space-y-2">
+        <div
+          className={cn(
+            "group flex items-center justify-between p-4 bg-card rounded-lg border transition-all duration-200 hover:shadow-sm cursor-move",
+            !category.is_active && "opacity-60 bg-gray-50"
+          )}
+          style={{ marginLeft: level * 24 }}
+          draggable
+          onDragStart={(e) => handleDragStart(e, category.id, category.type, category.parent_id)}
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, category.id, category.type, category.parent_id)}
+        >
+          <div className="flex items-center space-x-3 flex-1">
+            {/* Drag Handle */}
+            <GripVertical className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+            
+            {/* Collapse/Expand Button */}
+            {hasSubcategories && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0"
+                onClick={() => toggleCollapsed(category.id)}
+                className="h-6 w-6 p-0"
               >
-                <MoreVertical className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleEdit(category)}>
-                <Edit2 className="h-4 w-4 mr-2" />
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => handleQuickToggleStatus(category)}
-              >
-                {category.is_active ? (
-                  <>
-                    <EyeOff className="h-4 w-4 mr-2" />
-                    Desativar
-                  </>
+                {isCollapsed ? (
+                  <ChevronRight className="h-3 w-3" />
                 ) : (
-                  <>
-                    <Eye className="h-4 w-4 mr-2" />
-                    Ativar
-                  </>
+                  <ChevronDown className="h-3 w-3" />
                 )}
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => deleteCategorySafely(category.id)}
-                disabled={isDeleting}
-                className="text-red-600 focus:text-red-600"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Excluir
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </Button>
+            )}
+
+            {/* Status Indicator */}
+            <div className="flex items-center gap-2">
+              {category.type === 'receita' ? (
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <TrendingDown className="h-4 w-4 text-red-600" />
+                  <div className="w-2 h-2 rounded-full bg-red-500" />
+                </div>
+              )}
+            </div>
+
+            {/* Category Info */}
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h4 className={cn(
+                  "font-medium text-sm",
+                  !category.is_active && "line-through text-gray-500"
+                )}>
+                  {category.name}
+                </h4>
+                {!category.is_active && (
+                  <EyeOff className="h-3 w-3 text-gray-400" />
+                )}
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs text-muted-foreground capitalize">
+                  {category.type === 'receita' ? 'Receita' : 'Despesa'}
+                  {level > 0 && ' • Subcategoria'}
+                </p>
+                {hasSubcategories && (
+                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                    {category.subcategories.length} subcategoria{category.subcategories.length > 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Quick Edit */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEdit(category)}
+              className="h-8 w-8 p-0"
+              title="Editar categoria"
+            >
+              <Edit2 className="h-3 w-3" />
+            </Button>
+
+            {/* Quick Toggle Status */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleQuickToggleStatus(category)}
+              className="h-8 w-8 p-0"
+              title={category.is_active ? "Desativar categoria" : "Ativar categoria"}
+            >
+              {category.is_active ? (
+                <Eye className="h-3 w-3" />
+              ) : (
+                <EyeOff className="h-3 w-3" />
+              )}
+            </Button>
+
+            {/* More Actions */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                >
+                  <MoreVertical className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleEdit(category)}>
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => handleQuickToggleStatus(category)}
+                >
+                  {category.is_active ? (
+                    <>
+                      <EyeOff className="h-4 w-4 mr-2" />
+                      Desativar
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Ativar
+                    </>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => deleteCategorySafely(category.id)}
+                  disabled={isDeleting}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
+
+        {/* Render subcategories if not collapsed */}
+        {hasSubcategories && !isCollapsed && (
+          <div className="space-y-2">
+            {category.subcategories.map((sub: any) => renderCategory(sub, level + 1))}
+          </div>
+        )}
       </div>
-      {category.subcategories?.map((sub: any) => renderCategory(sub, level + 1))}
-    </div>
-  );
+    );
+  };
 
   if (isLoading) {
     return (
@@ -197,20 +274,14 @@ export function Categories() {
         <div className="flex gap-2">
           <Button 
             variant="outline"
-            onClick={() => {
-              setSelectedCategory(null);
-              setShowModal(true);
-            }}
+            onClick={() => handleNewCategory('receita')}
             className="border-green-200 text-green-700 hover:bg-green-50"
           >
             <TrendingUp className="h-4 w-4 mr-2" />
             Nova Receita
           </Button>
           <Button 
-            onClick={() => {
-              setSelectedCategory(null);
-              setShowModal(true);
-            }}
+            onClick={() => handleNewCategory('despesa')}
             className="bg-red-600 hover:bg-red-700"
           >
             <TrendingDown className="h-4 w-4 mr-2" />
@@ -239,7 +310,7 @@ export function Categories() {
                   variant="outline" 
                   size="sm" 
                   className="mt-2"
-                  onClick={() => setShowModal(true)}
+                  onClick={() => handleNewCategory('despesa')}
                 >
                   Criar primeira categoria
                 </Button>
@@ -267,7 +338,7 @@ export function Categories() {
                   variant="outline" 
                   size="sm" 
                   className="mt-2"
-                  onClick={() => setShowModal(true)}
+                  onClick={() => handleNewCategory('receita')}
                 >
                   Criar primeira categoria
                 </Button>
@@ -283,6 +354,7 @@ export function Categories() {
         onSubmit={selectedCategory ? updateCategory : createCategory}
         category={selectedCategory}
         categories={categories}
+        preselectedType={preselectedType}
         isLoading={isCreating || isUpdating}
       />
     </div>

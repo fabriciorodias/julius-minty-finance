@@ -10,6 +10,7 @@ export interface Category {
   name: string;
   type: 'receita' | 'despesa';
   is_active: boolean;
+  sort_index: number;
   created_at: string;
   subcategories?: Category[];
 }
@@ -27,7 +28,8 @@ export function useCategories() {
         .from('categories')
         .select('*')
         .eq('user_id', user.id)
-        .order('name');
+        .order('sort_index', { ascending: true })
+        .order('name', { ascending: true });
 
       if (error) throw error;
 
@@ -60,14 +62,27 @@ export function useCategories() {
   });
 
   const createCategoryMutation = useMutation({
-    mutationFn: async (categoryData: Omit<Category, 'id' | 'user_id' | 'created_at' | 'subcategories'>) => {
+    mutationFn: async (categoryData: Omit<Category, 'id' | 'user_id' | 'created_at' | 'subcategories' | 'sort_index'>) => {
       if (!user?.id) throw new Error('User not authenticated');
+
+      // Get the highest sort_index for this type and parent
+      const { data: maxSortData } = await supabase
+        .from('categories')
+        .select('sort_index')
+        .eq('user_id', user.id)
+        .eq('type', categoryData.type)
+        .eq('parent_id', categoryData.parent_id || null)
+        .order('sort_index', { ascending: false })
+        .limit(1);
+
+      const nextSortIndex = maxSortData && maxSortData.length > 0 ? maxSortData[0].sort_index + 1 : 0;
 
       const { data, error } = await supabase
         .from('categories')
         .insert({
           ...categoryData,
           user_id: user.id,
+          sort_index: nextSortIndex,
         })
         .select()
         .single();
@@ -119,6 +134,73 @@ export function useCategories() {
     },
   });
 
+  const updateCategoryOrderMutation = useMutation({
+    mutationFn: async ({ dragCategoryId, dropCategoryId }: { dragCategoryId: string, dropCategoryId: string }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      // Get both categories
+      const { data: categoriesData, error: fetchError } = await supabase
+        .from('categories')
+        .select('*')
+        .in('id', [dragCategoryId, dropCategoryId])
+        .eq('user_id', user.id);
+
+      if (fetchError) throw fetchError;
+
+      const dragCategory = categoriesData.find(cat => cat.id === dragCategoryId);
+      const dropCategory = categoriesData.find(cat => cat.id === dropCategoryId);
+
+      if (!dragCategory || !dropCategory) throw new Error('Categories not found');
+
+      // Get all categories in the same group (same type and parent)
+      const { data: groupCategories, error: groupError } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('type', dragCategory.type)
+        .eq('parent_id', dragCategory.parent_id || null)
+        .order('sort_index', { ascending: true });
+
+      if (groupError) throw groupError;
+
+      // Remove the dragged category from its current position
+      const filteredCategories = groupCategories.filter(cat => cat.id !== dragCategoryId);
+      
+      // Find the drop position
+      const dropIndex = filteredCategories.findIndex(cat => cat.id === dropCategoryId);
+      
+      // Insert the dragged category before the drop category
+      filteredCategories.splice(dropIndex, 0, dragCategory);
+
+      // Update sort_index for all categories in the group
+      const updates = filteredCategories.map((cat, index) => ({
+        id: cat.id,
+        sort_index: index
+      }));
+
+      // Perform batch update
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('categories')
+          .update({ sort_index: update.sort_index })
+          .eq('id', update.id);
+
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
+    },
+    onError: (error) => {
+      console.error('Error updating category order:', error);
+      toast({
+        title: "Erro ao reordenar",
+        description: "Não foi possível alterar a ordem das categorias.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const deleteCategoryMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
@@ -153,7 +235,6 @@ export function useCategories() {
     },
   });
 
-  // Nova função para exclusão segura com pré-verificação melhorada
   const deleteCategorySafely = async (id: string) => {
     if (!user?.id) return;
 
@@ -262,6 +343,8 @@ export function useCategories() {
     createCategory: createCategoryMutation.mutate,
     updateCategory: updateCategoryMutation.mutate,
     deleteCategory: deleteCategoryMutation.mutate,
+    updateCategoryOrder: (dragCategoryId: string, dropCategoryId: string) => 
+      updateCategoryOrderMutation.mutate({ dragCategoryId, dropCategoryId }),
     deleteCategorySafely,
     isCreating: createCategoryMutation.isPending,
     isUpdating: updateCategoryMutation.isPending,

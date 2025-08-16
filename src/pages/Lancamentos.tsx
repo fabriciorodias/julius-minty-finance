@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTransactions, TransactionFilters, TransactionWithRelations, CreateTransactionData } from '@/hooks/useTransactions';
@@ -16,9 +15,10 @@ import { AccountsFilterPanel } from '@/components/transactions/AccountsFilterPan
 import { DynamicBalanceCard } from '@/components/transactions/DynamicBalanceCard';
 import { QuickDateFilters } from '@/components/transactions/QuickDateFilters';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, CreditCard, AlertTriangle } from 'lucide-react';
+import { Upload, CreditCard, AlertTriangle, TrendingUp } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
+import { CashFlowModal } from '@/components/transactions/CashFlowModal';
 
 export default function Lancamentos() {
   const { user } = useAuth();
@@ -33,6 +33,7 @@ export default function Lancamentos() {
   const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [isCashFlowModalOpen, setIsCashFlowModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionWithRelations | null>(null);
 
   const { categories } = useCategories();
@@ -161,6 +162,15 @@ export default function Lancamentos() {
           <Button onClick={() => setIsInstallmentModalOpen(true)} variant="outline">
             Lançamento Parcelado/Recorrente
           </Button>
+          <Button 
+            onClick={() => setIsCashFlowModalOpen(true)} 
+            variant="outline" 
+            size="sm"
+            className="flex items-center gap-2 text-xs"
+          >
+            <TrendingUp className="h-3 w-3" />
+            Fluxo de Caixa
+          </Button>
         </div>
       </div>
 
@@ -254,6 +264,15 @@ export default function Lancamentos() {
       <InvoiceManagerModal
         isOpen={isInvoiceModalOpen}
         onClose={() => setIsInvoiceModalOpen(false)}
+      />
+
+      <CashFlowModal
+        isOpen={isCashFlowModalOpen}
+        onClose={() => setIsCashFlowModalOpen(false)}
+        selectedAccountIds={selectedAccountIds}
+        accounts={accounts}
+        institutions={institutions}
+        dateFilters={dateFilters}
       />
     </div>
   );

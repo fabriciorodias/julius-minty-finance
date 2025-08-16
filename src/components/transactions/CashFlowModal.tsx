@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { useCashFlowProjection } from '@/hooks/useCashFlowProjection';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -62,6 +62,14 @@ export function CashFlowModal({
   const formatDate = (dateStr: string) => {
     return format(parseISO(dateStr), 'dd/MM', { locale: ptBR });
   };
+
+  // Calculate min and max values for the reference area
+  const allValues = dataPoints.flatMap(point => [
+    point.total,
+    ...accountsInfo.map(account => point[account.id] as number || 0)
+  ]);
+  const minValue = Math.min(...allValues);
+  const maxValue = Math.max(...allValues);
 
   const chartConfig = {
     total: {
@@ -168,6 +176,18 @@ export function CashFlowModal({
                       tick={{ fontSize: 12 }}
                       width={80}
                     />
+
+                    {/* Reference area for negative values */}
+                    {minValue < 0 && (
+                      <ReferenceArea
+                        y1={minValue}
+                        y2={0}
+                        fill="hsl(var(--destructive))"
+                        fillOpacity={0.1}
+                        stroke="none"
+                      />
+                    )}
+
                     <ChartTooltip 
                       content={({ active, payload, label }) => {
                         if (!active || !payload?.length) return null;
@@ -196,7 +216,9 @@ export function CashFlowModal({
                                         }
                                       </span>
                                     </div>
-                                    <span className="font-medium">
+                                    <span className={`font-medium ${
+                                      (entry.value as number) < 0 ? 'text-destructive' : ''
+                                    }`}>
                                       {formatCurrency(entry.value as number)}
                                     </span>
                                   </div>

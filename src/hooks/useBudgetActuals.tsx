@@ -25,7 +25,11 @@ export function useBudgetActuals(selectedMonth: string) {
 
       if (error) throw error;
 
-      return data || [];
+      // Type cast the category_type to ensure it matches our interface
+      return (data || []).map(item => ({
+        ...item,
+        category_type: item.category_type as 'receita' | 'despesa'
+      }));
     },
     enabled: !!user?.id,
   });

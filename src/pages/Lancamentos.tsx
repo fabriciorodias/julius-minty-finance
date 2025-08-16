@@ -11,9 +11,10 @@ import { TransactionModal } from '@/components/transactions/TransactionModal';
 import { InstallmentRecurringModal } from '@/components/transactions/InstallmentRecurringModal';
 import { ImportTransactionsModal } from '@/components/transactions/ImportTransactionsModal';
 import { InvoiceManagerModal } from '@/components/transactions/InvoiceManagerModal';
-import { TransactionFilters as FiltersComponent } from '@/components/transactions/TransactionFilters';
 import { TransactionsList } from '@/components/transactions/TransactionsList';
-import { AccountBalancesContainer } from '@/components/accounts/AccountBalancesContainer';
+import { AccountsFilterPanel } from '@/components/transactions/AccountsFilterPanel';
+import { DynamicBalanceCard } from '@/components/transactions/DynamicBalanceCard';
+import { QuickDateFilters } from '@/components/transactions/QuickDateFilters';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, CreditCard, AlertTriangle } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -23,9 +24,10 @@ export default function Lancamentos() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
-  // Persist filters in localStorage
-  const [filters, setFilters] = useLocalStorage<TransactionFilters>('transaction-filters', {});
+  // Local storage for selected accounts and search
+  const [selectedAccountIds, setSelectedAccountIds] = useLocalStorage<string[]>('selected-account-ids', []);
   const [searchTerm, setSearchTerm] = useLocalStorage<string>('transaction-search', '');
+  const [dateFilters, setDateFilters] = useLocalStorage<{ startDate?: string; endDate?: string }>('transaction-date-filters', {});
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInstallmentModalOpen, setIsInstallmentModalOpen] = useState(false);
@@ -37,6 +39,26 @@ export default function Lancamentos() {
   const { accounts } = useAccounts();
   const { institutions } = useInstitutions();
   const { balanceMap, isLoading: balancesLoading } = useAccountBalances();
+
+  // Initialize selected accounts with all active accounts if none selected
+  useEffect(() => {
+    if (accounts.length > 0 && selectedAccountIds.length === 0) {
+      const activeAccountIds = accounts.filter(account => account.is_active).map(account => account.id);
+      setSelectedAccountIds(activeAccountIds);
+    }
+  }, [accounts, selectedAccountIds.length, setSelectedAccountIds]);
+
+  // Build transaction filters
+  const filters: TransactionFilters = useMemo(() => {
+    const baseFilters: TransactionFilters = {
+      accountIds: selectedAccountIds.length > 0 ? selectedAccountIds : undefined,
+    };
+
+    if (dateFilters.startDate) baseFilters.startDate = dateFilters.startDate;
+    if (dateFilters.endDate) baseFilters.endDate = dateFilters.endDate;
+
+    return baseFilters;
+  }, [selectedAccountIds, dateFilters]);
 
   const {
     transactions,
@@ -75,24 +97,13 @@ export default function Lancamentos() {
   };
 
   const handleImportSuccess = () => {
-    // Invalidate and refetch transactions and account balances to show newly imported ones
     queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
     queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
     queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
-    
-    // Filter to show only uncategorized transactions after import
-    setFilters({ ...filters, withoutCategory: true });
   };
 
-  const handleSelectAccount = (accountId: string) => {
-    if (filters.accountId === accountId) {
-      // If the same account is clicked, remove the filter
-      const { accountId: _, ...newFilters } = filters;
-      setFilters(newFilters);
-    } else {
-      // Apply filter for the selected account
-      setFilters({ ...filters, accountId });
-    }
+  const handleDateRangeSelect = (startDate: string, endDate: string) => {
+    setDateFilters({ startDate, endDate });
   };
 
   const filteredTransactions = useMemo(() => {
@@ -126,6 +137,9 @@ export default function Lancamentos() {
     };
   }, [transactions, queryClient, user?.id]);
 
+  // Determine pre-filled account for new transaction modal
+  const prefilledAccountId = selectedAccountIds.length === 1 ? selectedAccountIds[0] : undefined;
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -147,21 +161,8 @@ export default function Lancamentos() {
           <Button onClick={() => setIsInstallmentModalOpen(true)} variant="outline">
             Lançamento Parcelado/Recorrente
           </Button>
-          <Button onClick={() => setIsModalOpen(true)}>
-            Novo Lançamento
-          </Button>
         </div>
       </div>
-
-      {/* Account Balances Container */}
-      <AccountBalancesContainer
-        accounts={accounts}
-        institutions={institutions}
-        balanceMap={balanceMap}
-        selectedAccountId={filters.accountId}
-        onSelectAccount={handleSelectAccount}
-        isLoading={balancesLoading}
-      />
 
       {/* Alert for uncategorized transactions */}
       {uncategorizedCount > 0 && (
@@ -170,48 +171,70 @@ export default function Lancamentos() {
           <AlertDescription className="text-yellow-800">
             Você tem <strong>{uncategorizedCount}</strong> lançamento{uncategorizedCount > 1 ? 's' : ''} sem categoria. 
             É recomendado categorizar todos os lançamentos para um melhor controle financeiro.
-            <Button 
-              variant="link" 
-              className="p-0 h-auto ml-2 text-yellow-800 underline"
-              onClick={() => setFilters({ ...filters, withoutCategory: true })}
-            >
-              Ver lançamentos não categorizados
-            </Button>
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Filtros */}
-      <FiltersComponent
-        filters={filters}
-        onFiltersChange={setFilters}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        categories={categories}
-        accounts={accounts}
-        institutions={institutions}
-      />
+      {/* Two-Panel Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Left Panel - Account Filter */}
+        <div className="lg:col-span-1">
+          <AccountsFilterPanel
+            accounts={accounts}
+            institutions={institutions}
+            selectedAccountIds={selectedAccountIds}
+            onAccountSelectionChange={setSelectedAccountIds}
+          />
+        </div>
 
-      {/* Lista de lançamentos */}
-      <TransactionsList
-        transactions={filteredTransactions}
-        accounts={accounts}
-        institutions={institutions}
-        isLoading={isLoading}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onBulkDelete={handleBulkDelete}
-        onNewTransaction={() => setIsModalOpen(true)}
-        isDeleting={isDeleting}
-      />
+        {/* Right Panel - Main Content */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Dynamic Balance Card */}
+          <DynamicBalanceCard
+            selectedAccountIds={selectedAccountIds}
+            accounts={accounts}
+            institutions={institutions}
+            balanceMap={balanceMap}
+          />
 
-      {/* Modais */}
+          {/* Header with Add Button and Quick Filters */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <Button onClick={() => setIsModalOpen(true)} size="lg" className="w-full sm:w-auto">
+              Adicionar Lançamento
+            </Button>
+            
+            <QuickDateFilters
+              onDateRangeSelect={handleDateRangeSelect}
+              currentStartDate={dateFilters.startDate}
+              currentEndDate={dateFilters.endDate}
+            />
+          </div>
+
+          {/* Transactions List */}
+          <TransactionsList
+            transactions={filteredTransactions}
+            accounts={accounts}
+            institutions={institutions}
+            isLoading={isLoading}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onBulkDelete={handleBulkDelete}
+            onNewTransaction={() => setIsModalOpen(true)}
+            isDeleting={isDeleting}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+          />
+        </div>
+      </div>
+
+      {/* Modals */}
       <TransactionModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveTransaction}
         transaction={selectedTransaction}
         isLoading={isCreating || isUpdating}
+        prefilledAccountId={prefilledAccountId}
       />
 
       <InstallmentRecurringModal

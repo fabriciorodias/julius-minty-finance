@@ -33,6 +33,7 @@ export interface TransactionFilters {
   endDate?: string;
   categoryId?: string;
   accountId?: string;
+  accountIds?: string[]; // New field for multiple account filtering
   creditCardId?: string;
   status?: 'pendente' | 'concluido';
   q?: string;
@@ -93,7 +94,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
         `)
         .eq('user_id', user.id);
 
-      // Aplicar filtros
+      // Apply filters
       if (filters.startDate || filters.endDate) {
         const dateColumn = filters.dateBase === 'effective' ? 'effective_date' : 'event_date';
         
@@ -110,7 +111,11 @@ export function useTransactions(filters: TransactionFilters = {}) {
         query = query.eq('category_id', filters.categoryId);
       }
 
-      if (filters.accountId) {
+      // Handle multiple account IDs (new functionality)
+      if (filters.accountIds && filters.accountIds.length > 0) {
+        query = query.in('account_id', filters.accountIds);
+      } else if (filters.accountId) {
+        // Keep backward compatibility with single accountId
         query = query.eq('account_id', filters.accountId);
       }
 

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -11,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Edit, Trash2, FileText, Plus } from 'lucide-react';
+import { Edit, Trash2, FileText, Plus, Search } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TransactionWithRelations } from '@/hooks/useTransactions';
@@ -30,6 +31,8 @@ interface TransactionsListProps {
   onBulkDelete: (ids: string[]) => void;
   onNewTransaction: () => void;
   isDeleting?: boolean;
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
 }
 
 export function TransactionsList({
@@ -42,11 +45,14 @@ export function TransactionsList({
   onBulkDelete,
   onNewTransaction,
   isDeleting = false,
+  searchTerm,
+  onSearchChange,
 }: TransactionsListProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
 
   // Create institution map for lookup
   const institutionMap = React.useMemo(() => 
@@ -128,10 +134,7 @@ export function TransactionsList({
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Lançamentos</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <div className="flex items-center justify-center py-12">
             <div className="text-center space-y-3">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
@@ -146,10 +149,7 @@ export function TransactionsList({
   if (transactions.length === 0) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Lançamentos</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
             <div className="rounded-full bg-muted p-4">
               <FileText className="h-8 w-8 text-muted-foreground" />
@@ -190,7 +190,19 @@ export function TransactionsList({
             Novo Lançamento
           </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Buscar por descrição..."
+              value={searchTerm}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Transactions Table */}
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -202,19 +214,22 @@ export function TransactionsList({
                       className={isPartiallySelected ? "data-[state=checked]:bg-primary/50" : ""}
                     />
                   </TableHead>
-                  <TableHead>Data do Evento</TableHead>
-                  <TableHead>Data de Efetivação</TableHead>
-                  <TableHead>Descrição</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Beneficiário</TableHead>
                   <TableHead>Categoria</TableHead>
-                  <TableHead>Origem</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Valor</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                  <TableHead>Conta</TableHead>
+                  <TableHead className="w-24"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {transactions.map((transaction) => (
-                  <TableRow key={transaction.id} className="hover:bg-muted/50">
+                  <TableRow 
+                    key={transaction.id} 
+                    className="hover:bg-muted/50"
+                    onMouseEnter={() => setHoveredRowId(transaction.id)}
+                    onMouseLeave={() => setHoveredRowId(null)}
+                  >
                     <TableCell>
                       <Checkbox
                         checked={selectedIds.includes(transaction.id)}
@@ -223,12 +238,6 @@ export function TransactionsList({
                     </TableCell>
                     <TableCell className="font-medium whitespace-nowrap">
                       {formatDate(transaction.event_date)}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {transaction.effective_date
-                        ? formatDate(transaction.effective_date)
-                        : '-'
-                      }
                     </TableCell>
                     <TableCell className="max-w-xs">
                       <div className="truncate" title={transaction.description}>
@@ -245,44 +254,37 @@ export function TransactionsList({
                         {transaction.categories?.name || 'Sem categoria'}
                       </span>
                     </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {getOriginDisplay(transaction)}
-                      </div>
-                    </TableCell>
                     <TableCell className="text-right font-medium whitespace-nowrap">
-                      <span className={transaction.amount >= 0 ? 'text-green-600' : 'text-red-600'}>
+                      <span className={transaction.amount >= 0 ? 'text-green-600 font-semibold' : 'text-foreground'}>
                         {transaction.amount >= 0 ? '+' : '-'}{formatCurrency(transaction.amount)}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
-                        transaction.status === 'concluido'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {transaction.status === 'concluido' ? 'Efetivado' : 'Pendente'}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onEdit(transaction)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleSingleDelete(transaction.id)}
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <div className="text-sm truncate">
+                        {getOriginDisplay(transaction)}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {hoveredRowId === transaction.id && (
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onEdit(transaction)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSingleDelete(transaction.id)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

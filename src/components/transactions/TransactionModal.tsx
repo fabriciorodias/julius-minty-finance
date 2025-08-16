@@ -81,6 +81,7 @@ interface TransactionModalProps {
     credit_cards: { name: string } | null;
   };
   isLoading?: boolean;
+  prefilledAccountId?: string;
 }
 
 export function TransactionModal({
@@ -89,6 +90,7 @@ export function TransactionModal({
   onSave,
   transaction,
   isLoading = false,
+  prefilledAccountId,
 }: TransactionModalProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -181,7 +183,12 @@ export function TransactionModal({
           account_id: transaction.account_id || undefined,
         });
       } else {
-        // Creating new transaction - always reset to clean state
+        // Creating new transaction - reset to clean state with prefilled account
+        const defaultAccount = prefilledAccountId || undefined;
+        const defaultSourceType = defaultAccount 
+          ? (accounts.find(acc => acc.id === defaultAccount)?.type === 'credit' ? 'credit_card' : 'account')
+          : 'account';
+
         form.reset({
           type: 'despesa',
           description: '',
@@ -190,12 +197,12 @@ export function TransactionModal({
           is_effective: false,
           effective_date: '',
           category_id: undefined,
-          source_type: 'account',
-          account_id: undefined,
+          source_type: defaultSourceType,
+          account_id: defaultAccount,
         });
       }
     }
-  }, [isOpen, transaction, form, accounts]);
+  }, [isOpen, transaction, form, accounts, prefilledAccountId]);
 
   const handleSubmit = (data: TransactionFormData, saveAndNew: boolean = false) => {
     const amount = parseFloat(data.amount);

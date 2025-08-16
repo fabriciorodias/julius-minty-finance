@@ -38,6 +38,10 @@ export function useCashFlowProjection({ selectedAccountIds, dateFilters }: UseCa
         return { dataPoints: [], accounts: [] };
       }
 
+      console.log('=== Cash Flow Projection Debug ===');
+      console.log('Selected accounts:', selectedAccountIds);
+      console.log('Date filters:', dateFilters);
+
       // Get accounts info
       const { data: accountsData, error: accountsError } = await supabase
         .from('accounts')
@@ -68,19 +72,25 @@ export function useCashFlowProjection({ selectedAccountIds, dateFilters }: UseCa
         return acc;
       }, {} as Record<string, { amount: number; date: string }>);
 
+      console.log('Initial balances:', initialBalanceMap);
+
       // Get all transactions for selected accounts
-      const { data: transactions, error: transactionsError } = await supabase
+      const { data: allTransactions, error: transactionsError } = await supabase
         .from('transactions')
-        .select('account_id, amount, type, status, event_date, effective_date')
+        .select('account_id, amount, type, status, event_date, effective_date, description')
         .eq('user_id', user.id)
         .in('account_id', selectedAccountIds)
         .order('event_date', { ascending: true });
 
       if (transactionsError) throw transactionsError;
 
+      console.log('All transactions:', allTransactions?.length || 0);
+
       // Determine date range
       const startDate = dateFilters?.startDate || format(new Date(), 'yyyy-MM-dd');
       const endDate = dateFilters?.endDate || format(addDays(new Date(), 90), 'yyyy-MM-dd');
+
+      console.log('Date range:', { startDate, endDate });
 
       // Generate colors for accounts
       const colors = [
@@ -101,66 +111,89 @@ export function useCashFlowProjection({ selectedAccountIds, dateFilters }: UseCa
         color: colors[index % colors.length]
       }));
 
-      // Calculate daily balances
-      const dataPointsMap = new Map<string, CashFlowDataPoint>();
+      // Calculate current balance for each account (initial + all completed transactions)
+      // This should match the "Saldo Total" from the cards
+      const currentAccountBalances: Record<string, number> = {};
       
-      // Initialize with start date
-      const initDate = startOfDay(parseISO(startDate));
-      const currentDataPoint: CashFlowDataPoint = {
-        date: format(initDate, 'yyyy-MM-dd'),
-        total: 0
-      };
-
-      // Set initial balances for each account
       selectedAccountIds.forEach(accountId => {
         const initialBalance = initialBalanceMap[accountId];
-        
-        // Calculate completed transactions up to start date
-        const completedTransactions = (transactions || []).filter(t => 
+        let accountBalance = initialBalance?.amount || 0;
+
+        // Add all completed transactions (this gives us the current "Saldo Total")
+        const completedTransactions = (allTransactions || []).filter(t => 
           t.account_id === accountId &&
           t.status === 'concluido' &&
-          t.effective_date &&
-          t.effective_date < startDate
+          t.effective_date
         );
 
-        let accountBalance = initialBalance?.amount || 0;
         completedTransactions.forEach(t => {
+          // Normalize transaction signs based on type
           if (t.type === 'receita') {
-            accountBalance += t.amount;
+            accountBalance += Math.abs(t.amount);
           } else {
             accountBalance -= Math.abs(t.amount);
           }
         });
 
-        currentDataPoint[accountId] = accountBalance;
-        currentDataPoint.total += accountBalance;
+        currentAccountBalances[accountId] = accountBalance;
+        console.log(`Account ${accountId} current balance:`, accountBalance);
       });
 
-      dataPointsMap.set(currentDataPoint.date, { ...currentDataPoint });
+      const totalCurrentBalance = Object.values(currentAccountBalances).reduce((sum, balance) => sum + balance, 0);
+      console.log('Total current balance (should match Saldo Total):', totalCurrentBalance);
 
-      // Process future transactions (from start date onwards)
-      const futureTransactions = (transactions || []).filter(t => {
+      // Initialize the data points map with the starting date and current balances
+      const dataPointsMap = new Map<string, CashFlowDataPoint>();
+      
+      const initDate = startOfDay(parseISO(startDate));
+      const initialDataPoint: CashFlowDataPoint = {
+        date: format(initDate, 'yyyy-MM-dd'),
+        total: totalCurrentBalance
+      };
+
+      // Set current balance for each account as the starting point
+      selectedAccountIds.forEach(accountId => {
+        initialDataPoint[accountId] = currentAccountBalances[accountId];
+      });
+
+      dataPointsMap.set(initialDataPoint.date, { ...initialDataPoint });
+
+      // Now process only PENDING transactions within the date range
+      const pendingTransactions = (allTransactions || []).filter(t => {
+        if (t.status !== 'pendente') return false;
+        
         const transactionDate = t.effective_date || t.event_date;
         return transactionDate >= startDate && transactionDate <= endDate;
       });
 
-      // Sort by date
-      futureTransactions.sort((a, b) => {
+      console.log('Pending transactions in range:', pendingTransactions.length);
+      console.log('Pending transactions:', pendingTransactions);
+
+      // Sort pending transactions by date
+      pendingTransactions.sort((a, b) => {
         const dateA = a.effective_date || a.event_date;
         const dateB = b.effective_date || b.event_date;
         return dateA.localeCompare(dateB);
       });
 
-      // Apply transactions day by day
-      futureTransactions.forEach(transaction => {
+      // Apply pending transactions day by day
+      pendingTransactions.forEach(transaction => {
         const transactionDate = transaction.effective_date || transaction.event_date;
+        
+        console.log(`Processing transaction on ${transactionDate}:`, {
+          description: transaction.description,
+          amount: transaction.amount,
+          type: transaction.type,
+          account_id: transaction.account_id
+        });
         
         // Get or create data point for this date
         let dataPoint = dataPointsMap.get(transactionDate);
         if (!dataPoint) {
           // Copy previous day's balances
-          const previousDate = format(addDays(parseISO(transactionDate), -1), 'yyyy-MM-dd');
-          const previousDataPoint = dataPointsMap.get(previousDate) || currentDataPoint;
+          const allDates = Array.from(dataPointsMap.keys()).sort();
+          const lastDate = allDates[allDates.length - 1];
+          const previousDataPoint = dataPointsMap.get(lastDate) || initialDataPoint;
           
           dataPoint = {
             date: transactionDate,
@@ -176,12 +209,17 @@ export function useCashFlowProjection({ selectedAccountIds, dateFilters }: UseCa
         const accountId = transaction.account_id!;
         const currentBalance = dataPoint[accountId] as number || 0;
         
+        // Normalize transaction signs based on type
         if (transaction.type === 'receita') {
-          dataPoint[accountId] = currentBalance + transaction.amount;
-          dataPoint.total += transaction.amount;
+          const newBalance = currentBalance + Math.abs(transaction.amount);
+          dataPoint[accountId] = newBalance;
+          dataPoint.total += Math.abs(transaction.amount);
+          console.log(`Added income ${Math.abs(transaction.amount)} to account ${accountId}, new balance: ${newBalance}`);
         } else {
-          dataPoint[accountId] = currentBalance - Math.abs(transaction.amount);
+          const newBalance = currentBalance - Math.abs(transaction.amount);
+          dataPoint[accountId] = newBalance;
           dataPoint.total -= Math.abs(transaction.amount);
+          console.log(`Subtracted expense ${Math.abs(transaction.amount)} from account ${accountId}, new balance: ${newBalance}`);
         }
 
         dataPointsMap.set(transactionDate, dataPoint);
@@ -191,7 +229,7 @@ export function useCashFlowProjection({ selectedAccountIds, dateFilters }: UseCa
       const dataPoints: CashFlowDataPoint[] = [];
       let currentDate = parseISO(startDate);
       const finalDate = parseISO(endDate);
-      let lastDataPoint = currentDataPoint;
+      let lastDataPoint = initialDataPoint;
 
       while (currentDate <= finalDate) {
         const dateStr = format(currentDate, 'yyyy-MM-dd');
@@ -200,6 +238,10 @@ export function useCashFlowProjection({ selectedAccountIds, dateFilters }: UseCa
         lastDataPoint = dataPoint;
         currentDate = addDays(currentDate, 1);
       }
+
+      console.log('Final data points:', dataPoints.slice(0, 5)); // Log first 5 points
+      console.log('Starting balance:', dataPoints[0]?.total);
+      console.log('Ending balance:', dataPoints[dataPoints.length - 1]?.total);
 
       return { dataPoints, accounts };
     },

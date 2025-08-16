@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTransactions, TransactionFilters, TransactionWithRelations, CreateTransactionData } from '@/hooks/useTransactions';
@@ -158,6 +157,7 @@ export default function Lancamentos() {
       {/* Account Balances Container */}
       <AccountBalancesContainer
         accounts={accounts}
+        institutions={institutions}
         balanceMap={balanceMap}
         selectedAccountId={filters.accountId}
         onSelectAccount={handleSelectAccount}

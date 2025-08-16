@@ -1,20 +1,28 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { useInvestments } from '@/hooks/useInvestments';
 import { useInvestmentTransactions } from '@/hooks/useInvestmentTransactions';
 import { useInvestmentBalances } from '@/hooks/useInvestmentBalances';
 import { useInvestmentsDashboard } from '@/hooks/dashboard/useInvestmentsDashboard';
+import { useCurrentBalances } from '@/hooks/useCurrentBalances';
 import { InvestmentModal } from '@/components/investments/InvestmentModal';
 import { TransactionModal } from '@/components/investments/TransactionModal';
 import { BalanceUpdateModal } from '@/components/investments/BalanceUpdateModal';
 import { InvestmentPortfolioChart } from '@/components/investments/InvestmentPortfolioChart';
+import { MonthSelector } from '@/components/planning/MonthSelector';
+import { RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
 
 const Investimentos = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
@@ -30,11 +38,53 @@ const Investimentos = () => {
   
   const { createTransaction, isCreating: isCreatingTransaction } = useInvestmentTransactions();
   const { upsertBalance, isUpdating: isUpdatingBalance } = useInvestmentBalances();
+  const { data: currentBalances } = useCurrentBalances();
   
   const { 
     data: dashboardData, 
     isLoading: dashboardLoading 
   } = useInvestmentsDashboard(selectedMonth);
+
+  // Real-time updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('investment-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'investment_transactions',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['investment-transactions'] });
+          queryClient.invalidateQueries({ queryKey: ['investments-dashboard'] });
+          queryClient.invalidateQueries({ queryKey: ['current-balances'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'investment_balances',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['investment-balances'] });
+          queryClient.invalidateQueries({ queryKey: ['investments-dashboard'] });
+          queryClient.invalidateQueries({ queryKey: ['current-balances'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient]);
 
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -65,6 +115,15 @@ const Investimentos = () => {
   const handleOpenBalanceModal = (investment: any) => {
     setSelectedInvestment(investment);
     setShowBalanceModal(true);
+  };
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['investments-dashboard'] });
+    queryClient.invalidateQueries({ queryKey: ['current-balances'] });
+  };
+
+  const getCurrentBalance = (investmentId: string) => {
+    return currentBalances?.find(b => b.investment_id === investmentId);
   };
 
   if (investmentsLoading) {
@@ -104,10 +163,24 @@ const Investimentos = () => {
             Gerencie sua carteira de investimentos
           </p>
         </div>
-        <Button onClick={() => setShowInvestmentModal(true)}>
-          <span className="material-icons text-sm mr-2">add</span>
-          Adicionar Investimento
-        </Button>
+        <div className="flex items-center gap-3">
+          <MonthSelector 
+            selectedMonth={selectedMonth} 
+            onMonthChange={setSelectedMonth} 
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={dashboardLoading}
+          >
+            <RefreshCw className={`h-4 w-4 ${dashboardLoading ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button onClick={() => setShowInvestmentModal(true)}>
+            <span className="material-icons text-sm mr-2">add</span>
+            Adicionar Investimento
+          </Button>
+        </div>
       </div>
 
       {/* Dashboard KPIs */}
@@ -242,6 +315,7 @@ const Investimentos = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
+                  <TableHead>Saldo Atual</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Instituição</TableHead>
                   <TableHead>Status</TableHead>
@@ -249,51 +323,73 @@ const Investimentos = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {investments.map((investment) => (
-                  <TableRow key={investment.id}>
-                    <TableCell className="font-medium">
-                      {investment.name}
-                      {investment.issuer && (
-                        <div className="text-sm text-mint-text-secondary">
-                          {investment.issuer}
+                {investments.map((investment) => {
+                  const balance = getCurrentBalance(investment.id);
+                  return (
+                    <TableRow key={investment.id}>
+                      <TableCell className="font-medium">
+                        {investment.name}
+                        {investment.issuer && (
+                          <div className="text-sm text-mint-text-secondary">
+                            {investment.issuer}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">
+                            {balance ? formatCurrency(balance.current_balance) : 'N/A'}
+                          </span>
+                          {balance && balance.percentage_change !== 0 && (
+                            <div className={`flex items-center text-xs ${
+                              balance.percentage_change > 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {balance.percentage_change > 0 ? (
+                                <TrendingUp className="h-3 w-3 mr-1" />
+                              ) : (
+                                <TrendingDown className="h-3 w-3 mr-1" />
+                              )}
+                              {balance.percentage_change.toFixed(2)}%
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getTypeColor(investment.type) as any}>
-                        {getTypeLabel(investment.type)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {investment.institution?.name || 'Sem Instituição'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={investment.status === 'ativo' ? 'default' : 'secondary'}>
-                        {investment.status === 'ativo' ? 'Ativo' : 'Liquidado'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenTransactionModal(investment)}
-                        >
-                          <span className="material-icons text-sm mr-1">swap_horiz</span>
-                          Movimentar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenBalanceModal(investment)}
-                        >
-                          <span className="material-icons text-sm mr-1">account_balance</span>
-                          Atualizar Saldo
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getTypeColor(investment.type) as any}>
+                          {getTypeLabel(investment.type)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {investment.institution?.name || 'Sem Instituição'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={investment.status === 'ativo' ? 'default' : 'secondary'}>
+                          {investment.status === 'ativo' ? 'Ativo' : 'Liquidado'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenTransactionModal(investment)}
+                          >
+                            <span className="material-icons text-sm mr-1">swap_horiz</span>
+                            Movimentar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenBalanceModal(investment)}
+                          >
+                            <span className="material-icons text-sm mr-1">account_balance</span>
+                            Atualizar Saldo
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}

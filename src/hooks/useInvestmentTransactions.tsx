@@ -57,6 +57,7 @@ export function useInvestmentTransactions(investmentId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['investment-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['investments-dashboard'] });
       toast({
         title: "Movimentação registrada",
         description: "A movimentação foi registrada com sucesso.",

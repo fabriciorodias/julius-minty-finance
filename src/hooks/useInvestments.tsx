@@ -154,6 +154,7 @@ export function useInvestments() {
       queryClient.invalidateQueries({ queryKey: ['investments', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['investment-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['investment-balances'] });
+      queryClient.invalidateQueries({ queryKey: ['investments-dashboard'] });
       toast({
         title: "Investimento criado",
         description: "O investimento foi criado com sucesso.",
@@ -183,6 +184,7 @@ export function useInvestments() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['investments', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['investments-dashboard'] });
       toast({
         title: "Investimento atualizado",
         description: "O investimento foi atualizado com sucesso.",
@@ -211,6 +213,7 @@ export function useInvestments() {
       queryClient.invalidateQueries({ queryKey: ['investments', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['investment-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['investment-balances'] });
+      queryClient.invalidateQueries({ queryKey: ['investments-dashboard'] });
       toast({
         title: "Investimento excluído",
         description: "O investimento foi excluído com sucesso.",

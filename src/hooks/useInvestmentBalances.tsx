@@ -58,6 +58,7 @@ export function useInvestmentBalances(investmentId?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['investment-balances'] });
+      queryClient.invalidateQueries({ queryKey: ['investments-dashboard'] });
       toast({
         title: "Saldo atualizado",
         description: "O saldo foi atualizado com sucesso.",

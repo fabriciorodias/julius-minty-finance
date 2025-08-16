@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,17 +24,12 @@ export function useCreditCards() {
       
       const { data, error } = await supabase
         .from('credit_cards')
-        .select(`
-          *,
-          institutions (
-            name
-          )
-        `)
+        .select('*')
         .eq('user_id', user.id)
         .order('name');
 
       if (error) throw error;
-      return data as (CreditCard & { institutions: { name: string } })[];
+      return data as CreditCard[];
     },
     enabled: !!user?.id,
   });

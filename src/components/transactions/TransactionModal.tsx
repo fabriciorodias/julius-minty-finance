@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -106,6 +106,10 @@ export function TransactionModal({
   const { creditCards } = useCreditCards();
   const { institutions } = useInstitutions();
 
+  // State for controlling date picker popovers
+  const [eventDateOpen, setEventDateOpen] = useState(false);
+  const [effectiveDateOpen, setEffectiveDateOpen] = useState(false);
+
   // Get only child categories (categories that have a parent_id)
   const childCategories = categories.flatMap(category => 
     category.subcategories && category.subcategories.length > 0 
@@ -154,16 +158,19 @@ export function TransactionModal({
       return true;
     }
     // For new transactions, only show active credit cards
-    // Credit cards are typically used for expenses, but can be used for refunds (receitas)
     return card.is_active;
   });
 
   // Force refresh data when modal opens
   useEffect(() => {
     if (isOpen) {
+      console.log('Modal opened, refreshing data...');
       queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['credit_cards', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
+      
+      // Force immediate refetch of credit cards
+      queryClient.refetchQueries({ queryKey: ['credit_cards', user?.id] });
     }
   }, [isOpen, queryClient, user?.id]);
 
@@ -245,12 +252,13 @@ export function TransactionModal({
     return new Date(year, month - 1, day);
   };
 
-  const handleDateSelect = (date: Date | undefined, fieldOnChange: (value: string) => void) => {
+  const handleDateSelect = (date: Date | undefined, fieldOnChange: (value: string) => void, setOpen: (open: boolean) => void) => {
     if (date) {
       const year = date.getFullYear();
       const month = (date.getMonth() + 1).toString().padStart(2, '0');
       const day = date.getDate().toString().padStart(2, '0');
       fieldOnChange(`${year}-${month}-${day}`);
+      setOpen(false); // Close the popover
     }
   };
 
@@ -331,7 +339,7 @@ export function TransactionModal({
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Data do Evento</FormLabel>
-                  <Popover>
+                  <Popover open={eventDateOpen} onOpenChange={setEventDateOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
@@ -354,7 +362,7 @@ export function TransactionModal({
                       <Calendar
                         mode="single"
                         selected={field.value ? parseInputDate(field.value) : undefined}
-                        onSelect={(date) => handleDateSelect(date, field.onChange)}
+                        onSelect={(date) => handleDateSelect(date, field.onChange, setEventDateOpen)}
                         locale={ptBR}
                         className="p-3 pointer-events-auto"
                       />
@@ -442,7 +450,7 @@ export function TransactionModal({
                       <SelectContent>
                         {availableAccounts.map((account) => (
                           <SelectItem key={account.id} value={account.id}>
-                            {institutionMap[account.institution_id]} - {account.name}
+                            {institutionMap[account.institution_id] || 'Instituição'} - {account.name}
                             {!account.is_active && ' (Inativa)'}
                           </SelectItem>
                         ))}
@@ -468,12 +476,18 @@ export function TransactionModal({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {availableCreditCards.map((card) => (
-                          <SelectItem key={card.id} value={card.id}>
-                            {institutionMap[card.institution_id]} - {card.name}
-                            {!card.is_active && ' (Inativo)'}
+                        {availableCreditCards.length === 0 ? (
+                          <SelectItem value="no-cards" disabled>
+                            Nenhum cartão ativo encontrado
                           </SelectItem>
-                        ))}
+                        ) : (
+                          availableCreditCards.map((card) => (
+                            <SelectItem key={card.id} value={card.id}>
+                              {institutionMap[card.institution_id] || 'Instituição'} - {card.name}
+                              {!card.is_active && ' (Inativo)'}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -508,7 +522,7 @@ export function TransactionModal({
                   render={({ field }) => (
                     <FormItem className="flex flex-col flex-1">
                       <FormLabel>Data de Efetivação</FormLabel>
-                      <Popover>
+                      <Popover open={effectiveDateOpen} onOpenChange={setEffectiveDateOpen}>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
@@ -531,7 +545,7 @@ export function TransactionModal({
                           <Calendar
                             mode="single"
                             selected={field.value ? parseInputDate(field.value) : undefined}
-                            onSelect={(date) => handleDateSelect(date, field.onChange)}
+                            onSelect={(date) => handleDateSelect(date, field.onChange, setEffectiveDateOpen)}
                             locale={ptBR}
                             className="p-3 pointer-events-auto"
                           />

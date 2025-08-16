@@ -106,6 +106,7 @@ export function useAccounts(institutionId?: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['account-initial-balance', user?.id] });
       toast({
         title: "Conta criada",
         description: "A conta foi criada com sucesso.",
@@ -148,31 +149,63 @@ export function useAccounts(institutionId?: string) {
           : balance_date;
 
         if (initial_balance && formattedDate) {
-          // Upsert the initial balance
-          console.log('Upserting initial balance:', {
-            user_id: user?.id,
-            account_id: id,
-            amount: initial_balance,
-            balance_date: formattedDate,
-          });
-
-          const { error: balanceError } = await supabase
+          // Check if initial balance already exists
+          console.log('Checking if initial balance exists for account:', id);
+          const { data: existingBalance } = await supabase
             .from('account_initial_balances')
-            .upsert({
+            .select('id')
+            .eq('account_id', id)
+            .eq('user_id', user?.id)
+            .single();
+
+          if (existingBalance) {
+            // Update existing initial balance
+            console.log('Updating existing initial balance:', {
+              account_id: id,
+              amount: initial_balance,
+              balance_date: formattedDate,
+            });
+
+            const { error: updateError } = await supabase
+              .from('account_initial_balances')
+              .update({
+                amount: initial_balance,
+                balance_date: formattedDate,
+              })
+              .eq('account_id', id)
+              .eq('user_id', user?.id);
+
+            if (updateError) {
+              console.error('Initial balance update error:', updateError);
+              throw updateError;
+            }
+
+            console.log('Initial balance updated successfully');
+          } else {
+            // Insert new initial balance
+            console.log('Inserting new initial balance:', {
               user_id: user?.id,
               account_id: id,
               amount: initial_balance,
               balance_date: formattedDate,
-            }, {
-              onConflict: 'account_id'
             });
 
-          if (balanceError) {
-            console.error('Initial balance upsert error:', balanceError);
-            throw balanceError;
-          }
+            const { error: insertError } = await supabase
+              .from('account_initial_balances')
+              .insert({
+                user_id: user?.id,
+                account_id: id,
+                amount: initial_balance,
+                balance_date: formattedDate,
+              });
 
-          console.log('Initial balance upserted successfully');
+            if (insertError) {
+              console.error('Initial balance insert error:', insertError);
+              throw insertError;
+            }
+
+            console.log('Initial balance inserted successfully');
+          }
         } else if (initial_balance === 0 || !initial_balance) {
           // Remove initial balance if set to 0 or empty
           console.log('Removing initial balance for account:', id);
@@ -197,6 +230,7 @@ export function useAccounts(institutionId?: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['account-initial-balance', user?.id] });
       toast({
         title: "Conta atualizada",
         description: "A conta foi atualizada com sucesso.",
@@ -236,6 +270,7 @@ export function useAccounts(institutionId?: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['account-initial-balance', user?.id] });
       toast({
         title: "Conta excluída",
         description: "A conta foi excluída com sucesso.",

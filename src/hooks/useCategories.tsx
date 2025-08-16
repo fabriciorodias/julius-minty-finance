@@ -41,7 +41,7 @@ export function useCategories() {
         categoriesMap.set(category.id, { 
           ...category, 
           type: category.type as 'receita' | 'despesa',
-          sort_index: category.sort_index || 0,
+          sort_index: (category as any).sort_index || 0,
           subcategories: [] 
         });
       });
@@ -76,7 +76,7 @@ export function useCategories() {
         .order('sort_index', { ascending: false })
         .limit(1);
 
-      const nextSortIndex = maxSortData && maxSortData.length > 0 ? (maxSortData[0].sort_index || 0) + 1 : 0;
+      const nextSortIndex = maxSortData && maxSortData.length > 0 ? ((maxSortData[0] as any).sort_index || 0) + 1 : 0;
 
       const { data, error } = await supabase
         .from('categories')
@@ -87,7 +87,7 @@ export function useCategories() {
           is_active: categoryData.is_active,
           user_id: user.id,
           sort_index: nextSortIndex,
-        })
+        } as any)
         .select()
         .single();
 
@@ -117,7 +117,7 @@ export function useCategories() {
       
       const { data, error } = await supabase
         .from('categories')
-        .update(updateData)
+        .update(updateData as any)
         .eq('id', id)
         .select()
         .single();
@@ -189,7 +189,7 @@ export function useCategories() {
       for (const update of updates) {
         const { error } = await supabase
           .from('categories')
-          .update({ sort_index: update.sort_index })
+          .update({ sort_index: update.sort_index } as any)
           .eq('id', update.id);
 
         if (error) throw error;

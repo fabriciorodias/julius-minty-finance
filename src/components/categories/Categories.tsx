@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useCategories } from '@/hooks/useCategories';
 import { Button } from '@/components/ui/button';
@@ -58,7 +59,7 @@ export function Categories() {
   };
 
   const toggleCollapsed = (categoryId: string) => {
-    setCollapsedCategories((prev: Record<string, boolean>) => ({
+    setCollapsedCategories((prev) => ({
       ...prev,
       [categoryId]: !prev[categoryId]
     }));

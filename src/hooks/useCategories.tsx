@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 export interface Category {
   id: string;
@@ -153,49 +153,97 @@ export function useCategories() {
     },
   });
 
-  // Nova função para exclusão segura com pré-verificação
+  // Nova função para exclusão segura com pré-verificação melhorada
   const deleteCategorySafely = async (id: string) => {
     if (!user?.id) return;
 
     try {
+      console.log('Iniciando verificação de dependências para categoria:', id);
+
       // Verificar se a categoria tem lançamentos associados
-      const { data: transactions, error: transactionsError } = await supabase
+      const { data: transactions, error: transactionsError, count: transactionsCount } = await supabase
         .from('transactions')
-        .select('id')
+        .select('id', { count: 'exact' })
         .eq('category_id', id)
         .limit(1);
 
-      if (transactionsError) throw transactionsError;
+      if (transactionsError) {
+        console.error('Erro ao verificar transações:', transactionsError);
+        throw transactionsError;
+      }
 
-      // Verificar se a categoria tem orçamentos associados
-      const { data: budgets, error: budgetsError } = await supabase
-        .from('budgets')
-        .select('id')
-        .eq('category_id', id)
-        .limit(1);
-
-      if (budgetsError) throw budgetsError;
+      console.log('Transações encontradas:', transactionsCount);
 
       // Verificar se a categoria tem subcategorias
-      const { data: subcategories, error: subcategoriesError } = await supabase
+      const { data: subcategories, error: subcategoriesError, count: subcategoriesCount } = await supabase
         .from('categories')
-        .select('id')
+        .select('id', { count: 'exact' })
         .eq('parent_id', id)
         .limit(1);
 
-      if (subcategoriesError) throw subcategoriesError;
+      if (subcategoriesError) {
+        console.error('Erro ao verificar subcategorias:', subcategoriesError);
+        throw subcategoriesError;
+      }
 
-      // Se houver qualquer dependência, impedir a exclusão
-      if (transactions.length > 0 || budgets.length > 0 || subcategories.length > 0) {
+      console.log('Subcategorias encontradas:', subcategoriesCount);
+
+      // Verificar se a categoria tem orçamentos associados
+      const { data: budgets, error: budgetsError, count: budgetsCount } = await supabase
+        .from('budgets')
+        .select('id', { count: 'exact' })
+        .eq('category_id', id);
+
+      if (budgetsError) {
+        console.error('Erro ao verificar orçamentos:', budgetsError);
+        throw budgetsError;
+      }
+
+      console.log('Orçamentos encontrados:', budgetsCount);
+
+      // Se houver transações ou subcategorias, impedir a exclusão
+      if ((transactionsCount && transactionsCount > 0) || (subcategoriesCount && subcategoriesCount > 0)) {
+        const reasons = [];
+        if (transactionsCount && transactionsCount > 0) {
+          reasons.push(`${transactionsCount} transação${transactionsCount > 1 ? 'ões' : ''}`);
+        }
+        if (subcategoriesCount && subcategoriesCount > 0) {
+          reasons.push(`${subcategoriesCount} subcategoria${subcategoriesCount > 1 ? 's' : ''}`);
+        }
+
         toast({
           title: "Categoria em uso",
-          description: "Não é possível excluir esta categoria porque ela já foi utilizada em lançamentos/orçamentos ou possui subcategorias. Para manter o histórico, considere desativá-la.",
+          description: `Não é possível excluir esta categoria porque ela possui ${reasons.join(' e ')} associada${reasons.length > 1 ? 's' : ''}. Para manter o histórico, considere desativá-la.`,
           variant: "destructive",
         });
         return;
       }
 
-      // Se não há dependências, prosseguir com a exclusão
+      // Se só existem orçamentos, deletá-los automaticamente antes de excluir a categoria
+      if (budgetsCount && budgetsCount > 0) {
+        console.log('Deletando orçamentos automaticamente...');
+        const { error: deleteBudgetsError } = await supabase
+          .from('budgets')
+          .delete()
+          .eq('category_id', id);
+
+        if (deleteBudgetsError) {
+          console.error('Erro ao deletar orçamentos:', deleteBudgetsError);
+          toast({
+            title: "Erro ao limpar orçamentos",
+            description: "Não foi possível remover os orçamentos associados à categoria.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Invalidar cache dos orçamentos
+        queryClient.invalidateQueries({ queryKey: ['budgets', user.id] });
+        console.log('Orçamentos deletados com sucesso');
+      }
+
+      // Prosseguir com a exclusão da categoria
+      console.log('Procedendo com a exclusão da categoria...');
       deleteCategoryMutation.mutate(id);
     } catch (error) {
       console.error('Erro ao verificar dependências da categoria:', error);

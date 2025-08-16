@@ -14,7 +14,6 @@ import { Button } from '@/components/ui/button';
 import { Search, X, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Category } from '@/hooks/useCategories';
 import { Account } from '@/hooks/useAccounts';
-import { CreditCard } from '@/hooks/useCreditCards';
 import { Institution } from '@/hooks/useInstitutions';
 
 interface TransactionFiltersProps {
@@ -24,7 +23,6 @@ interface TransactionFiltersProps {
     endDate?: string;
     categoryId?: string;
     accountId?: string;
-    creditCardId?: string;
     status?: 'pendente' | 'concluido';
   };
   onFiltersChange: (filters: any) => void;
@@ -32,7 +30,6 @@ interface TransactionFiltersProps {
   onSearchChange: (searchTerm: string) => void;
   categories: Category[];
   accounts: Account[];
-  creditCards: CreditCard[];
   institutions: Institution[];
 }
 
@@ -43,7 +40,6 @@ export function TransactionFilters({
   onSearchChange,
   categories,
   accounts,
-  creditCards,
   institutions,
 }: TransactionFiltersProps) {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -195,9 +191,9 @@ export function TransactionFilters({
                 </Select>
               </div>
 
-              {/* Account Filter */}
+              {/* Account Filter - Now includes both regular accounts and credit accounts */}
               <div className="space-y-2">
-                <Label htmlFor="account">Conta</Label>
+                <Label htmlFor="account">Conta/Cartão</Label>
                 <Select
                   value={filters.accountId || 'all'}
                   onValueChange={(value) =>
@@ -215,32 +211,7 @@ export function TransactionFilters({
                     {accounts.map((account) => (
                       <SelectItem key={account.id} value={account.id}>
                         {institutionMap[account.institution_id]} - {account.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Credit Card Filter */}
-              <div className="space-y-2">
-                <Label htmlFor="creditCard">Cartão de Crédito</Label>
-                <Select
-                  value={filters.creditCardId || 'all'}
-                  onValueChange={(value) =>
-                    onFiltersChange({
-                      ...filters,
-                      creditCardId: value === 'all' ? undefined : value,
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    {creditCards.map((card) => (
-                      <SelectItem key={card.id} value={card.id}>
-                        {institutionMap[card.institution_id]} - {card.name}
+                        {account.source_type === 'credit' && ' (Cartão)'}
                       </SelectItem>
                     ))}
                   </SelectContent>

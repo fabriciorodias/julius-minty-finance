@@ -28,7 +28,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAccounts } from '@/hooks/useAccounts';
-import { useCreditCards } from '@/hooks/useCreditCards';
 import { useInstitutions } from '@/hooks/useInstitutions';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -64,7 +63,6 @@ export function ImportTransactionsModal({
 }: ImportTransactionsModalProps) {
   const [isUploading, setIsUploading] = useState(false);
   const { accounts } = useAccounts();
-  const { creditCards } = useCreditCards();
   const { institutions } = useInstitutions();
 
   const form = useForm<ImportFormData>({
@@ -85,6 +83,17 @@ export function ImportTransactionsModal({
   [institutions]);
 
   const watchImportType = form.watch('importType');
+
+  // Filter accounts based on import type
+  const availableAccounts = React.useMemo(() => {
+    return accounts.filter(account => {
+      if (watchImportType === 'account') {
+        return account.source_type === 'on_budget' || account.source_type === 'off_budget';
+      } else {
+        return account.source_type === 'credit';
+      }
+    });
+  }, [accounts, watchImportType]);
 
   const handleSubmit = async (data: ImportFormData) => {
     setIsUploading(true);
@@ -204,18 +213,11 @@ export function ImportTransactionsModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {watchImportType === 'account' 
-                        ? accounts.map((account) => (
-                            <SelectItem key={account.id} value={account.id}>
-                              {institutionMap[account.institution_id]} - {account.name}
-                            </SelectItem>
-                          ))
-                        : creditCards.map((card) => (
-                            <SelectItem key={card.id} value={card.id}>
-                              {institutionMap[card.institution_id]} - {card.name}
-                            </SelectItem>
-                          ))
-                      }
+                      {availableAccounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {institutionMap[account.institution_id]} - {account.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />

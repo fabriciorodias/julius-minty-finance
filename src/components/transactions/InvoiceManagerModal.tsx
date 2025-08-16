@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useCreditCards } from '@/hooks/useCreditCards';
+import { useAccounts } from '@/hooks/useAccounts';
 import { useInstitutions } from '@/hooks/useInstitutions';
 import { useTransactions } from '@/hooks/useTransactions';
 import { format } from 'date-fns';
@@ -35,7 +35,7 @@ import { CreditCard, Calendar, DollarSign, FileText } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 
 const invoiceSchema = z.object({
-  creditCardId: z.string().min(1, 'Selecione um cartão de crédito'),
+  creditAccountId: z.string().min(1, 'Selecione um cartão de crédito'),
   month: z.string().min(1, 'Selecione um mês'),
 });
 
@@ -51,17 +51,23 @@ export function InvoiceManagerModal({
   onClose,
 }: InvoiceManagerModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const { creditCards } = useCreditCards();
+  const { accounts } = useAccounts();
   const { institutions } = useInstitutions();
   const { transactions, updateTransaction } = useTransactions();
 
   const form = useForm<InvoiceFormData>({
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
-      creditCardId: '',
+      creditAccountId: '',
       month: '',
     },
   });
+
+  // Filter only credit accounts (credit cards)
+  const creditAccounts = useMemo(() => 
+    accounts.filter(account => account.source_type === 'credit'),
+    [accounts]
+  );
 
   // Create institution map for lookup
   const institutionMap = useMemo(() => 
@@ -71,7 +77,7 @@ export function InvoiceManagerModal({
     }, {} as Record<string, string>), 
   [institutions]);
 
-  const watchCreditCardId = form.watch('creditCardId');
+  const watchCreditAccountId = form.watch('creditAccountId');
   const watchMonth = form.watch('month');
 
   // Generate month options (last 12 months + next 3 months)
@@ -89,17 +95,17 @@ export function InvoiceManagerModal({
     return options;
   }, []);
 
-  // Filter transactions for the selected card and month
+  // Filter transactions for the selected credit account and month
   const invoiceTransactions = useMemo(() => {
-    if (!watchCreditCardId || !watchMonth) return [];
+    if (!watchCreditAccountId || !watchMonth) return [];
 
     return transactions.filter(transaction => 
-      transaction.credit_card_id === watchCreditCardId &&
+      transaction.account_id === watchCreditAccountId &&
       transaction.status === 'pendente' &&
       transaction.effective_date &&
       transaction.effective_date.startsWith(watchMonth)
     );
-  }, [transactions, watchCreditCardId, watchMonth]);
+  }, [transactions, watchCreditAccountId, watchMonth]);
 
   const totalAmount = useMemo(() => {
     return invoiceTransactions.reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
@@ -181,7 +187,7 @@ export function InvoiceManagerModal({
           <form className="space-y-4">
             <FormField
               control={form.control}
-              name="creditCardId"
+              name="creditAccountId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cartão de Crédito</FormLabel>
@@ -192,9 +198,9 @@ export function InvoiceManagerModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {creditCards.map((card) => (
-                        <SelectItem key={card.id} value={card.id}>
-                          {institutionMap[card.institution_id]} - {card.name}
+                      {creditAccounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {institutionMap[account.institution_id]} - {account.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -232,7 +238,7 @@ export function InvoiceManagerModal({
               )}
             />
 
-            {watchCreditCardId && watchMonth && (
+            {watchCreditAccountId && watchMonth && (
               <Card>
                 <CardContent className="pt-6">
                   <div className="space-y-4">

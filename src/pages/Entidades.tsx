@@ -37,7 +37,7 @@ const Entidades = () => {
     isDeleting: deletingAccount,
   } = useAccounts();
 
-  const { data: accountBalances = [] } = useAccountBalances();
+  const { balances: accountBalances = [] } = useAccountBalances();
 
   const {
     creditCards,

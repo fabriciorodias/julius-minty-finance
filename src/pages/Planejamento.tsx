@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { PlusCircle, Edit2, ChevronDown, ChevronRight } from "lucide-react";
+import { PlusCircle, Edit2, ChevronDown, ChevronRight, TrendingUp, TrendingDown } from "lucide-react";
 import { useCategories, Category } from '@/hooks/useCategories';
 import { useBudgets } from '@/hooks/useBudgets';
 import { BudgetModal } from '@/components/planning/BudgetModal';
@@ -88,6 +88,27 @@ const Planejamento = () => {
     // Para despesas: Planejado - Realizado (positivo = dentro do orçamento)
     // Para receitas: Realizado - Planejado (positivo = acima da meta)
     return categoryType === 'despesa' ? budgeted - realized : realized - budgeted;
+  };
+
+  // Funções para calcular totais
+  const calculateTotals = (categoriesList: Category[]) => {
+    let totalPlanned = 0;
+    let totalRealized = 0;
+
+    categoriesList.forEach(category => {
+      const planned = category.subcategories && category.subcategories.length > 0 
+        ? getSubcategoriesTotal(category)
+        : getBudgetedAmount(category.id);
+      
+      const realized = category.subcategories && category.subcategories.length > 0
+        ? getSubcategoriesRealizedTotal(category)
+        : getRealizedAmount(category.id);
+
+      totalPlanned += planned;
+      totalRealized += realized;
+    });
+
+    return { totalPlanned, totalRealized };
   };
 
   const toggleCategoryExpansion = (categoryId: string) => {
@@ -366,56 +387,90 @@ const Planejamento = () => {
     title: string; 
     categoriesList: Category[]; 
     type: 'receita' | 'despesa' 
-  }) => (
-    <Card className="mint-card">
-      <CardHeader>
-        <CardTitle className="text-mint-text-primary flex items-center">
-          <span className="material-icons mr-2">
-            {type === 'receita' ? 'trending_up' : 'trending_down'}
-          </span>
-          {title}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              const allCategoryIds = new Set(categoriesList
-                .filter(cat => cat.subcategories && cat.subcategories.length > 0)
-                .map(cat => cat.id)
-              );
-              setExpandedCategories(
-                expandedCategories.size === allCategoryIds.size ? 
-                new Set() : 
-                allCategoryIds
-              );
-            }}
-            className="ml-auto text-xs text-mint-text-secondary hover:text-mint-text-primary"
-          >
-            {expandedCategories.size > 0 ? 'Recolher Todas' : 'Expandir Todas'}
-          </Button>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b border-mint-border">
-                <th className="text-left py-3 px-2 text-mint-text-secondary font-medium">Categoria</th>
-                <th className="text-center py-3 px-2 text-mint-text-secondary font-medium">Planejado</th>
-                <th className="text-center py-3 px-2 text-mint-text-secondary font-medium">Realizado</th>
-                <th className="text-center py-3 px-2 text-mint-text-secondary font-medium">Diferença</th>
-                <th className="text-center py-3 px-2 text-mint-text-secondary font-medium">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categoriesList.map((category) => (
-                <CategoryRow key={category.id} category={category} type={type} />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  }) => {
+    const { totalPlanned, totalRealized } = calculateTotals(categoriesList);
+    const totalDifference = type === 'despesa' ? totalPlanned - totalRealized : totalRealized - totalPlanned;
+    const Icon = type === 'receita' ? TrendingUp : TrendingDown;
+    const iconColor = type === 'receita' ? 'text-green-600' : 'text-red-600';
+    const bgColor = type === 'receita' ? 'bg-green-50' : 'bg-red-50';
+    const borderColor = type === 'receita' ? 'border-green-200' : 'border-red-200';
+
+    return (
+      <Card className="mint-card">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-mint-text-primary flex items-center">
+              <Icon className={`mr-2 h-5 w-5 ${iconColor}`} />
+              {title}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const allCategoryIds = new Set(categoriesList
+                    .filter(cat => cat.subcategories && cat.subcategories.length > 0)
+                    .map(cat => cat.id)
+                  );
+                  setExpandedCategories(
+                    expandedCategories.size === allCategoryIds.size ? 
+                    new Set() : 
+                    allCategoryIds
+                  );
+                }}
+                className="ml-auto text-xs text-mint-text-secondary hover:text-mint-text-primary"
+              >
+                {expandedCategories.size > 0 ? 'Recolher Todas' : 'Expandir Todas'}
+              </Button>
+            </CardTitle>
+          </div>
+          
+          {/* Totalizador */}
+          <div className={`mt-4 p-4 rounded-lg border ${bgColor} ${borderColor}`}>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center">
+                <p className="text-sm font-medium text-mint-text-secondary mb-1">Total Planejado</p>
+                <p className="text-lg font-bold text-mint-text-primary">{formatCurrency(totalPlanned)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium text-mint-text-secondary mb-1">Total Realizado</p>
+                <p className="text-lg font-bold text-mint-text-primary">{formatCurrency(totalRealized)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium text-mint-text-secondary mb-1">Diferença</p>
+                <p className={`text-lg font-bold ${
+                  totalDifference > 0 ? 'text-green-600' : 
+                  totalDifference < 0 ? 'text-red-600' : 'text-mint-text-secondary'
+                }`}>
+                  {formatCurrency(Math.abs(totalDifference))}
+                  {totalDifference > 0 && <span className="text-sm ml-1">↑</span>}
+                  {totalDifference < 0 && <span className="text-sm ml-1">↓</span>}
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-mint-border">
+                  <th className="text-left py-3 px-2 text-mint-text-secondary font-medium">Categoria</th>
+                  <th className="text-center py-3 px-2 text-mint-text-secondary font-medium">Planejado</th>
+                  <th className="text-center py-3 px-2 text-mint-text-secondary font-medium">Realizado</th>
+                  <th className="text-center py-3 px-2 text-mint-text-secondary font-medium">Diferença</th>
+                  <th className="text-center py-3 px-2 text-mint-text-secondary font-medium">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categoriesList.map((category) => (
+                  <CategoryRow key={category.id} category={category} type={type} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   if (categoriesLoading) {
     return (

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,7 +22,7 @@ const Entidades = () => {
   const [creditCardModal, setCreditCardModal] = useState({ isOpen: false, creditCard: undefined as any });
   const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, type: '', id: '', name: '' });
 
-  const { categories, createCategory, updateCategory, deleteCategory, isCreating, isUpdating, isDeleting } = useCategories();
+  const { categories, createCategory, updateCategory, deleteCategorySafely, isCreating, isUpdating, isDeleting } = useCategories();
   const { institutions, createInstitution, updateInstitution, deleteInstitution } = useInstitutions();
   const { accounts, createAccount, updateAccount, deleteAccount } = useAccounts();
   const { creditCards, createCreditCard, updateCreditCard, deleteCreditCard } = useCreditCards();
@@ -31,7 +30,7 @@ const Entidades = () => {
   const handleDelete = () => {
     switch (deleteDialog.type) {
       case 'category':
-        deleteCategory(deleteDialog.id);
+        deleteCategorySafely(deleteDialog.id);
         break;
       case 'institution':
         deleteInstitution(deleteDialog.id);

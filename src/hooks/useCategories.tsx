@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -136,14 +135,77 @@ export function useCategories() {
         description: "A categoria foi excluída com sucesso.",
       });
     },
-    onError: (error) => {
-      toast({
-        title: "Erro ao excluir categoria",
-        description: "Não foi possível excluir a categoria. Verifique se não há lançamentos associados.",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      // Tratar violação de foreign key (categoria em uso)
+      if (error?.code === '23503') {
+        toast({
+          title: "Categoria em uso",
+          description: "Não é possível excluir esta categoria porque ela já foi utilizada em lançamentos/orçamentos ou possui subcategorias. Para manter o histórico, considere desativá-la.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro ao excluir categoria",
+          description: "Não foi possível excluir a categoria. Verifique se não há lançamentos associados.",
+          variant: "destructive",
+        });
+      }
     },
   });
+
+  // Nova função para exclusão segura com pré-verificação
+  const deleteCategorySafely = async (id: string) => {
+    if (!user?.id) return;
+
+    try {
+      // Verificar se a categoria tem lançamentos associados
+      const { data: transactions, error: transactionsError } = await supabase
+        .from('transactions')
+        .select('id')
+        .eq('category_id', id)
+        .limit(1);
+
+      if (transactionsError) throw transactionsError;
+
+      // Verificar se a categoria tem orçamentos associados
+      const { data: budgets, error: budgetsError } = await supabase
+        .from('budgets')
+        .select('id')
+        .eq('category_id', id)
+        .limit(1);
+
+      if (budgetsError) throw budgetsError;
+
+      // Verificar se a categoria tem subcategorias
+      const { data: subcategories, error: subcategoriesError } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('parent_id', id)
+        .limit(1);
+
+      if (subcategoriesError) throw subcategoriesError;
+
+      // Se houver qualquer dependência, impedir a exclusão
+      if (transactions.length > 0 || budgets.length > 0 || subcategories.length > 0) {
+        toast({
+          title: "Categoria em uso",
+          description: "Não é possível excluir esta categoria porque ela já foi utilizada em lançamentos/orçamentos ou possui subcategorias. Para manter o histórico, considere desativá-la.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Se não há dependências, prosseguir com a exclusão
+      deleteCategoryMutation.mutate(id);
+    } catch (error) {
+      console.error('Erro ao verificar dependências da categoria:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao verificar se a categoria pode ser excluída. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return {
     categories,
@@ -152,6 +214,7 @@ export function useCategories() {
     createCategory: createCategoryMutation.mutate,
     updateCategory: updateCategoryMutation.mutate,
     deleteCategory: deleteCategoryMutation.mutate,
+    deleteCategorySafely,
     isCreating: createCategoryMutation.isPending,
     isUpdating: updateCategoryMutation.isPending,
     isDeleting: deleteCategoryMutation.isPending,

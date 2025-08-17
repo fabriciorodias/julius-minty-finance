@@ -36,7 +36,8 @@ export function useCounterparties() {
     queryFn: async (): Promise<Counterparty[]> => {
       if (!user?.id) return [];
 
-      const { data, error } = await supabase
+      // Use type assertion to work around missing counterparties type
+      const { data, error } = await (supabase as any)
         .from('counterparties')
         .select('*')
         .eq('user_id', user.id)
@@ -44,7 +45,7 @@ export function useCounterparties() {
         .order('name');
 
       if (error) throw error;
-      return data || [];
+      return (data || []) as Counterparty[];
     },
     enabled: !!user?.id,
   });
@@ -53,7 +54,8 @@ export function useCounterparties() {
     mutationFn: async (counterpartyData: CreateCounterpartyData) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
+      // Use type assertion to work around missing counterparties type
+      const { data, error } = await (supabase as any)
         .from('counterparties')
         .insert({
           ...counterpartyData,
@@ -63,7 +65,7 @@ export function useCounterparties() {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as Counterparty;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['counterparties', user?.id] });

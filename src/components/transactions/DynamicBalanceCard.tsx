@@ -133,7 +133,7 @@ export function DynamicBalanceCard({
     
     switch (variant) {
       case 'budget':
-        return 'Saldo das contas de orçamento considerando saldos iniciais + transações concluídas';
+        return 'Soma dos saldos das contas de ativos (saldos iniciais + transações concluídas)';
       case 'credit':
         return 'Saldo devedor dos cartões de crédito (valores negativos indicam dívida)';
       case 'consolidated':
@@ -176,14 +176,14 @@ export function DynamicBalanceCard({
             </div>
           )}
           
-          {/* Saldo com Provisão */}
+          {/* Saldo Projetado */}
           <div className="flex items-center gap-2 text-sm">
             {isLoadingProvisioned ? (
               <Skeleton className="h-4 w-48" />
             ) : (
               <>
                 <span className="text-muted-foreground/80">
-                  Saldo c/ provisão:
+                  Saldo Projetado:
                 </span>
                 <span className={`font-medium ${getBalanceColor(totalBalance)}`}>
                   {formatCurrency(totalBalance)}
@@ -194,7 +194,7 @@ export function DynamicBalanceCard({
                   </TooltipTrigger>
                   <TooltipContent className="z-50 bg-popover">
                     <p className="text-xs max-w-xs">
-                      Saldo total + impacto das transações pendentes
+                      Saldo em conta + impacto das transações pendentes
                       {dateRange.startDate && (
                         <>
                           <br />
@@ -208,31 +208,54 @@ export function DynamicBalanceCard({
             )}
           </div>
 
-          {/* Provisões */}
-          {!isLoadingProvisioned && (
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground/80">
-                Provisões:
-              </span>
-              <span className={`font-medium ${getBalanceColor(provisionsAmount)}`}>
-                {formatCurrency(provisionsAmount)}
-              </span>
-              <Tooltip>
-                <TooltipTrigger>
-                  <Info className="h-3 w-3 text-muted-foreground/60 hover:text-muted-foreground transition-colors" />
-                </TooltipTrigger>
-                <TooltipContent className="z-50 bg-popover">
-                  <p className="text-xs max-w-xs">
-                    Soma líquida das transações pendentes
-                    <br />
-                    (Receitas pendentes - Despesas pendentes)
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+          {/* Subtotalizadores: Débitos a ocorrer e Créditos previstos */}
+          {!isLoadingProvisioned && (pendingExpense > 0 || pendingIncome > 0) && (
+            <div className="space-y-2">
+              {pendingExpense > 0 && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-muted-foreground/80">
+                    Débitos a ocorrer:
+                  </span>
+                  <span className="font-medium text-red-600">
+                    {formatCurrency(pendingExpense)}
+                  </span>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-3 w-3 text-muted-foreground/60 hover:text-muted-foreground transition-colors" />
+                    </TooltipTrigger>
+                    <TooltipContent className="z-50 bg-popover">
+                      <p className="text-xs max-w-xs">
+                        Total de despesas pendentes no período
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              )}
+              
+              {pendingIncome > 0 && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-muted-foreground/80">
+                    Créditos previstos:
+                  </span>
+                  <span className="font-medium text-green-600">
+                    {formatCurrency(pendingIncome)}
+                  </span>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-3 w-3 text-muted-foreground/60 hover:text-muted-foreground transition-colors" />
+                    </TooltipTrigger>
+                    <TooltipContent className="z-50 bg-popover">
+                      <p className="text-xs max-w-xs">
+                        Total de receitas pendentes no período
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Mini informações em badges */}
+          {/* Mini informações em badges - mantidas para compatibilidade visual */}
           {!isLoadingProvisioned && (pendingIncome > 0 || pendingExpense > 0) && (
             <div className="flex flex-wrap gap-2">
               {pendingIncome > 0 && (

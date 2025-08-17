@@ -31,9 +31,11 @@ const Entidades = () => {
     createAccount,
     updateAccount,
     deleteAccount,
+    reconcileAccount,
     isCreating: creatingAccount,
     isUpdating: updatingAccount,
     isDeleting: deletingAccount,
+    isReconciling,
   } = useAccounts();
 
   const { balances: accountBalances = [] } = useAccountBalances();
@@ -55,6 +57,10 @@ const Entidades = () => {
     } else {
       createInstitution(institutionData);
     }
+  };
+
+  const handleReconcileAccount = (accountId: string, reconciledAt: Date) => {
+    reconcileAccount({ accountId, reconciledAt });
   };
 
   return (
@@ -87,11 +93,13 @@ const Entidades = () => {
             onCreateAccount={createAccount}
             onUpdateAccount={updateAccount}
             onDeleteAccount={deleteAccount}
+            onReconcileAccount={handleReconcileAccount}
             onCreateInstitution={handleCreateInstitutionFromAccount}
             isLoading={accountsLoading}
             isCreating={creatingAccount}
             isUpdating={updatingAccount}
             isDeleting={deletingAccount}
+            isReconciling={isReconciling}
           />
         </TabsContent>
 

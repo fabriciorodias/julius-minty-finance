@@ -1,3 +1,4 @@
+
 import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import { 
   LineChart, 
@@ -56,6 +57,19 @@ export function CashFlowChartBase({
   const maxValue = Math.max(...allValues);
   const padding = (maxValue - minValue) * 0.1;
 
+  // Split data into positive and negative segments
+  const positiveData = data.map(d => ({
+    ...d,
+    total: d.total >= 0 ? d.total : 0,
+    originalTotal: d.total
+  }));
+
+  const negativeData = data.map(d => ({
+    ...d,
+    total: d.total < 0 ? d.total : 0,
+    originalTotal: d.total
+  }));
+
   return (
     <ChartContainer config={chartConfig} className="h-full">
       <ResponsiveContainer width="100%" height={height}>
@@ -101,13 +115,34 @@ export function CashFlowChartBase({
             />
           )}
 
-          {/* Main area chart */}
+          {/* Positive area (above zero) */}
           <Area
+            type="monotone"
+            data={positiveData}
+            dataKey="total"
+            stroke="hsl(142, 76%, 36%)"
+            strokeWidth={0}
+            fill="url(#positiveGradient)"
+            dot={false}
+          />
+
+          {/* Negative area (below zero) */}
+          <Area
+            type="monotone"
+            data={negativeData}
+            dataKey="total"
+            stroke="hsl(346, 77%, 49%)"
+            strokeWidth={0}
+            fill="url(#negativeGradient)"
+            dot={false}
+          />
+
+          {/* Main line */}
+          <Line
             type="monotone"
             dataKey="total"
             stroke="hsl(142, 76%, 36%)"
             strokeWidth={3}
-            fill="url(#positiveGradient)"
             dot={false}
           />
 

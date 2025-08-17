@@ -7,9 +7,9 @@ import { useProvisionedTotals } from '@/hooks/useProvisionedTotals';
 import { useCashFlowProjection } from '@/hooks/useCashFlowProjection';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useInstitutions } from '@/hooks/useInstitutions';
-import { safeCurrencyFormatter, safeFormatDate } from '@/lib/date-utils';
+import { safeCurrencyFormatter, safeFormatDate, safeFormatDateLong } from '@/lib/date-utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TrendingUp, TrendingDown, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, Calendar, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 interface AnxiousBalancePanelProps {
   selectedAccountIds: string[];
@@ -74,12 +74,18 @@ export function AnxiousBalancePanel({ selectedAccountIds, dateFilters }: Anxious
   };
 
   // Format data for chart
-  const chartData = dataPoints.map(point => ({
-    date: point.date,
-    total: point.total,
-    formattedDate: safeFormatDate(point.date, 'dd/MM'),
-    fullDate: safeFormatDate(point.date, 'dd/MM/yyyy')
-  }));
+  const chartData = dataPoints.map((point, index) => {
+    const previousPoint = index > 0 ? dataPoints[index - 1] : null;
+    const dailyVariation = previousPoint ? point.total - previousPoint.total : 0;
+    
+    return {
+      date: point.date,
+      total: point.total,
+      formattedDate: safeFormatDate(point.date, 'dd/MM'),
+      fullDate: safeFormatDateLong(point.date, 'PPPP'),
+      dailyVariation
+    };
+  });
 
   if (isLoading) {
     return (
@@ -187,15 +193,50 @@ export function AnxiousBalancePanel({ selectedAccountIds, dateFilters }: Anxious
                         if (!active || !payload?.length) return null;
                         
                         const data = payload[0].payload;
+                        const balance = data.total as number;
+                        const variation = data.dailyVariation as number;
+                        const isPositiveVariation = variation >= 0;
+                        
                         return (
-                          <ChartTooltipContent
-                            className="w-auto"
-                            labelFormatter={() => data.fullDate}
-                            formatter={(value) => [
-                              `R$ ${safeCurrencyFormatter(value as number)}`,
-                              'Saldo Projetado'
-                            ]}
-                          />
+                          <div className="bg-background border border-border rounded-lg shadow-lg p-4 min-w-[240px]">
+                            <div className="space-y-3">
+                              {/* Date */}
+                              <div className="text-center">
+                                <p className="text-sm font-medium text-foreground">
+                                  {data.fullDate}
+                                </p>
+                              </div>
+                              
+                              {/* Balance */}
+                              <div className="text-center">
+                                <p className="text-xs text-muted-foreground mb-1">Saldo Projetado</p>
+                                <p className={`text-lg font-bold ${
+                                  balance >= 0 ? 'text-foreground' : 'text-destructive'
+                                }`}>
+                                  R$ {safeCurrencyFormatter(balance)}
+                                </p>
+                              </div>
+                              
+                              {/* Daily Variation */}
+                              {Math.abs(variation) > 0.01 && (
+                                <div className="flex items-center justify-center gap-2 pt-2 border-t border-border">
+                                  <div className={`flex items-center gap-1 text-xs font-medium ${
+                                    isPositiveVariation ? 'text-green-600' : 'text-red-600'
+                                  }`}>
+                                    {isPositiveVariation ? (
+                                      <ArrowUpRight className="h-3 w-3" />
+                                    ) : (
+                                      <ArrowDownRight className="h-3 w-3" />
+                                    )}
+                                    <span>
+                                      {isPositiveVariation ? '+' : ''}R$ {safeCurrencyFormatter(Math.abs(variation))}
+                                    </span>
+                                  </div>
+                                  <span className="text-xs text-muted-foreground">no dia</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         );
                       }}
                     />

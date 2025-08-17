@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Edit2, Trash2, CreditCard, Wallet, Eye, EyeOff, Calendar, TrendingUp } from 'lucide-react';
+import { Plus, Edit2, Trash2, CreditCard, Wallet, Eye, EyeOff, Calendar, TrendingUp, Banknote, PiggyBank, TrendingDown, Building2, Home, DollarSign } from 'lucide-react';
 import { AccountModal } from './AccountModal';
 import { Account, isCreditCard, isBudgetAccount, SUBTYPE_LABELS } from '@/hooks/useAccounts';
 import { Institution } from '@/hooks/useInstitutions';
@@ -55,6 +55,56 @@ function AccountInitialBalanceInfo({ accountId }: { accountId: string }) {
       </div>
     </div>
   );
+}
+
+// Helper function to get subtype icon
+function getSubtypeIcon(subtype: Account['subtype'], size: 'sm' | 'md' = 'md') {
+  const iconSize = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5';
+  
+  switch (subtype) {
+    case 'cash':
+      return <Banknote className={`${iconSize} text-green-600`} />;
+    case 'bank':
+      return <Building2 className={`${iconSize} text-blue-600`} />;
+    case 'investment':
+      return <TrendingUp className={`${iconSize} text-emerald-600`} />;
+    case 'property_rights':
+      return <Home className={`${iconSize} text-amber-600`} />;
+    case 'other_assets':
+      return <PiggyBank className={`${iconSize} text-indigo-600`} />;
+    case 'credit_card':
+      return <CreditCard className={`${iconSize} text-purple-600`} />;
+    case 'loan':
+      return <TrendingDown className={`${iconSize} text-red-600`} />;
+    case 'other_liabilities':
+      return <DollarSign className={`${iconSize} text-orange-600`} />;
+    default:
+      return <Wallet className={`${iconSize} text-gray-600`} />;
+  }
+}
+
+// Helper function to get kind color scheme
+function getKindColorScheme(kind: Account['kind']) {
+  switch (kind) {
+    case 'asset':
+      return {
+        border: 'border-l-blue-500',
+        badge: 'bg-blue-50 text-blue-700 border-blue-200',
+        gradient: 'bg-gradient-to-br from-blue-50/50 to-blue-100/30'
+      };
+    case 'liability':
+      return {
+        border: 'border-l-purple-500',
+        badge: 'bg-purple-50 text-purple-700 border-purple-200',
+        gradient: 'bg-gradient-to-br from-purple-50/50 to-purple-100/30'
+      };
+    default:
+      return {
+        border: 'border-l-gray-500',
+        badge: 'bg-gray-50 text-gray-700 border-gray-200',
+        gradient: 'bg-gradient-to-br from-gray-50/50 to-gray-100/30'
+      };
+  }
 }
 
 export function AccountsList({
@@ -148,21 +198,26 @@ export function AccountsList({
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {budgetAccounts.map((account) => {
             const balance = getAccountBalance(account.id);
+            const colorScheme = getKindColorScheme(account.kind);
+            
             return (
-              <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500 ${!account.is_active ? 'opacity-50' : ''}`}>
+              <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${colorScheme.border} ${colorScheme.gradient} ${!account.is_active ? 'opacity-50' : ''}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2 flex-1">
                       <CardTitle className="text-base flex items-center gap-2">
+                        {getSubtypeIcon(account.subtype, 'sm')}
                         {!account.is_active && <EyeOff className="h-4 w-4 text-muted-foreground" />}
                         {account.name}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground font-medium">
                         {getInstitutionName(account.institution_id)}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {SUBTYPE_LABELS[account.subtype]}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className={colorScheme.badge}>
+                          {SUBTYPE_LABELS[account.subtype]}
+                        </Badge>
+                      </div>
                       <AccountInitialBalanceInfo accountId={account.id} />
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -215,22 +270,26 @@ export function AccountsList({
             const balance = Math.abs(getAccountBalance(account.id));
             const utilization = getCreditUtilization(account);
             const availableCredit = (account.credit_limit || 0) - balance;
+            const colorScheme = getKindColorScheme(account.kind);
             
             return (
-              <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 border-l-purple-500 ${!account.is_active ? 'opacity-50' : ''}`}>
+              <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${colorScheme.border} ${colorScheme.gradient} ${!account.is_active ? 'opacity-50' : ''}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2 flex-1">
                       <CardTitle className="text-base flex items-center gap-2">
+                        {getSubtypeIcon(account.subtype, 'sm')}
                         {!account.is_active && <EyeOff className="h-4 w-4 text-muted-foreground" />}
                         {account.name}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground font-medium">
                         {getInstitutionName(account.institution_id)}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {SUBTYPE_LABELS[account.subtype]}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className={colorScheme.badge}>
+                          {SUBTYPE_LABELS[account.subtype]}
+                        </Badge>
+                      </div>
                       <AccountInitialBalanceInfo accountId={account.id} />
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

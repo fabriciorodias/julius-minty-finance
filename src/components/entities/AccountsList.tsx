@@ -4,11 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Edit2, Trash2, CreditCard, Wallet, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit2, Trash2, CreditCard, Wallet, Eye, EyeOff, Calendar, TrendingUp } from 'lucide-react';
 import { AccountModal } from './AccountModal';
 import { Account } from '@/hooks/useAccounts';
 import { Institution } from '@/hooks/useInstitutions';
 import { AccountBalance } from '@/hooks/useAccountBalances';
+import { useAccountInitialBalance } from '@/hooks/useAccountInitialBalance';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface AccountsListProps {
   accounts: Account[];
@@ -22,6 +25,36 @@ interface AccountsListProps {
   isCreating?: boolean;
   isUpdating?: boolean;
   isDeleting?: boolean;
+}
+
+function AccountInitialBalanceInfo({ accountId }: { accountId: string }) {
+  const { data: initialBalance, isLoading } = useAccountInitialBalance(accountId);
+
+  if (isLoading || !initialBalance) {
+    return null;
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
+  };
+
+  return (
+    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <TrendingUp className="h-3 w-3" />
+      <span>Inicial: {formatCurrency(initialBalance.amount)}</span>
+      <div className="flex items-center gap-1">
+        <Calendar className="h-3 w-3" />
+        <span>{formatDate(initialBalance.balance_date)}</span>
+      </div>
+    </div>
+  );
 }
 
 export function AccountsList({
@@ -115,23 +148,25 @@ export function AccountsList({
           {budgetAccounts.map((account) => {
             const balance = getAccountBalance(account.id);
             return (
-              <Card key={account.id} className={!account.is_active ? 'opacity-50' : ''}>
+              <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500 ${!account.is_active ? 'opacity-50' : ''}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
-                    <div className="space-y-1">
+                    <div className="space-y-2 flex-1">
                       <CardTitle className="text-base flex items-center gap-2">
                         {!account.is_active && <EyeOff className="h-4 w-4 text-muted-foreground" />}
                         {account.name}
                       </CardTitle>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground font-medium">
                         {getInstitutionName(account.institution_id)}
                       </p>
+                      <AccountInitialBalanceInfo accountId={account.id} />
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleEdit(account)}
+                        className="h-8 w-8 p-0"
                       >
                         <Edit2 className="h-4 w-4" />
                       </Button>
@@ -140,6 +175,7 @@ export function AccountsList({
                         size="sm"
                         onClick={() => onDeleteAccount(account.id)}
                         disabled={isDeleting}
+                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -149,8 +185,8 @@ export function AccountsList({
                 <CardContent>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Saldo</span>
-                      <span className={`font-semibold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <span className="text-sm font-medium text-muted-foreground">Saldo Atual</span>
+                      <span className={`text-lg font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {formatCurrency(balance)}
                       </span>
                     </div>
@@ -177,23 +213,25 @@ export function AccountsList({
             const availableCredit = (account.credit_limit || 0) - balance;
             
             return (
-              <Card key={account.id} className={!account.is_active ? 'opacity-50' : ''}>
+              <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 border-l-purple-500 ${!account.is_active ? 'opacity-50' : ''}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
-                    <div className="space-y-1">
+                    <div className="space-y-2 flex-1">
                       <CardTitle className="text-base flex items-center gap-2">
                         {!account.is_active && <EyeOff className="h-4 w-4 text-muted-foreground" />}
                         {account.name}
                       </CardTitle>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground font-medium">
                         {getInstitutionName(account.institution_id)}
                       </p>
+                      <AccountInitialBalanceInfo accountId={account.id} />
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleEdit(account)}
+                        className="h-8 w-8 p-0"
                       >
                         <Edit2 className="h-4 w-4" />
                       </Button>
@@ -202,6 +240,7 @@ export function AccountsList({
                         size="sm"
                         onClick={() => onDeleteAccount(account.id)}
                         disabled={isDeleting}
+                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -211,25 +250,25 @@ export function AccountsList({
                 <CardContent className="space-y-3">
                   <div className="space-y-2">
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">Utilizado</span>
-                      <span className="font-medium">{formatCurrency(balance)}</span>
+                      <span className="text-muted-foreground font-medium">Utilizado</span>
+                      <span className="font-semibold">{formatCurrency(balance)}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">Disponível</span>
-                      <span className="font-medium text-green-600">
+                      <span className="text-muted-foreground font-medium">Disponível</span>
+                      <span className="font-semibold text-green-600">
                         {formatCurrency(availableCredit)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">Limite</span>
-                      <span className="font-medium">{formatCurrency(account.credit_limit || 0)}</span>
+                      <span className="text-muted-foreground font-medium">Limite</span>
+                      <span className="font-semibold">{formatCurrency(account.credit_limit || 0)}</span>
                     </div>
                   </div>
                   
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-muted-foreground">Utilização</span>
-                      <span className={`font-medium ${utilization > 80 ? 'text-red-600' : utilization > 50 ? 'text-yellow-600' : 'text-green-600'}`}>
+                      <span className="text-muted-foreground font-medium">Utilização</span>
+                      <span className={`font-semibold ${utilization > 80 ? 'text-red-600' : utilization > 50 ? 'text-yellow-600' : 'text-green-600'}`}>
                         {utilization.toFixed(1)}%
                       </span>
                     </div>

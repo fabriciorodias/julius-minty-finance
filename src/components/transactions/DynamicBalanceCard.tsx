@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { TrendingUp, TrendingDown, Wallet, Info } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Info, CreditCard } from 'lucide-react';
 import { Account } from '@/hooks/useAccounts';
 import { Institution } from '@/hooks/useInstitutions';
 import { useProvisionedTotals } from '@/hooks/useProvisionedTotals';
@@ -20,6 +20,10 @@ interface DynamicBalanceCardProps {
     startDate?: string;
     endDate?: string;
   };
+  title?: string;
+  variant?: 'budget' | 'credit' | 'consolidated';
+  customIcon?: React.ReactNode;
+  customTooltip?: string;
 }
 
 export function DynamicBalanceCard({
@@ -28,6 +32,10 @@ export function DynamicBalanceCard({
   institutions,
   balanceMap,
   dateFilters,
+  title,
+  variant = 'consolidated',
+  customIcon,
+  customTooltip,
 }: DynamicBalanceCardProps) {
   const selectedAccounts = accounts.filter(account => 
     selectedAccountIds.includes(account.id)
@@ -67,6 +75,8 @@ export function DynamicBalanceCard({
   };
 
   const getCardTitle = () => {
+    if (title) return title;
+    
     if (selectedAccountIds.length === 0) {
       return 'Nenhuma Conta Selecionada';
     }
@@ -85,6 +95,12 @@ export function DynamicBalanceCard({
   };
 
   const getIcon = () => {
+    if (customIcon) return customIcon;
+    
+    if (variant === 'credit') {
+      return <CreditCard className="h-5 w-5 text-purple-600" />;
+    }
+    
     if (completedBalance > 0) {
       return <TrendingUp className="h-5 w-5 text-green-600" />;
     } else if (completedBalance < 0) {
@@ -94,14 +110,49 @@ export function DynamicBalanceCard({
   };
 
   const getBalanceColor = (amount: number) => {
+    if (variant === 'credit') {
+      // Para cartão de crédito, invertemos a lógica
+      if (amount < 0) return 'text-green-600'; // Menos dívida é melhor
+      if (amount > 0) return 'text-red-600';   // Mais dívida é pior
+      return 'text-foreground';
+    }
+    
     if (amount > 0) return 'text-green-600';
     if (amount < 0) return 'text-red-600';
     return 'text-foreground';
   };
 
+  const getCardGradient = () => {
+    switch (variant) {
+      case 'budget':
+        return 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200';
+      case 'credit':
+        return 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200';
+      case 'consolidated':
+        return 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200';
+      default:
+        return 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200';
+    }
+  };
+
+  const getTooltipText = () => {
+    if (customTooltip) return customTooltip;
+    
+    switch (variant) {
+      case 'budget':
+        return 'Saldo das contas de orçamento considerando saldos iniciais + transações concluídas';
+      case 'credit':
+        return 'Saldo devedor dos cartões de crédito (valores negativos indicam dívida)';
+      case 'consolidated':
+        return 'Saldo consolidado considerando saldos iniciais + transações concluídas';
+      default:
+        return 'Saldo considerando saldos iniciais + transações concluídas';
+    }
+  };
+
   return (
     <TooltipProvider>
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+      <Card className={`${getCardGradient()}`}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <div className="flex items-center gap-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -113,7 +164,7 @@ export function DynamicBalanceCard({
               </TooltipTrigger>
               <TooltipContent>
                 <p className="text-xs">
-                  Saldo considerando saldos iniciais + transações concluídas
+                  {getTooltipText()}
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -121,7 +172,7 @@ export function DynamicBalanceCard({
           {getIcon()}
         </CardHeader>
         <CardContent className="space-y-3">
-          {/* Saldo Principal (saldos iniciais + transações concluídas) */}
+          {/* Saldo Principal */}
           {isLoadingProvisioned ? (
             <Skeleton className="h-8 w-40" />
           ) : (
@@ -130,7 +181,7 @@ export function DynamicBalanceCard({
             </div>
           )}
           
-          {/* Saldo com Provisão (saldo principal + transações pendentes) */}
+          {/* Saldo com Provisão */}
           <div className="flex items-center gap-2">
             {isLoadingProvisioned ? (
               <Skeleton className="h-4 w-48" />
@@ -162,7 +213,7 @@ export function DynamicBalanceCard({
             )}
           </div>
 
-          {/* Provisões (soma líquida das transações pendentes) */}
+          {/* Provisões */}
           {!isLoadingProvisioned && (
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">

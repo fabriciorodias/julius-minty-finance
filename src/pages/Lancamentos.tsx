@@ -19,6 +19,7 @@ import { Upload, CreditCard, AlertTriangle, TrendingUp } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { CashFlowModal } from '@/components/transactions/CashFlowModal';
+import { BalancesOverview } from '@/components/transactions/BalancesOverview';
 
 export default function Lancamentos() {
   const { user } = useAuth();
@@ -200,8 +201,8 @@ export default function Lancamentos() {
 
         {/* Right Panel - Main Content */}
         <div className="lg:col-span-3 space-y-6">
-          {/* Dynamic Balance Card */}
-          <DynamicBalanceCard
+          {/* Enhanced Balances Overview - Now with 3 cards */}
+          <BalancesOverview
             selectedAccountIds={selectedAccountIds}
             accounts={accounts}
             institutions={institutions}

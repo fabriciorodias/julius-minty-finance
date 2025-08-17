@@ -93,7 +93,7 @@ export function AccountsFilterPanel({
                   {institutionMap[account.institution_id] || 'Instituição'}
                 </div>
               </div>
-              <div className="text-sm text-muted-foreground ml-2">
+              <div className="text-sm ml-2">
                 {formatCurrency(balance)}
               </div>
             </button>
@@ -134,7 +134,7 @@ export function AccountsFilterPanel({
               Todas as Contas
             </span>
             {isAllSelected && (
-              <div className="text-sm text-muted-foreground ml-2">
+              <div className="text-sm ml-2">
                 {formatCurrency(
                   activeAccounts.reduce((sum, account) => sum + (balanceMap[account.id] ?? 0), 0)
                 )}

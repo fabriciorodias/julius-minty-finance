@@ -3,18 +3,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { Database } from '@/integrations/supabase/types';
 
-export interface Counterparty {
-  id: string;
-  user_id: string;
-  name: string;
-  document: string | null;
-  email: string | null;
-  phone: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+type CounterpartyRow = Database['public']['Tables']['counterparties']['Row'];
+type CounterpartyInsert = Database['public']['Tables']['counterparties']['Insert'];
+type CounterpartyUpdate = Database['public']['Tables']['counterparties']['Update'];
+
+export interface Counterparty extends CounterpartyRow {}
 
 export interface CreateCounterpartyData {
   name: string;

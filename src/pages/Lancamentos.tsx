@@ -7,16 +7,11 @@ import { Button } from '@/components/ui/button';
 import { useTransactions, TransactionFilters } from '@/hooks/useTransactions';
 import { TransactionModal } from '@/components/transactions/TransactionModal';
 import { TransactionsList } from '@/components/transactions/TransactionsList';
-import { TransactionFilters as TransactionFiltersComponent } from '@/components/transactions/TransactionFilters';
 import { CounterpartiesFilter } from '@/components/transactions/CounterpartiesFilter';
 import { ReviewStatusFilter } from '@/components/transactions/ReviewStatusFilter';
 import { TagsFilter } from '@/components/transactions/TagsFilter';
-import { QuickDateFilters } from '@/components/transactions/QuickDateFilters';
 import { BulkActionsBar } from '@/components/transactions/BulkActionsBar';
 import { DeleteConfirmationDialog } from '@/components/transactions/DeleteConfirmationDialog';
-import { AccountsFilterPanel } from '@/components/transactions/AccountsFilterPanel';
-import { BalancesOverview } from '@/components/transactions/BalancesOverview';
-import { DynamicBalanceCard } from '@/components/transactions/DynamicBalanceCard';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 export default function Lancamentos() {
@@ -129,26 +124,7 @@ export default function Lancamentos() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Left sidebar with filters */}
         <div className="lg:col-span-1 space-y-6">
-          <BalancesOverview accountIds={selectedAccountIds} />
           
-          <DynamicBalanceCard filters={filters} />
-          
-          <QuickDateFilters
-            onDateRangeChange={(startDate, endDate) => 
-              handleFilterChange({ startDate, endDate })
-            }
-          />
-
-          <TransactionFiltersComponent
-            filters={filters}
-            onFiltersChange={handleFilterChange}
-          />
-
-          <AccountsFilterPanel
-            selectedAccountIds={selectedAccountIds}
-            onAccountSelectionChange={setSelectedAccountIds}
-          />
-
           <CounterpartiesFilter
             selectedCounterpartyId={filters.counterpartyId}
             onCounterpartyChange={(counterpartyId) => 
@@ -206,7 +182,6 @@ export default function Lancamentos() {
           setIsBulkDelete(false);
         }}
         onConfirm={confirmDelete}
-        isDeleting={isDeleting}
         title={isBulkDelete ? "Excluir Lançamentos" : "Excluir Lançamento"}
         description={
           isBulkDelete

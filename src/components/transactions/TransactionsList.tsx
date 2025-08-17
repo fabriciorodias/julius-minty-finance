@@ -14,7 +14,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { useColumnOrder } from '@tanstack/react-table';
 import { TransactionWithRelations } from '@/hooks/useTransactions';
 import { TransactionTags } from './TransactionTags';
 import { formatCurrency } from '@/lib/utils';
@@ -66,10 +65,8 @@ export function TransactionsList({
             <TableHead className="w-12">
               <Checkbox
                 checked={allSelected}
-                ref={(ref) => {
-                  if (ref) ref.indeterminate = someSelected;
-                }}
                 onCheckedChange={handleSelectAll}
+                className={someSelected ? "data-[state=checked]:bg-primary" : ""}
               />
             </TableHead>
             <TableHead>Data</TableHead>
@@ -148,11 +145,11 @@ export function TransactionsList({
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center justify-center">
+                  <div className="flex items-center justify-center" title={transaction.is_reviewed ? "Revisado" : "Não revisado"}>
                     {transaction.is_reviewed ? (
-                      <Eye className="h-4 w-4 text-green-600" title="Revisado" />
+                      <Eye className="h-4 w-4 text-green-600" />
                     ) : (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" title="Não revisado" />
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
                     )}
                   </div>
                 </TableCell>

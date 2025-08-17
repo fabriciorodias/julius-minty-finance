@@ -26,8 +26,8 @@ export function AccountsFilterPanel({
   balanceMap = {},
 }: AccountsFilterPanelProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [budgetGroupOpen, setBudgetGroupOpen] = useState(true);
-  const [creditGroupOpen, setCreditGroupOpen] = useState(true);
+  const [assetGroupOpen, setAssetGroupOpen] = useState(true);
+  const [liabilityGroupOpen, setLiabilityGroupOpen] = useState(true);
 
   const institutionMap = institutions.reduce((acc, institution) => {
     acc[institution.id] = institution.name;
@@ -42,8 +42,8 @@ export function AccountsFilterPanel({
     institutionMap[account.institution_id]?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const budgetAccounts = filteredAccounts.filter(account => account.type === 'on_budget');
-  const creditAccounts = filteredAccounts.filter(account => account.type === 'credit');
+  const assetAccounts = filteredAccounts.filter(account => account.kind === 'asset');
+  const liabilityAccounts = filteredAccounts.filter(account => account.kind === 'liability');
 
   const isAllSelected = selectedAccountIds.length === activeAccounts.length;
   const hasMultipleSelected = selectedAccountIds.length > 1;
@@ -142,7 +142,7 @@ export function AccountsFilterPanel({
               <div className={`text-sm ml-2 font-medium transition-colors ${
                 isSelected ? 'text-primary' : ''
               }`}>
-                {formatCurrency(balance)}
+                {account.kind === 'liability' ? formatCurrency(Math.abs(balance)) : formatCurrency(balance)}
               </div>
             </button>
           );
@@ -209,30 +209,33 @@ export function AccountsFilterPanel({
               {isAllSelected && (
                 <div className={`text-sm ml-2 font-medium ${isAllSelected ? 'text-primary' : ''}`}>
                   {formatCurrency(
-                    activeAccounts.reduce((sum, account) => sum + (balanceMap[account.id] ?? 0), 0)
+                    activeAccounts.reduce((sum, account) => {
+                      const balance = balanceMap[account.id] ?? 0;
+                      return account.kind === 'asset' ? sum + balance : sum + Math.abs(balance);
+                    }, 0)
                   )}
                 </div>
               )}
             </button>
           </div>
 
-          {/* Budget Accounts */}
-          {budgetAccounts.length > 0 && (
+          {/* Asset Accounts */}
+          {assetAccounts.length > 0 && (
             <AccountGroup 
-              title="Contas de Orçamento" 
-              accounts={budgetAccounts}
-              isOpen={budgetGroupOpen}
-              onToggle={() => setBudgetGroupOpen(!budgetGroupOpen)}
+              title="Ativos" 
+              accounts={assetAccounts}
+              isOpen={assetGroupOpen}
+              onToggle={() => setAssetGroupOpen(!assetGroupOpen)}
             />
           )}
 
-          {/* Credit Accounts */}
-          {creditAccounts.length > 0 && (
+          {/* Liability Accounts */}
+          {liabilityAccounts.length > 0 && (
             <AccountGroup 
-              title="Cartões de Crédito" 
-              accounts={creditAccounts}
-              isOpen={creditGroupOpen}
-              onToggle={() => setCreditGroupOpen(!creditGroupOpen)}
+              title="Passivos" 
+              accounts={liabilityAccounts}
+              isOpen={liabilityGroupOpen}
+              onToggle={() => setLiabilityGroupOpen(!liabilityGroupOpen)}
             />
           )}
 

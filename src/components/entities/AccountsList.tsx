@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Plus, Edit2, Trash2, CreditCard, Wallet, Eye, EyeOff, Calendar, TrendingUp, Banknote, PiggyBank, TrendingDown, Building2, Home, DollarSign, CheckCircle, Clock, User, Zap, Building, AlertTriangle } from 'lucide-react';
 import { AccountModal } from './AccountModal';
 import { ReconcileAccountModal } from './ReconcileAccountModal';
-import { Account, isCreditCard, isBudgetAccount, SUBTYPE_LABELS, RECONCILIATION_METHOD_LABELS } from '@/hooks/useAccounts';
+import { Account, isCreditCard, SUBTYPE_LABELS, RECONCILIATION_METHOD_LABELS } from '@/hooks/useAccounts';
 import { Institution } from '@/hooks/useInstitutions';
 import { AccountBalance } from '@/hooks/useAccountBalances';
 import { useAccountInitialBalance } from '@/hooks/useAccountInitialBalance';
@@ -124,6 +124,30 @@ function getKindColorScheme(kind: Account['kind']) {
         gradient: 'bg-gradient-to-br from-gray-50/50 to-gray-100/30'
       };
   }
+}
+
+// Helper function to get account groups by kind and subtype
+function getAccountGroups(accounts: Account[]) {
+  const assetAccounts = accounts.filter(account => account.kind === 'asset');
+  const liabilityAccounts = accounts.filter(account => account.kind === 'liability');
+
+  // Group assets by subtype
+  const assetGroups = assetAccounts.reduce((groups, account) => {
+    const subtype = account.subtype;
+    if (!groups[subtype]) groups[subtype] = [];
+    groups[subtype].push(account);
+    return groups;
+  }, {} as Record<string, Account[]>);
+
+  // Group liabilities by subtype
+  const liabilityGroups = liabilityAccounts.reduce((groups, account) => {
+    const subtype = account.subtype;
+    if (!groups[subtype]) groups[subtype] = [];
+    groups[subtype].push(account);
+    return groups;
+  }, {} as Record<string, Account[]>);
+
+  return { assetGroups, liabilityGroups, assetAccounts, liabilityAccounts };
 }
 
 export function AccountsList({
@@ -269,13 +293,163 @@ export function AccountsList({
     }
   };
 
-  // Usar as helper functions para manter compatibilidade
-  const budgetAccounts = accounts.filter(isBudgetAccount);
-  const creditAccounts = accounts.filter(isCreditCard);
+  const { assetGroups, liabilityGroups, assetAccounts, liabilityAccounts } = getAccountGroups(accounts);
 
   if (isLoading) {
     return <div>Carregando contas...</div>;
   }
+
+  const renderAccountCard = (account: Account) => {
+    const balance = getAccountBalance(account.id);
+    const colorScheme = getKindColorScheme(account.kind);
+    const reconciliationStatus = getReconciliationStatus(account);
+    
+    return (
+      <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${colorScheme.border} ${colorScheme.gradient} ${!account.is_active ? 'opacity-50' : ''} ${reconciliationStatus.isAlert ? 'ring-2 ring-offset-1' : ''} ${reconciliationStatus.alertLevel === 'critical' ? 'ring-red-200' : reconciliationStatus.alertLevel === 'warning' ? 'ring-amber-200' : ''}`}>
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2 flex-1">
+              <CardTitle className="text-base flex items-center gap-2">
+                {getSubtypeIcon(account.subtype, 'sm')}
+                {!account.is_active && <EyeOff className="h-4 w-4 text-muted-foreground" />}
+                {reconciliationStatus.isAlert && (
+                  <div className={`inline-flex items-center justify-center w-2 h-2 rounded-full ${reconciliationStatus.alertLevel === 'critical' ? 'bg-red-500' : 'bg-amber-500'} animate-pulse`} />
+                )}
+                {account.name}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground font-medium">
+                {getInstitutionName(account.institution_id)}
+              </p>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className={colorScheme.badge}>
+                  {SUBTYPE_LABELS[account.subtype]}
+                </Badge>
+              </div>
+              <AccountInitialBalanceInfo accountId={account.id} />
+              
+              {/* Reconciliation Status */}
+              <div className={`flex items-center gap-2 text-xs px-2 py-1 rounded-md border ${reconciliationStatus.bgColor} ${reconciliationStatus.borderColor} ${reconciliationStatus.color}`}>
+                {reconciliationStatus.icon}
+                <span className="font-medium">{reconciliationStatus.text}</span>
+                {reconciliationStatus.method && (
+                  <div className="flex items-center gap-1 ml-2">
+                    {reconciliationStatus.method.icon}
+                    <span>({reconciliationStatus.method.label})</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleReconcile(account)}
+                disabled={isReconciling}
+                className={`h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600 ${reconciliationStatus.isAlert ? 'ring-1 ring-green-300 bg-green-50/50' : ''}`}
+                title="Conciliar conta"
+              >
+                <CheckCircle className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleEdit(account)}
+                className="h-8 w-8 p-0"
+              >
+                <Edit2 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDeleteAccount(account.id)}
+                disabled={isDeleting}
+                className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {isCreditCard(account) ? (
+            <>
+              {/* Credit card specific content */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground font-medium">Utilizado</span>
+                  <span className="font-semibold">{formatCurrency(Math.abs(balance))}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground font-medium">Disponível</span>
+                  <span className="font-semibold text-green-600">
+                    {formatCurrency((account.credit_limit || 0) - Math.abs(balance))}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground font-medium">Limite</span>
+                  <span className="font-semibold">{formatCurrency(account.credit_limit || 0)}</span>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-muted-foreground font-medium">Utilização</span>
+                  <span className={`font-semibold ${getCreditUtilization(account) > 80 ? 'text-red-600' : getCreditUtilization(account) > 50 ? 'text-yellow-600' : 'text-green-600'}`}>
+                    {getCreditUtilization(account).toFixed(1)}%
+                  </span>
+                </div>
+                <Progress 
+                  value={getCreditUtilization(account)} 
+                  className="h-2"
+                />
+              </div>
+            </>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-muted-foreground">
+                  {account.kind === 'asset' ? 'Saldo Atual' : 'Valor Devido'}
+                </span>
+                <span className={`text-lg font-bold ${
+                  account.kind === 'asset' 
+                    ? (balance >= 0 ? 'text-green-600' : 'text-red-600')
+                    : 'text-red-600'
+                }`}>
+                  {account.kind === 'asset' 
+                    ? formatCurrency(balance)
+                    : formatCurrency(Math.abs(balance))
+                  }
+                </span>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderAccountGroup = (title: string, icon: React.ReactNode, groups: Record<string, Account[]>, totalCount: number) => (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        {icon}
+        <h3 className="text-lg font-semibold">{title}</h3>
+        <Badge variant="secondary">{totalCount}</Badge>
+      </div>
+      
+      {Object.entries(groups).map(([subtype, accounts]) => (
+        <div key={subtype} className="space-y-3">
+          <div className="flex items-center gap-2 ml-2">
+            {getSubtypeIcon(subtype as Account['subtype'], 'sm')}
+            <h4 className="text-md font-medium text-muted-foreground">{SUBTYPE_LABELS[subtype as Account['subtype']]}</h4>
+            <Badge variant="outline" className="text-xs">{accounts.length}</Badge>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {accounts.map(renderAccountCard)}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -292,233 +466,21 @@ export function AccountsList({
         </Button>
       </div>
 
-      {/* Contas de Ativo */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Wallet className="h-5 w-5 text-blue-600" />
-          <h3 className="text-lg font-semibold">Ativos</h3>
-          <Badge variant="secondary">{budgetAccounts.length}</Badge>
-        </div>
-        
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {budgetAccounts.map((account) => {
-            const balance = getAccountBalance(account.id);
-            const colorScheme = getKindColorScheme(account.kind);
-            const reconciliationStatus = getReconciliationStatus(account);
-            
-            return (
-              <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${colorScheme.border} ${colorScheme.gradient} ${!account.is_active ? 'opacity-50' : ''} ${reconciliationStatus.isAlert ? 'ring-2 ring-offset-1' : ''} ${reconciliationStatus.alertLevel === 'critical' ? 'ring-red-200' : reconciliationStatus.alertLevel === 'warning' ? 'ring-amber-200' : ''}`}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2 flex-1">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        {getSubtypeIcon(account.subtype, 'sm')}
-                        {!account.is_active && <EyeOff className="h-4 w-4 text-muted-foreground" />}
-                        {reconciliationStatus.isAlert && (
-                          <div className={`inline-flex items-center justify-center w-2 h-2 rounded-full ${reconciliationStatus.alertLevel === 'critical' ? 'bg-red-500' : 'bg-amber-500'} animate-pulse`} />
-                        )}
-                        {account.name}
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground font-medium">
-                        {getInstitutionName(account.institution_id)}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={colorScheme.badge}>
-                          {SUBTYPE_LABELS[account.subtype]}
-                        </Badge>
-                      </div>
-                      <AccountInitialBalanceInfo accountId={account.id} />
-                      
-                      {/* Reconciliation Status com visual cues */}
-                      <div className={`flex items-center gap-2 text-xs px-2 py-1 rounded-md border ${reconciliationStatus.bgColor} ${reconciliationStatus.borderColor} ${reconciliationStatus.color}`}>
-                        {reconciliationStatus.icon}
-                        <span className="font-medium">{reconciliationStatus.text}</span>
-                        {reconciliationStatus.method && (
-                          <div className="flex items-center gap-1 ml-2">
-                            {reconciliationStatus.method.icon}
-                            <span>({reconciliationStatus.method.label})</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleReconcile(account)}
-                        disabled={isReconciling}
-                        className={`h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600 ${reconciliationStatus.isAlert ? 'ring-1 ring-green-300 bg-green-50/50' : ''}`}
-                        title="Conciliar conta"
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(account)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onDeleteAccount(account.id)}
-                        disabled={isDeleting}
-                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-muted-foreground">Saldo Atual</span>
-                      <span className={`text-lg font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(balance)}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
+      {/* Assets */}
+      {assetAccounts.length > 0 && renderAccountGroup(
+        "Ativos", 
+        <Wallet className="h-5 w-5 text-blue-600" />, 
+        assetGroups, 
+        assetAccounts.length
+      )}
 
-      {/* Contas de Passivo */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <CreditCard className="h-5 w-5 text-purple-600" />
-          <h3 className="text-lg font-semibold">Passivos</h3>
-          <Badge variant="secondary">{creditAccounts.length}</Badge>
-        </div>
-        
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {creditAccounts.map((account) => {
-            const balance = Math.abs(getAccountBalance(account.id));
-            const utilization = getCreditUtilization(account);
-            const availableCredit = (account.credit_limit || 0) - balance;
-            const colorScheme = getKindColorScheme(account.kind);
-            const reconciliationStatus = getReconciliationStatus(account);
-            
-            return (
-              <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${colorScheme.border} ${colorScheme.gradient} ${!account.is_active ? 'opacity-50' : ''} ${reconciliationStatus.isAlert ? 'ring-2 ring-offset-1' : ''} ${reconciliationStatus.alertLevel === 'critical' ? 'ring-red-200' : reconciliationStatus.alertLevel === 'warning' ? 'ring-amber-200' : ''}`}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2 flex-1">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        {getSubtypeIcon(account.subtype, 'sm')}
-                        {!account.is_active && <EyeOff className="h-4 w-4 text-muted-foreground" />}
-                        {reconciliationStatus.isAlert && (
-                          <div className={`inline-flex items-center justify-center w-2 h-2 rounded-full ${reconciliationStatus.alertLevel === 'critical' ? 'bg-red-500' : 'bg-amber-500'} animate-pulse`} />
-                        )}
-                        {account.name}
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground font-medium">
-                        {getInstitutionName(account.institution_id)}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={colorScheme.badge}>
-                          {SUBTYPE_LABELS[account.subtype]}
-                        </Badge>
-                      </div>
-                      <AccountInitialBalanceInfo accountId={account.id} />
-                      
-                      {/* Reconciliation Status com visual cues */}
-                      <div className={`flex items-center gap-2 text-xs px-2 py-1 rounded-md border ${reconciliationStatus.bgColor} ${reconciliationStatus.borderColor} ${reconciliationStatus.color}`}>
-                        {reconciliationStatus.icon}
-                        <span className="font-medium">{reconciliationStatus.text}</span>
-                        {reconciliationStatus.method && (
-                          <div className="flex items-center gap-1 ml-2">
-                            {reconciliationStatus.method.icon}
-                            <span>({reconciliationStatus.method.label})</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleReconcile(account)}
-                        disabled={isReconciling}
-                        className={`h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600 ${reconciliationStatus.isAlert ? 'ring-1 ring-green-300 bg-green-50/50' : ''}`}
-                        title="Conciliar conta"
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(account)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onDeleteAccount(account.id)}
-                        disabled={isDeleting}
-                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {isCreditCard(account) ? (
-                    <>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground font-medium">Utilizado</span>
-                          <span className="font-semibold">{formatCurrency(balance)}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground font-medium">Disponível</span>
-                          <span className="font-semibold text-green-600">
-                            {formatCurrency(availableCredit)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground font-medium">Limite</span>
-                          <span className="font-semibold">{formatCurrency(account.credit_limit || 0)}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="text-muted-foreground font-medium">Utilização</span>
-                          <span className={`font-semibold ${utilization > 80 ? 'text-red-600' : utilization > 50 ? 'text-yellow-600' : 'text-green-600'}`}>
-                            {utilization.toFixed(1)}%
-                          </span>
-                        </div>
-                        <Progress 
-                          value={utilization} 
-                          className="h-2"
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-muted-foreground">Saldo Atual</span>
-                        <span className={`text-lg font-bold ${balance >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          {formatCurrency(balance)}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
+      {/* Liabilities */}
+      {liabilityAccounts.length > 0 && renderAccountGroup(
+        "Passivos", 
+        <CreditCard className="h-5 w-5 text-purple-600" />, 
+        liabilityGroups, 
+        liabilityAccounts.length
+      )}
 
       <AccountModal
         isOpen={showModal}

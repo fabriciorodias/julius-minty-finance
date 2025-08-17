@@ -69,16 +69,28 @@ const config: Config = {
           secondary: "hsl(174, 100%, 36%)", // #00B8A5 - Verde secundário mais claro
           light: "hsl(174, 42%, 94%)", // #E6F7F5 - Verde muito claro para fundos
           dark: "hsl(174, 100%, 27%)", // #008A7A - Verde escuro para contrastes
+          darker: "hsl(174, 100%, 22%)", // #006B5D - Verde ainda mais escuro
           "text-primary": "hsl(0, 0%, 13%)", // #222222 - Texto principal
           "text-secondary": "hsl(0, 0%, 42%)", // #6A6A6A - Texto secundário
           "bg-main": "hsl(0, 0%, 97%)", // #F7F7F7 - Fundo principal
           "bg-component": "hsl(0, 0%, 100%)", // #FFFFFF - Fundo dos componentes
+        },
+        // Glass morphism utilities
+        glass: {
+          white: "rgba(255, 255, 255, 0.1)",
+          "white-light": "rgba(255, 255, 255, 0.05)",
+          "white-strong": "rgba(255, 255, 255, 0.2)",
+          dark: "rgba(0, 0, 0, 0.1)",
+          "dark-light": "rgba(0, 0, 0, 0.05)",
         },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      backdropBlur: {
+        xs: '2px',
       },
       keyframes: {
         "accordion-down": {
@@ -89,10 +101,20 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "fade-in": {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-in": {
+          "0%": { opacity: "0", transform: "translateX(-10px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-in": "fade-in 0.3s ease-out",
+        "slide-in": "slide-in 0.3s ease-out",
       },
     },
   },

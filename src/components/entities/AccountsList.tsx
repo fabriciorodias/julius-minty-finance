@@ -1,16 +1,16 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Edit2, Trash2, CreditCard, Wallet, Eye, EyeOff, Calendar, TrendingUp, Banknote, PiggyBank, TrendingDown, Building2, Home, DollarSign, CheckCircle, Clock, User, Zap, Building } from 'lucide-react';
+import { Plus, Edit2, Trash2, CreditCard, Wallet, Eye, EyeOff, Calendar, TrendingUp, Banknote, PiggyBank, TrendingDown, Building2, Home, DollarSign, CheckCircle, Clock, User, Zap, Building, AlertTriangle } from 'lucide-react';
 import { AccountModal } from './AccountModal';
 import { ReconcileAccountModal } from './ReconcileAccountModal';
 import { Account, isCreditCard, isBudgetAccount, SUBTYPE_LABELS, RECONCILIATION_METHOD_LABELS } from '@/hooks/useAccounts';
 import { Institution } from '@/hooks/useInstitutions';
 import { AccountBalance } from '@/hooks/useAccountBalances';
 import { useAccountInitialBalance } from '@/hooks/useAccountInitialBalance';
+import { useReconciliationSettings } from '@/hooks/useReconciliationSettings';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -144,6 +144,7 @@ export function AccountsList({
   const [showModal, setShowModal] = useState(false);
   const [showReconcileModal, setShowReconcileModal] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<Account | undefined>();
+  const { settings } = useReconciliationSettings();
 
   const handleEdit = (account: Account) => {
     setSelectedAccount(account);
@@ -206,41 +207,64 @@ export function AccountsList({
     if (!account.last_reconciled_at) {
       return {
         text: 'Nunca conciliada',
-        icon: <Clock className="h-3 w-3 text-orange-500" />,
-        color: 'text-orange-600',
-        method: null
+        icon: <AlertTriangle className="h-3 w-3 text-red-500" />,
+        color: 'text-red-600',
+        bgColor: 'bg-red-50',
+        borderColor: 'border-red-200',
+        method: null,
+        isAlert: true,
+        alertLevel: 'critical' as const
       };
     }
 
     const reconciledDate = new Date(account.last_reconciled_at);
     const now = new Date();
-    const daysDiff = Math.floor((now.getTime() - reconciledDate.getTime()) / (1000 * 60 * 60 * 24));
+    const hoursDiff = Math.floor((now.getTime() - reconciledDate.getTime()) / (1000 * 60 * 60));
+    const daysDiff = Math.floor(hoursDiff / 24);
 
     const methodIcon = getReconciliationMethodIcon(account.last_reconciliation_method);
     const methodLabel = account.last_reconciliation_method 
       ? RECONCILIATION_METHOD_LABELS[account.last_reconciliation_method]
       : 'Manual';
 
+    const isStale = hoursDiff > settings.alertThresholdHours;
+
     if (daysDiff === 0) {
       return {
         text: 'Conciliada hoje',
         icon: <CheckCircle className="h-3 w-3 text-green-500" />,
         color: 'text-green-600',
-        method: { icon: methodIcon, label: methodLabel }
+        bgColor: 'bg-green-50',
+        borderColor: 'border-green-200',
+        method: { icon: methodIcon, label: methodLabel },
+        isAlert: false,
+        alertLevel: null
       };
-    } else if (daysDiff <= 7) {
+    } else if (!isStale) {
+      const timeText = daysDiff <= 7 
+        ? `há ${daysDiff} ${daysDiff === 1 ? 'dia' : 'dias'}`
+        : `há ${daysDiff} dias`;
+      
       return {
-        text: `Conciliada há ${daysDiff} ${daysDiff === 1 ? 'dia' : 'dias'}`,
+        text: `Conciliada ${timeText}`,
         icon: <CheckCircle className="h-3 w-3 text-green-500" />,
         color: 'text-green-600',
-        method: { icon: methodIcon, label: methodLabel }
+        bgColor: 'bg-green-50',
+        borderColor: 'border-green-200',
+        method: { icon: methodIcon, label: methodLabel },
+        isAlert: false,
+        alertLevel: null
       };
     } else {
       return {
         text: `Conciliada há ${daysDiff} dias`,
-        icon: <Clock className="h-3 w-3 text-orange-500" />,
-        color: 'text-orange-600',
-        method: { icon: methodIcon, label: methodLabel }
+        icon: <Clock className="h-3 w-3 text-amber-500" />,
+        color: 'text-amber-600',
+        bgColor: 'bg-amber-50',
+        borderColor: 'border-amber-200',
+        method: { icon: methodIcon, label: methodLabel },
+        isAlert: true,
+        alertLevel: 'warning' as const
       };
     }
   };
@@ -283,13 +307,16 @@ export function AccountsList({
             const reconciliationStatus = getReconciliationStatus(account);
             
             return (
-              <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${colorScheme.border} ${colorScheme.gradient} ${!account.is_active ? 'opacity-50' : ''}`}>
+              <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${colorScheme.border} ${colorScheme.gradient} ${!account.is_active ? 'opacity-50' : ''} ${reconciliationStatus.isAlert ? 'ring-2 ring-offset-1' : ''} ${reconciliationStatus.alertLevel === 'critical' ? 'ring-red-200' : reconciliationStatus.alertLevel === 'warning' ? 'ring-amber-200' : ''}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2 flex-1">
                       <CardTitle className="text-base flex items-center gap-2">
                         {getSubtypeIcon(account.subtype, 'sm')}
                         {!account.is_active && <EyeOff className="h-4 w-4 text-muted-foreground" />}
+                        {reconciliationStatus.isAlert && (
+                          <div className={`inline-flex items-center justify-center w-2 h-2 rounded-full ${reconciliationStatus.alertLevel === 'critical' ? 'bg-red-500' : 'bg-amber-500'} animate-pulse`} />
+                        )}
                         {account.name}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground font-medium">
@@ -302,10 +329,10 @@ export function AccountsList({
                       </div>
                       <AccountInitialBalanceInfo accountId={account.id} />
                       
-                      {/* Reconciliation Status */}
-                      <div className={`flex items-center gap-2 text-xs ${reconciliationStatus.color}`}>
+                      {/* Reconciliation Status com visual cues */}
+                      <div className={`flex items-center gap-2 text-xs px-2 py-1 rounded-md border ${reconciliationStatus.bgColor} ${reconciliationStatus.borderColor} ${reconciliationStatus.color}`}>
                         {reconciliationStatus.icon}
-                        <span>{reconciliationStatus.text}</span>
+                        <span className="font-medium">{reconciliationStatus.text}</span>
                         {reconciliationStatus.method && (
                           <div className="flex items-center gap-1 ml-2">
                             {reconciliationStatus.method.icon}
@@ -320,7 +347,7 @@ export function AccountsList({
                         size="sm"
                         onClick={() => handleReconcile(account)}
                         disabled={isReconciling}
-                        className="h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600"
+                        className={`h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600 ${reconciliationStatus.isAlert ? 'ring-1 ring-green-300 bg-green-50/50' : ''}`}
                         title="Conciliar conta"
                       >
                         <CheckCircle className="h-4 w-4" />
@@ -378,13 +405,16 @@ export function AccountsList({
             const reconciliationStatus = getReconciliationStatus(account);
             
             return (
-              <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${colorScheme.border} ${colorScheme.gradient} ${!account.is_active ? 'opacity-50' : ''}`}>
+              <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${colorScheme.border} ${colorScheme.gradient} ${!account.is_active ? 'opacity-50' : ''} ${reconciliationStatus.isAlert ? 'ring-2 ring-offset-1' : ''} ${reconciliationStatus.alertLevel === 'critical' ? 'ring-red-200' : reconciliationStatus.alertLevel === 'warning' ? 'ring-amber-200' : ''}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2 flex-1">
                       <CardTitle className="text-base flex items-center gap-2">
                         {getSubtypeIcon(account.subtype, 'sm')}
                         {!account.is_active && <EyeOff className="h-4 w-4 text-muted-foreground" />}
+                        {reconciliationStatus.isAlert && (
+                          <div className={`inline-flex items-center justify-center w-2 h-2 rounded-full ${reconciliationStatus.alertLevel === 'critical' ? 'bg-red-500' : 'bg-amber-500'} animate-pulse`} />
+                        )}
                         {account.name}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground font-medium">
@@ -397,10 +427,10 @@ export function AccountsList({
                       </div>
                       <AccountInitialBalanceInfo accountId={account.id} />
                       
-                      {/* Reconciliation Status */}
-                      <div className={`flex items-center gap-2 text-xs ${reconciliationStatus.color}`}>
+                      {/* Reconciliation Status com visual cues */}
+                      <div className={`flex items-center gap-2 text-xs px-2 py-1 rounded-md border ${reconciliationStatus.bgColor} ${reconciliationStatus.borderColor} ${reconciliationStatus.color}`}>
                         {reconciliationStatus.icon}
-                        <span>{reconciliationStatus.text}</span>
+                        <span className="font-medium">{reconciliationStatus.text}</span>
                         {reconciliationStatus.method && (
                           <div className="flex items-center gap-1 ml-2">
                             {reconciliationStatus.method.icon}
@@ -415,7 +445,7 @@ export function AccountsList({
                         size="sm"
                         onClick={() => handleReconcile(account)}
                         disabled={isReconciling}
-                        className="h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600"
+                        className={`h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600 ${reconciliationStatus.isAlert ? 'ring-1 ring-green-300 bg-green-50/50' : ''}`}
                         title="Conciliar conta"
                       >
                         <CheckCircle className="h-4 w-4" />

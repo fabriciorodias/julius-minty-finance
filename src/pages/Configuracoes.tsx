@@ -1,5 +1,6 @@
 
 import { Categories } from '@/components/categories/Categories';
+import { ReconciliationSettingsSection } from '@/components/settings/ReconciliationSettingsSection';
 
 const Configuracoes = () => {
   return (
@@ -15,6 +16,11 @@ const Configuracoes = () => {
         <div>
           <h2 className="text-2xl font-bold mb-4">Categorias</h2>
           <Categories />
+        </div>
+
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Conciliação de Contas</h2>
+          <ReconciliationSettingsSection />
         </div>
       </div>
     </div>

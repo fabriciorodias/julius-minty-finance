@@ -1,3 +1,4 @@
+
 import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import { 
   LineChart, 
@@ -40,46 +41,92 @@ export function CashFlowChartBase({
   };
 
   const formatDate = (dateStr: string) => {
-    if (!dateStr) return '';
+    if (!dateStr || typeof dateStr !== 'string') return '';
     try {
       const parsedDate = parseISO(dateStr);
-      if (!isValid(parsedDate)) return dateStr;
+      if (!isValid(parsedDate)) {
+        console.warn('Invalid date in formatDate:', dateStr);
+        return '';
+      }
       return format(parsedDate, 'dd/MM', { locale: ptBR });
     } catch (error) {
-      console.warn('Invalid date in formatDate:', dateStr);
-      return dateStr;
+      console.warn('Error formatting date:', dateStr, error);
+      return '';
     }
   };
 
   const formatDateLong = (dateStr: string) => {
-    if (!dateStr) return '';
+    if (!dateStr || typeof dateStr !== 'string') return '';
     try {
       const parsedDate = parseISO(dateStr);
-      if (!isValid(parsedDate)) return dateStr;
+      if (!isValid(parsedDate)) {
+        console.warn('Invalid date in formatDateLong:', dateStr);
+        return '';
+      }
       return format(parsedDate, 'dd/MM/yyyy', { locale: ptBR });
     } catch (error) {
-      console.warn('Invalid date in formatDateLong:', dateStr);
-      return dateStr;
+      console.warn('Error formatting long date:', dateStr, error);
+      return '';
     }
   };
 
+  // Validate and filter data to ensure all dates are valid
+  const validData = data.filter(d => {
+    if (!d.date || typeof d.date !== 'string') {
+      console.warn('Invalid date found in data:', d);
+      return false;
+    }
+    try {
+      const parsedDate = parseISO(d.date);
+      return isValid(parsedDate);
+    } catch (error) {
+      console.warn('Error parsing date in data:', d.date, error);
+      return false;
+    }
+  });
+
+  const validScenarioData = scenarioData?.filter(d => {
+    if (!d.date || typeof d.date !== 'string') {
+      console.warn('Invalid date found in scenario data:', d);
+      return false;
+    }
+    try {
+      const parsedDate = parseISO(d.date);
+      return isValid(parsedDate);
+    } catch (error) {
+      console.warn('Error parsing date in scenario data:', d.date, error);
+      return false;
+    }
+  });
+
+  // If no valid data, return empty state
+  if (validData.length === 0) {
+    return (
+      <ChartContainer config={chartConfig} className="h-full">
+        <div className="flex items-center justify-center h-full text-muted-foreground">
+          <p>Nenhum dado válido para exibir</p>
+        </div>
+      </ChartContainer>
+    );
+  }
+
   // Calculate min and max values for better scaling
   const allValues = [
-    ...data.map(d => d.total),
-    ...(scenarioData?.map(d => d.total) || [])
+    ...validData.map(d => d.total),
+    ...(validScenarioData?.map(d => d.total) || [])
   ];
   const minValue = Math.min(...allValues);
   const maxValue = Math.max(...allValues);
   const padding = (maxValue - minValue) * 0.1;
 
   // Split data into positive and negative segments
-  const positiveData = data.map(d => ({
+  const positiveData = validData.map(d => ({
     ...d,
     total: d.total >= 0 ? d.total : 0,
     originalTotal: d.total
   }));
 
-  const negativeData = data.map(d => ({
+  const negativeData = validData.map(d => ({
     ...d,
     total: d.total < 0 ? d.total : 0,
     originalTotal: d.total
@@ -88,7 +135,7 @@ export function CashFlowChartBase({
   return (
     <ChartContainer config={chartConfig} className="h-full">
       <ResponsiveContainer width="100%" height={height}>
-        <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: showBrush ? 80 : 40 }}>
+        <AreaChart data={validData} margin={{ top: 20, right: 30, left: 20, bottom: showBrush ? 80 : 40 }}>
           <defs>
             <linearGradient id="positiveGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.8}/>
@@ -162,11 +209,11 @@ export function CashFlowChartBase({
           />
 
           {/* Scenario line */}
-          {showScenario && scenarioData && (
+          {showScenario && validScenarioData && validScenarioData.length > 0 && (
             <Line
               type="monotone"
               dataKey="total"
-              data={scenarioData}
+              data={validScenarioData}
               stroke="hsl(38, 92%, 50%)"
               strokeWidth={2}
               strokeDasharray="8 4"
@@ -182,7 +229,7 @@ export function CashFlowChartBase({
               stroke="hsl(var(--primary))"
               tickFormatter={formatDate}
               startIndex={0}
-              endIndex={Math.min(data.length - 1, 30)}
+              endIndex={Math.min(validData.length - 1, 30)}
             />
           )}
 
@@ -191,8 +238,8 @@ export function CashFlowChartBase({
               if (!active || !payload?.length || !label) return null;
               
               const mainData = payload.find(p => p.dataKey === 'total');
-              const scenarioValue = showScenario && scenarioData ? 
-                scenarioData.find(d => d.date === label)?.total : null;
+              const scenarioValue = showScenario && validScenarioData ? 
+                validScenarioData.find(d => d.date === label)?.total : null;
               
               return (
                 <div className="bg-background border rounded-lg shadow-lg p-4 min-w-[200px]">

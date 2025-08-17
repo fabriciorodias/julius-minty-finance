@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -60,18 +59,6 @@ export default function Lancamentos() {
     }
   }, [accounts, selectedAccountIds.length, setSelectedAccountIds]);
 
-  // Handle URL synchronization for details view
-  useEffect(() => {
-    const viewTxId = searchParams.get('viewTx');
-    if (viewTxId && transactions.length > 0) {
-      const transaction = transactions.find(tx => tx.id === viewTxId);
-      if (transaction) {
-        setDetailsTransaction(transaction);
-        setIsDetailsSheetOpen(true);
-      }
-    }
-  }, [searchParams, transactions]);
-
   // Build transaction filters
   const filters: TransactionFilters = useMemo(() => {
     const baseFilters: TransactionFilters = {
@@ -99,6 +86,18 @@ export default function Lancamentos() {
     isDeleting,
     isCreatingInstallments,
   } = useTransactions(filters);
+
+  // Handle URL synchronization for details view
+  useEffect(() => {
+    const viewTxId = searchParams.get('viewTx');
+    if (viewTxId && transactions.length > 0) {
+      const transaction = transactions.find(tx => tx.id === viewTxId);
+      if (transaction) {
+        setDetailsTransaction(transaction);
+        setIsDetailsSheetOpen(true);
+      }
+    }
+  }, [searchParams, transactions]);
 
   const handleEdit = (transaction: TransactionWithRelations) => {
     setSelectedTransaction(transaction);

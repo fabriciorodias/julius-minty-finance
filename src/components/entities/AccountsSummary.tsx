@@ -12,7 +12,7 @@ import {
   DollarSign,
   Target
 } from 'lucide-react';
-import { Account, isCreditCard, isBudgetAccount } from '@/hooks/useAccounts';
+import { Account, isCreditCard } from '@/hooks/useAccounts';
 import { AccountBalance } from '@/hooks/useAccountBalances';
 
 interface AccountsSummaryProps {
@@ -35,26 +35,34 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
   };
 
   // Cálculos dos dados do resumo
-  const budgetAccounts = accounts.filter(isBudgetAccount).filter(acc => acc.is_active);
+  const assetAccounts = accounts.filter(acc => acc.kind === 'asset' && acc.is_active);
+  const liabilityAccounts = accounts.filter(acc => acc.kind === 'liability' && acc.is_active);
   const creditAccounts = accounts.filter(isCreditCard).filter(acc => acc.is_active);
 
-  const totalAssetBalance = budgetAccounts.reduce((total, account) => {
+  const totalAssetBalance = assetAccounts.reduce((total, account) => {
     return total + getAccountBalance(account.id);
   }, 0);
 
-  const totalCreditUtilized = creditAccounts.reduce((total, account) => {
-    const balance = Math.abs(getAccountBalance(account.id));
-    return total + balance;
+  // Total utilizado agora inclui TODOS os passivos (cartões, empréstimos, etc.)
+  const totalLiabilityUsed = liabilityAccounts.reduce((total, account) => {
+    const balance = getAccountBalance(account.id);
+    // Como os saldos de passivos são negativos, usamos Math.abs para mostrar valor positivo
+    return total + Math.abs(balance);
   }, 0);
 
   const totalCreditLimit = creditAccounts.reduce((total, account) => {
     return total + (account.credit_limit || 0);
   }, 0);
 
-  const totalAvailableCredit = totalCreditLimit - totalCreditUtilized;
+  const totalCreditUsed = creditAccounts.reduce((total, account) => {
+    const balance = getAccountBalance(account.id);
+    return total + Math.abs(balance);
+  }, 0);
+
+  const totalAvailableCredit = totalCreditLimit - totalCreditUsed;
 
   const creditUtilizationPercentage = totalCreditLimit > 0 
-    ? (totalCreditUtilized / totalCreditLimit) * 100 
+    ? (totalCreditUsed / totalCreditLimit) * 100 
     : 0;
 
   if (isLoading) {
@@ -114,12 +122,12 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
                 {formatCurrency(totalAssetBalance)}
               </div>
               <p className="text-xs text-muted-foreground/70 mt-1">
-                {budgetAccounts.length} conta{budgetAccounts.length !== 1 ? 's' : ''}
+                {assetAccounts.length} conta{assetAccounts.length !== 1 ? 's' : ''}
               </p>
             </CardContent>
           </Card>
 
-          {/* Total Utilizado (Passivos) */}
+          {/* Total Utilizado (Todos os Passivos) */}
           <Card className="bg-gradient-to-br from-purple-50 via-purple-50/50 to-pink-50/80 border-purple-200/60 shadow-sm ring-1 ring-purple-100/50 hover:shadow-md transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <div className="flex items-center gap-2">
@@ -132,7 +140,7 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
                   </TooltipTrigger>
                   <TooltipContent className="z-50 bg-popover">
                     <p className="text-xs max-w-xs">
-                      Valor total utilizado em cartões de crédito e outros passivos
+                      Valor total utilizado em todos os passivos (cartões, empréstimos, etc.)
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -141,10 +149,10 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold tracking-tight text-purple-600">
-                {formatCurrency(totalCreditUtilized)}
+                {formatCurrency(totalLiabilityUsed)}
               </div>
               <p className="text-xs text-muted-foreground/70 mt-1">
-                {creditAccounts.length} cartão{creditAccounts.length !== 1 ? 'ões' : ''}
+                {liabilityAccounts.length} passivo{liabilityAccounts.length !== 1 ? 's' : ''}
               </p>
             </CardContent>
           </Card>

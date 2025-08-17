@@ -9,11 +9,43 @@ export interface Account {
   user_id: string;
   institution_id: string;
   name: string;
-  type: 'on_budget' | 'credit';
+  type: 'on_budget' | 'credit'; // Legacy field - mantido para compatibilidade
+  kind: 'asset' | 'liability';
+  subtype: 'cash' | 'bank' | 'investment' | 'property_rights' | 'other_assets' | 'credit_card' | 'loan' | 'other_liabilities';
   credit_limit?: number;
   is_active: boolean;
   created_at: string;
 }
+
+// Helper functions para manter compatibilidade
+export const isCreditCard = (account: Account): boolean => {
+  return account.subtype === 'credit_card';
+};
+
+export const isBudgetAccount = (account: Account): boolean => {
+  return account.kind === 'asset';
+};
+
+// Mapeamento de subtipos para labels em português
+export const SUBTYPE_LABELS: Record<Account['subtype'], string> = {
+  cash: 'Dinheiro',
+  bank: 'Conta Bancária',
+  investment: 'Investimentos',
+  property_rights: 'Bens e Direitos',
+  other_assets: 'Outros Ativos',
+  credit_card: 'Cartão de Crédito',
+  loan: 'Empréstimos',
+  other_liabilities: 'Outros Passivos',
+};
+
+// Agrupamento de subtipos por kind
+export const ASSET_SUBTYPES: Account['subtype'][] = [
+  'cash', 'bank', 'investment', 'property_rights', 'other_assets'
+];
+
+export const LIABILITY_SUBTYPES: Account['subtype'][] = [
+  'credit_card', 'loan', 'other_liabilities'
+];
 
 export function useAccounts(institutionId?: string) {
   const { user } = useAuth();
@@ -49,6 +81,22 @@ export function useAccounts(institutionId?: string) {
 
       // Separate account data from initial balance data
       const { initial_balance, balance_date, ...cleanAccountData } = accountData;
+
+      // Garantir compatibilidade: se não vier kind/subtype, derivar do type
+      if (!cleanAccountData.kind || !cleanAccountData.subtype) {
+        if (cleanAccountData.type === 'on_budget') {
+          cleanAccountData.kind = 'asset';
+          cleanAccountData.subtype = 'bank';
+        } else if (cleanAccountData.type === 'credit') {
+          cleanAccountData.kind = 'liability';
+          cleanAccountData.subtype = 'credit_card';
+        }
+      }
+
+      // Definir type para compatibilidade
+      if (!cleanAccountData.type) {
+        cleanAccountData.type = cleanAccountData.kind === 'asset' ? 'on_budget' : 'credit';
+      }
 
       console.log('Clean account data:', cleanAccountData);
       console.log('Initial balance data:', { initial_balance, balance_date });
@@ -125,6 +173,22 @@ export function useAccounts(institutionId?: string) {
   const updateAccountMutation = useMutation({
     mutationFn: async ({ id, initial_balance, balance_date, ...updates }: Partial<Account> & { id: string; initial_balance?: number; balance_date?: Date }) => {
       console.log('Updating account with data:', { id, initial_balance, balance_date, updates });
+
+      // Garantir compatibilidade: se não vier kind/subtype, derivar do type
+      if (updates.type && (!updates.kind || !updates.subtype)) {
+        if (updates.type === 'on_budget') {
+          updates.kind = 'asset';
+          updates.subtype = 'bank';
+        } else if (updates.type === 'credit') {
+          updates.kind = 'liability';
+          updates.subtype = 'credit_card';
+        }
+      }
+
+      // Definir type para compatibilidade se não estiver definido
+      if (updates.kind && !updates.type) {
+        updates.type = updates.kind === 'asset' ? 'on_budget' : 'credit';
+      }
 
       // Update account data
       const { data, error } = await supabase

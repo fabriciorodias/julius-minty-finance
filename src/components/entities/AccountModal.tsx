@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { CurrencyInput } from '@/components/ui/currency-input';
-import { Account } from '@/hooks/useAccounts';
+import { Account, SUBTYPE_LABELS, ASSET_SUBTYPES, LIABILITY_SUBTYPES } from '@/hooks/useAccounts';
 import { Institution } from '@/hooks/useInstitutions';
 import { useAccountInitialBalance } from '@/hooks/useAccountInitialBalance';
 
@@ -41,7 +42,8 @@ export function AccountModal({
   const [formData, setFormData] = useState({
     name: '',
     institution_id: '',
-    type: 'on_budget' as 'on_budget' | 'credit',
+    kind: 'asset' as 'asset' | 'liability',
+    subtype: 'bank' as Account['subtype'],
     credit_limit: '',
     initial_balance: '',
     balance_date: undefined as Date | undefined,
@@ -53,7 +55,8 @@ export function AccountModal({
       setFormData({
         name: account.name,
         institution_id: account.institution_id,
-        type: account.type,
+        kind: account.kind,
+        subtype: account.subtype,
         credit_limit: account.credit_limit?.toString() || '',
         initial_balance: initialBalance?.amount ? Math.abs(initialBalance.amount).toLocaleString('pt-BR', {
           minimumFractionDigits: 2,
@@ -66,7 +69,8 @@ export function AccountModal({
       setFormData({
         name: '',
         institution_id: '',
-        type: 'on_budget',
+        kind: 'asset',
+        subtype: 'bank',
         credit_limit: '',
         initial_balance: '',
         balance_date: undefined,
@@ -75,18 +79,32 @@ export function AccountModal({
     }
   }, [account, initialBalance, isOpen]);
 
+  const handleKindChange = (kind: 'asset' | 'liability') => {
+    setFormData({ 
+      ...formData, 
+      kind, 
+      subtype: kind === 'asset' ? 'bank' : 'credit_card',
+      credit_limit: '' 
+    });
+  };
+
+  const getAvailableSubtypes = () => {
+    return formData.kind === 'asset' ? ASSET_SUBTYPES : LIABILITY_SUBTYPES;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     const submitData: any = {
       name: formData.name,
       institution_id: formData.institution_id,
-      type: formData.type,
+      kind: formData.kind,
+      subtype: formData.subtype,
       is_active: formData.is_active,
     };
 
     // Adiciona credit_limit se for cartão de crédito
-    if (formData.type === 'credit' && formData.credit_limit) {
+    if (formData.subtype === 'credit_card' && formData.credit_limit) {
       const creditLimit = parseFloat(formData.credit_limit.replace(/\./g, '').replace(',', '.'));
       submitData.credit_limit = creditLimit;
     }
@@ -94,7 +112,7 @@ export function AccountModal({
     // Adiciona dados do saldo inicial se informado
     if (formData.initial_balance) {
       const initialBalanceAmount = parseFloat(formData.initial_balance.replace(/\./g, '').replace(',', '.'));
-      submitData.initial_balance = formData.type === 'credit' ? -Math.abs(initialBalanceAmount) : initialBalanceAmount;
+      submitData.initial_balance = formData.subtype === 'credit_card' ? -Math.abs(initialBalanceAmount) : initialBalanceAmount;
       submitData.balance_date = formData.balance_date;
     }
 
@@ -110,7 +128,7 @@ export function AccountModal({
 
   const isFormValid = formData.name && 
     formData.institution_id && 
-    (formData.type === 'on_budget' || (formData.type === 'credit' && formData.credit_limit)) &&
+    (formData.subtype !== 'credit_card' || formData.credit_limit) &&
     (!formData.initial_balance || formData.balance_date);
 
   return (
@@ -183,40 +201,61 @@ export function AccountModal({
           <div className="space-y-4">
             <Label className="text-base font-medium">Tipo de Conta *</Label>
             <RadioGroup
-              value={formData.type}
-              onValueChange={(value: 'on_budget' | 'credit') => 
-                setFormData({ ...formData, type: value, credit_limit: '', initial_balance: '' })
-              }
+              value={formData.kind}
+              onValueChange={handleKindChange}
               disabled={!!account}
               className="space-y-4"
             >
               <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                <RadioGroupItem value="on_budget" id="on_budget" className="mt-1" />
+                <RadioGroupItem value="asset" id="asset" className="mt-1" />
                 <div className="space-y-1 flex-1">
-                  <Label htmlFor="on_budget" className="font-medium cursor-pointer">
-                    Conta de Orçamento
+                  <Label htmlFor="asset" className="font-medium cursor-pointer">
+                    Ativo
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    Conta cujo saldo representa dinheiro que você possui e pode orçar.
+                    Representa recursos que você possui e podem gerar valor futuro.
                   </p>
                 </div>
               </div>
               <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                <RadioGroupItem value="credit" id="credit" className="mt-1" />
+                <RadioGroupItem value="liability" id="liability" className="mt-1" />
                 <div className="space-y-1 flex-1">
-                  <Label htmlFor="credit" className="font-medium cursor-pointer">
-                    Cartão de Crédito
+                  <Label htmlFor="liability" className="font-medium cursor-pointer">
+                    Passivo
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    Cartão de crédito que representa uma linha de crédito disponível.
+                    Representa obrigações e dívidas que você deve pagar.
                   </p>
                 </div>
               </div>
             </RadioGroup>
           </div>
 
+          {/* Subtipo da Conta */}
+          <div className="space-y-3">
+            <Label htmlFor="subtype" className="text-base font-medium">
+              Subtipo *
+            </Label>
+            <Select
+              value={formData.subtype}
+              onValueChange={(value: Account['subtype']) => setFormData({ ...formData, subtype: value })}
+              required
+            >
+              <SelectTrigger className="h-12">
+                <SelectValue placeholder="Selecione o subtipo" />
+              </SelectTrigger>
+              <SelectContent>
+                {getAvailableSubtypes().map((subtype) => (
+                  <SelectItem key={subtype} value={subtype}>
+                    {SUBTYPE_LABELS[subtype]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Limite do Cartão */}
-          {formData.type === 'credit' && (
+          {formData.subtype === 'credit_card' && (
             <div className="space-y-3">
               <Label htmlFor="credit_limit" className="text-base font-medium">
                 Limite Total do Cartão *
@@ -231,20 +270,20 @@ export function AccountModal({
             </div>
           )}
 
-          {/* Saldo Inicial - para contas novas e existentes */}
+          {/* Saldo Inicial */}
           <div className="space-y-6 p-6 border rounded-lg bg-muted/20">
             <div className="space-y-2">
               <h3 className="text-lg font-medium">
                 {account ? 'Saldo Inicial' : 'Saldo Inicial (Opcional)'}
               </h3>
               <p className="text-sm text-muted-foreground">
-                {formData.type === 'on_budget' 
+                {formData.kind === 'asset' 
                   ? account 
                     ? 'Ajuste o saldo inicial desta conta. Isso afetará o cálculo do saldo atual.'
                     : 'Registre o saldo atual desta conta para começar com o valor correto.'
                   : account
-                    ? 'Ajuste o valor da fatura inicial. Isso afetará o cálculo do saldo atual.'
-                    : 'Registre o valor da sua fatura atual (será registrado como dívida).'
+                    ? 'Ajuste o valor da dívida inicial. Isso afetará o cálculo do saldo atual.'
+                    : 'Registre o valor da sua dívida atual (será registrado como passivo).'
                 }
               </p>
             </div>
@@ -252,7 +291,7 @@ export function AccountModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <Label htmlFor="initial_balance" className="text-base font-medium">
-                  {formData.type === 'on_budget' ? 'Saldo Inicial' : 'Valor da Fatura Inicial'}
+                  {formData.kind === 'asset' ? 'Saldo Inicial' : 'Valor da Dívida Inicial'}
                 </Label>
                 <CurrencyInput
                   id="initial_balance"

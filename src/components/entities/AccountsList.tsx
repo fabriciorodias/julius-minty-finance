@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Plus, Edit2, Trash2, CreditCard, Wallet, Eye, EyeOff, Calendar, TrendingUp } from 'lucide-react';
 import { AccountModal } from './AccountModal';
-import { Account } from '@/hooks/useAccounts';
+import { Account, isCreditCard, isBudgetAccount, SUBTYPE_LABELS } from '@/hooks/useAccounts';
 import { Institution } from '@/hooks/useInstitutions';
 import { AccountBalance } from '@/hooks/useAccountBalances';
 import { useAccountInitialBalance } from '@/hooks/useAccountInitialBalance';
@@ -109,13 +109,14 @@ export function AccountsList({
   };
 
   const getCreditUtilization = (account: Account) => {
-    if (account.type !== 'credit' || !account.credit_limit) return 0;
+    if (!isCreditCard(account) || !account.credit_limit) return 0;
     const balance = Math.abs(getAccountBalance(account.id));
     return (balance / account.credit_limit) * 100;
   };
 
-  const budgetAccounts = accounts.filter(account => account.type === 'on_budget');
-  const creditAccounts = accounts.filter(account => account.type === 'credit');
+  // Usar as helper functions para manter compatibilidade
+  const budgetAccounts = accounts.filter(isBudgetAccount);
+  const creditAccounts = accounts.filter(isCreditCard);
 
   if (isLoading) {
     return <div>Carregando contas...</div>;
@@ -127,7 +128,7 @@ export function AccountsList({
         <div>
           <h2 className="text-2xl font-bold">Contas</h2>
           <p className="text-muted-foreground">
-            Gerencie suas contas bancárias e cartões de crédito
+            Gerencie suas contas de ativos e passivos
           </p>
         </div>
         <Button onClick={() => setShowModal(true)}>
@@ -136,11 +137,11 @@ export function AccountsList({
         </Button>
       </div>
 
-      {/* Contas de Orçamento */}
+      {/* Contas de Ativo */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Wallet className="h-5 w-5 text-blue-600" />
-          <h3 className="text-lg font-semibold">Contas de Orçamento</h3>
+          <h3 className="text-lg font-semibold">Ativos</h3>
           <Badge variant="secondary">{budgetAccounts.length}</Badge>
         </div>
         
@@ -158,6 +159,9 @@ export function AccountsList({
                       </CardTitle>
                       <p className="text-sm text-muted-foreground font-medium">
                         {getInstitutionName(account.institution_id)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {SUBTYPE_LABELS[account.subtype]}
                       </p>
                       <AccountInitialBalanceInfo accountId={account.id} />
                     </div>
@@ -198,11 +202,11 @@ export function AccountsList({
         </div>
       </div>
 
-      {/* Cartões de Crédito */}
+      {/* Contas de Passivo */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <CreditCard className="h-5 w-5 text-purple-600" />
-          <h3 className="text-lg font-semibold">Cartões de Crédito</h3>
+          <h3 className="text-lg font-semibold">Passivos</h3>
           <Badge variant="secondary">{creditAccounts.length}</Badge>
         </div>
         
@@ -223,6 +227,9 @@ export function AccountsList({
                       </CardTitle>
                       <p className="text-sm text-muted-foreground font-medium">
                         {getInstitutionName(account.institution_id)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {SUBTYPE_LABELS[account.subtype]}
                       </p>
                       <AccountInitialBalanceInfo accountId={account.id} />
                     </div>
@@ -248,35 +255,48 @@ export function AccountsList({
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground font-medium">Utilizado</span>
-                      <span className="font-semibold">{formatCurrency(balance)}</span>
+                  {isCreditCard(account) ? (
+                    <>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground font-medium">Utilizado</span>
+                          <span className="font-semibold">{formatCurrency(balance)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground font-medium">Disponível</span>
+                          <span className="font-semibold text-green-600">
+                            {formatCurrency(availableCredit)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground font-medium">Limite</span>
+                          <span className="font-semibold">{formatCurrency(account.credit_limit || 0)}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-muted-foreground font-medium">Utilização</span>
+                          <span className={`font-semibold ${utilization > 80 ? 'text-red-600' : utilization > 50 ? 'text-yellow-600' : 'text-green-600'}`}>
+                            {utilization.toFixed(1)}%
+                          </span>
+                        </div>
+                        <Progress 
+                          value={utilization} 
+                          className="h-2"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-muted-foreground">Saldo Atual</span>
+                        <span className={`text-lg font-bold ${balance >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {formatCurrency(balance)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground font-medium">Disponível</span>
-                      <span className="font-semibold text-green-600">
-                        {formatCurrency(availableCredit)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground font-medium">Limite</span>
-                      <span className="font-semibold">{formatCurrency(account.credit_limit || 0)}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-muted-foreground font-medium">Utilização</span>
-                      <span className={`font-semibold ${utilization > 80 ? 'text-red-600' : utilization > 50 ? 'text-yellow-600' : 'text-green-600'}`}>
-                        {utilization.toFixed(1)}%
-                      </span>
-                    </div>
-                    <Progress 
-                      value={utilization} 
-                      className="h-2"
-                    />
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             );

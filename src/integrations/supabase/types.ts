@@ -51,7 +51,9 @@ export type Database = {
           id: string
           institution_id: string
           is_active: boolean
+          kind: Database["public"]["Enums"]["account_kind"]
           name: string
+          subtype: Database["public"]["Enums"]["account_subtype"]
           type: Database["public"]["Enums"]["account_type"]
           user_id: string
         }
@@ -61,7 +63,9 @@ export type Database = {
           id?: string
           institution_id: string
           is_active?: boolean
+          kind: Database["public"]["Enums"]["account_kind"]
           name: string
+          subtype: Database["public"]["Enums"]["account_subtype"]
           type?: Database["public"]["Enums"]["account_type"]
           user_id: string
         }
@@ -71,7 +75,9 @@ export type Database = {
           id?: string
           institution_id?: string
           is_active?: boolean
+          kind?: Database["public"]["Enums"]["account_kind"]
           name?: string
+          subtype?: Database["public"]["Enums"]["account_subtype"]
           type?: Database["public"]["Enums"]["account_type"]
           user_id?: string
         }
@@ -163,6 +169,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      counterparties: {
+        Row: {
+          created_at: string
+          document: string | null
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          document?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       credit_cards: {
         Row: {
@@ -604,6 +646,7 @@ export type Database = {
           account_id: string | null
           amount: number
           category_id: string | null
+          counterparty_id: string | null
           created_at: string
           credit_card_id: string | null
           description: string
@@ -612,6 +655,8 @@ export type Database = {
           id: string
           installment_id: string | null
           installment_number: number | null
+          is_reviewed: boolean
+          notes: string | null
           status: string
           total_installments: number | null
           type: string
@@ -621,6 +666,7 @@ export type Database = {
           account_id?: string | null
           amount: number
           category_id?: string | null
+          counterparty_id?: string | null
           created_at?: string
           credit_card_id?: string | null
           description: string
@@ -629,6 +675,8 @@ export type Database = {
           id?: string
           installment_id?: string | null
           installment_number?: number | null
+          is_reviewed?: boolean
+          notes?: string | null
           status?: string
           total_installments?: number | null
           type: string
@@ -638,6 +686,7 @@ export type Database = {
           account_id?: string | null
           amount?: number
           category_id?: string | null
+          counterparty_id?: string | null
           created_at?: string
           credit_card_id?: string | null
           description?: string
@@ -646,6 +695,8 @@ export type Database = {
           id?: string
           installment_id?: string | null
           installment_number?: number | null
+          is_reviewed?: boolean
+          notes?: string | null
           status?: string
           total_installments?: number | null
           type?: string
@@ -664,6 +715,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_counterparty_id_fkey"
+            columns: ["counterparty_id"]
+            isOneToOne: false
+            referencedRelation: "counterparties"
             referencedColumns: ["id"]
           },
           {
@@ -698,6 +756,16 @@ export type Database = {
       }
     }
     Enums: {
+      account_kind: "asset" | "liability"
+      account_subtype:
+        | "cash"
+        | "bank"
+        | "investment"
+        | "property_rights"
+        | "other_assets"
+        | "credit_card"
+        | "loan"
+        | "other_liabilities"
       account_type: "on_budget" | "credit"
     }
     CompositeTypes: {
@@ -826,6 +894,17 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_kind: ["asset", "liability"],
+      account_subtype: [
+        "cash",
+        "bank",
+        "investment",
+        "property_rights",
+        "other_assets",
+        "credit_card",
+        "loan",
+        "other_liabilities",
+      ],
       account_type: ["on_budget", "credit"],
     },
   },

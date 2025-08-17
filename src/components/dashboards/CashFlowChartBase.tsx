@@ -12,9 +12,14 @@ import {
   ReferenceLine,
   Brush
 } from 'recharts';
-import { format, parseISO, isValid } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { CashFlowDataPoint } from '@/lib/cashflow-sim';
+import { 
+  isValidDateString, 
+  safeFormatDate, 
+  safeFormatDateLong, 
+  ultraSafeTickFormatter,
+  safeCurrencyFormatter 
+} from '@/lib/date-utils';
 
 interface CashFlowChartBaseProps {
   data: CashFlowDataPoint[];
@@ -40,53 +45,10 @@ export function CashFlowChartBase({
     }).format(value);
   };
 
-  // Ultra-safe date validation that prevents ANY invalid date from passing through
-  const isStrictValidDate = (dateValue: any): boolean => {
-    try {
-      if (!dateValue) return false;
-      if (typeof dateValue !== 'string') return false;
-      
-      // Check for basic string format
-      if (dateValue.length < 8) return false;
-      
-      // Check for ISO date pattern
-      const isoPattern = /^\d{4}-\d{2}-\d{2}(T.*)?$/;
-      if (!isoPattern.test(dateValue)) return false;
-      
-      // Try to parse and validate
-      const parsed = parseISO(dateValue);
-      if (!isValid(parsed)) return false;
-      
-      // Additional check: ensure the date is within reasonable bounds
-      const year = parsed.getFullYear();
-      if (year < 1900 || year > 2100) return false;
-      
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  // Safe date formatting that NEVER throws
-  const safeDateFormat = (dateStr: any, formatStr: string = 'dd/MM'): string => {
-    try {
-      if (!isStrictValidDate(dateStr)) {
-        console.warn('Invalid date rejected:', dateStr);
-        return '';
-      }
-      
-      const parsed = parseISO(dateStr);
-      return format(parsed, formatStr, { locale: ptBR });
-    } catch (error) {
-      console.warn('Date formatting error:', error, 'for date:', dateStr);
-      return '';
-    }
-  };
-
   // Comprehensive data point validation
   const isValidDataPoint = (item: any): item is CashFlowDataPoint => {
     if (!item || typeof item !== 'object') return false;
-    if (!isStrictValidDate(item.date)) return false;
+    if (!isValidDateString(item.date)) return false;
     if (typeof item.total !== 'number' || !isFinite(item.total)) return false;
     return true;
   };
@@ -144,37 +106,6 @@ export function CashFlowChartBase({
     total: d.total < 0 ? d.total : 0,
     originalTotal: d.total
   }));
-
-  // Absolutely safe tick formatters that never throw
-  const ultraSafeTickFormatter = (value: any): string => {
-    try {
-      if (!value) return '';
-      const formatted = safeDateFormat(String(value));
-      return formatted || '';
-    } catch {
-      return '';
-    }
-  };
-
-  const ultraSafeBrushFormatter = (value: any): string => {
-    try {
-      if (!value) return '';
-      const formatted = safeDateFormat(String(value));
-      return formatted || '';
-    } catch {
-      return '';
-    }
-  };
-
-  // Safe currency formatter for Y-axis
-  const safeCurrencyFormatter = (value: any): string => {
-    try {
-      if (typeof value !== 'number' || !isFinite(value)) return '0';
-      return formatCurrency(value).replace('R$', '').trim();
-    } catch {
-      return String(value);
-    }
-  };
 
   return (
     <ChartContainer config={chartConfig} className="h-full">
@@ -274,7 +205,7 @@ export function CashFlowChartBase({
               dataKey="date"
               height={30}
               stroke="hsl(var(--primary))"
-              tickFormatter={ultraSafeBrushFormatter}
+              tickFormatter={ultraSafeTickFormatter}
               startIndex={0}
               endIndex={Math.min(safeData.length - 1, 30)}
             />
@@ -286,7 +217,7 @@ export function CashFlowChartBase({
                 if (!active || !payload?.length || !label) return null;
                 
                 // Extra validation for tooltip label
-                if (!isStrictValidDate(label)) {
+                if (!isValidDateString(label)) {
                   console.warn('Invalid tooltip label:', label);
                   return null;
                 }
@@ -295,7 +226,7 @@ export function CashFlowChartBase({
                 const scenarioValue = showScenario && safeScenarioData.length > 0 ? 
                   safeScenarioData.find(d => d.date === label)?.total : null;
                 
-                const formattedDate = safeDateFormat(label, 'PPP');
+                const formattedDate = safeFormatDateLong(label, 'PPP');
                 if (!formattedDate) {
                   console.warn('Could not format tooltip date:', label);
                   return null;

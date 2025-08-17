@@ -11,6 +11,7 @@ import { useCashFlowProjection } from '@/hooks/useCashFlowProjection';
 import { useCashFlowMetrics } from '@/hooks/useCashFlowMetrics';
 import { useProvisionedTotals } from '@/hooks/useProvisionedTotals';
 import { simulateCashFlowScenario, ScenarioAdjustment } from '@/lib/cashflow-sim';
+import { safeFormatDate } from '@/lib/date-utils';
 import { format, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -218,7 +219,7 @@ export function CashFlowHero({ selectedAccountIds }: CashFlowHeroProps) {
                 {formatCurrency(metrics.worstDayBalance)}
               </p>
               <p className="text-xs text-muted-foreground">
-                {format(new Date(metrics.worstDayDate), 'dd/MM', { locale: ptBR })}
+                {safeFormatDate(metrics.worstDayDate, 'dd/MM')}
               </p>
             </div>
           </Card>

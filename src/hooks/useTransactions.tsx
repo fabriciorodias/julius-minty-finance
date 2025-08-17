@@ -144,9 +144,10 @@ export function useTransactions(filters: TransactionFilters = {}) {
 
       if (error) throw error;
 
-      // Transform the data to include tags properly
+      // Transform the data to include tags properly and cast status type
       const transformedData = data?.map(transaction => ({
         ...transaction,
+        status: transaction.status as 'pendente' | 'concluido',
         tags: transaction.transaction_tags?.map((tt: any) => tt.tags).filter(Boolean) || []
       })) || [];
 
@@ -168,11 +169,15 @@ export function useTransactions(filters: TransactionFilters = {}) {
 
       const { tags, ...transactionFields } = transactionData;
 
+      // Determine transaction type based on amount
+      const transactionType = transactionFields.amount >= 0 ? 'receita' : 'despesa';
+
       const { data: transaction, error } = await supabase
         .from('transactions')
         .insert({
           ...transactionFields,
           user_id: user.id,
+          type: transactionType,
           status: transactionFields.status || 'concluido',
           is_reviewed: transactionFields.is_reviewed || false,
         })
@@ -217,9 +222,15 @@ export function useTransactions(filters: TransactionFilters = {}) {
 
   const updateTransactionMutation = useMutation({
     mutationFn: async ({ id, tags, ...updates }: UpdateTransactionData) => {
+      // Determine transaction type based on amount if provided
+      const updateData: any = { ...updates };
+      if (updates.amount !== undefined) {
+        updateData.type = updates.amount >= 0 ? 'receita' : 'despesa';
+      }
+
       const { data, error } = await supabase
         .from('transactions')
-        .update(updates)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();

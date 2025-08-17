@@ -141,7 +141,7 @@ export default function Lancamentos() {
 
           <TagsFilter
             selectedTagIds={selectedTagIds}
-            onTagSelectionChange={setSelectedTagIds}
+            onTagChange={setSelectedTagIds}
           />
         </div>
 

@@ -232,12 +232,14 @@ export function TransactionDetailsSheet({
             label="Data do Evento" 
             value={format(new Date(transaction.event_date), 'dd/MM/yyyy', { locale: ptBR })}
           />
-          {transaction.effective_date && transaction.effective_date !== transaction.event_date && (
-            <DetailItem 
-              label="Data Efetiva" 
-              value={format(new Date(transaction.effective_date), 'dd/MM/yyyy', { locale: ptBR })}
-            />
-          )}
+          <DetailItem 
+            label="Data de Efetivação" 
+            value={
+              transaction.effective_date ? 
+                format(new Date(transaction.effective_date), 'dd/MM/yyyy', { locale: ptBR }) :
+                <span className="text-amber-600 italic">Pendente de liquidação</span>
+            }
+          />
         </DetailSection>
 
         <Separator />

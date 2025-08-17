@@ -153,6 +153,11 @@ export function TransactionsList({
             <div className="text-xs text-muted-foreground truncate">
               {institution?.name} - {account?.name}
             </div>
+            {transaction.counterparties && (
+              <div className="text-xs text-muted-foreground truncate">
+                Fav.: {transaction.counterparties.name}
+              </div>
+            )}
             {transaction.installment_number && transaction.total_installments && (
               <div className="text-xs text-blue-600 font-medium">
                 Parcela {transaction.installment_number}/{transaction.total_installments}

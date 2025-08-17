@@ -9,6 +9,7 @@ export interface Transaction {
   account_id: string | null;
   credit_card_id: string | null;
   category_id: string | null;
+  counterparty_id: string | null;
   description: string;
   amount: number;
   event_date: string;
@@ -25,6 +26,7 @@ export interface TransactionWithRelations extends Transaction {
   categories: { name: string } | null;
   accounts: { name: string } | null;
   credit_cards: { name: string } | null;
+  counterparties: { id: string; name: string } | null;
   tags?: { name: string; color: string | null }[];
 }
 
@@ -46,6 +48,7 @@ export interface CreateTransactionData {
   account_id?: string;
   credit_card_id?: string;
   category_id?: string;
+  counterparty_id?: string;
   description: string;
   amount: number;
   event_date: string;
@@ -92,6 +95,10 @@ export function useTransactions(filters: TransactionFilters = {}) {
             name
           ),
           credit_cards!left (
+            name
+          ),
+          counterparties!left (
+            id,
             name
           )
         `)
@@ -148,6 +155,9 @@ export function useTransactions(filters: TransactionFilters = {}) {
         categories: item.categories && !('error' in item.categories) ? item.categories : null,
         accounts: item.accounts && !('error' in item.accounts) ? item.accounts : null,
         credit_cards: item.credit_cards && !('error' in item.credit_cards) ? item.credit_cards : null,
+        counterparties: item.counterparties && !('error' in item.counterparties) ? item.counterparties : null,
+        status: item.status as 'pendente' | 'concluido',
+        type: item.type as 'receita' | 'despesa',
       })) as TransactionWithRelations[];
 
       // Fetch tags for each transaction
@@ -211,6 +221,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
         .insert({
           ...transactionFields,
           user_id: user.id,
+          type: transactionData.amount >= 0 ? 'receita' : 'despesa',
         })
         .select()
         .single();
@@ -292,9 +303,15 @@ export function useTransactions(filters: TransactionFilters = {}) {
 
   const updateTransactionMutation = useMutation({
     mutationFn: async ({ id, tags, ...updates }: Partial<Transaction> & { id: string; tags?: string[] }) => {
+      // Determine type based on amount if amount is being updated
+      const updateData = { ...updates };
+      if (updates.amount !== undefined) {
+        updateData.type = updates.amount >= 0 ? 'receita' : 'despesa';
+      }
+
       const { data, error } = await supabase
         .from('transactions')
-        .update(updates)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();

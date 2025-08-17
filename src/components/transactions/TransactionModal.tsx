@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -53,6 +52,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { CurrencyInputBRL } from '@/components/ui/currency-input-brl';
 import { TagsInput } from '@/components/ui/tags-input';
+import { useCounterparties } from '@/hooks/useCounterparties';
+import { CounterpartyCombobox } from './CounterpartyCombobox';
 
 const transactionSchema = z.object({
   type: z.enum(['receita', 'despesa']),
@@ -62,6 +63,7 @@ const transactionSchema = z.object({
   is_effective: z.boolean(),
   effective_date: z.string().optional(),
   category_id: z.string().optional(),
+  counterparty_id: z.string().optional(),
   source_type: z.enum(['account', 'credit_card']),
   account_id: z.string().optional(),
   tags: z.array(z.string()).default([]),
@@ -90,6 +92,7 @@ interface TransactionModalProps {
     categories: { name: string } | null;
     accounts: { name: string } | null;
     credit_cards: { name: string } | null;
+    counterparties: { id: string; name: string } | null;
     tags?: { name: string; color: string | null }[];
   };
   isLoading?: boolean;
@@ -110,6 +113,7 @@ export function TransactionModal({
   const { accounts } = useAccounts();
   const { institutions } = useInstitutions();
   const { tags, createTag } = useTags();
+  const { counterparties, createCounterparty, isCreating: isCreatingCounterparty } = useCounterparties();
 
   // State for controlling date picker popovers
   const [eventDateOpen, setEventDateOpen] = useState(false);
@@ -131,6 +135,7 @@ export function TransactionModal({
       is_effective: false,
       effective_date: '',
       category_id: undefined,
+      counterparty_id: undefined,
       source_type: 'account',
       account_id: undefined,
       tags: [],
@@ -171,6 +176,11 @@ export function TransactionModal({
   // Handle tag creation
   const handleCreateTag = async (tagName: string) => {
     await createTag({ name: tagName });
+  };
+
+  // Handle counterparty quick creation
+  const handleCreateCounterparty = async (name: string) => {
+    createCounterparty({ name });
   };
 
   // Auto-select account if only one option is available
@@ -222,6 +232,7 @@ export function TransactionModal({
           is_effective: transaction.status === 'concluido',
           effective_date: transaction.effective_date || '',
           category_id: transaction.category_id || undefined,
+          counterparty_id: transaction.counterparty_id || undefined,
           source_type: sourceType,
           account_id: transaction.account_id || undefined,
           tags: transactionTags,
@@ -241,6 +252,7 @@ export function TransactionModal({
           is_effective: false,
           effective_date: '',
           category_id: undefined,
+          counterparty_id: undefined,
           source_type: defaultSourceType,
           account_id: defaultAccount,
           tags: [],
@@ -261,10 +273,11 @@ export function TransactionModal({
       event_date: data.event_date,
       effective_date: data.is_effective ? data.effective_date : undefined,
       category_id: data.category_id,
+      counterparty_id: data.counterparty_id,
       status: data.is_effective ? 'concluido' : 'pendente',
       account_id: data.account_id,
       credit_card_id: undefined,
-      tags: data.tags || [], // Always send tags array
+      tags: data.tags || [],
     };
 
     onSave(transactionData);
@@ -279,6 +292,7 @@ export function TransactionModal({
         is_effective: false,
         effective_date: '',
         category_id: undefined,
+        counterparty_id: undefined,
         source_type: data.source_type,
         account_id: data.account_id,
         tags: [],
@@ -442,6 +456,28 @@ export function TransactionModal({
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Counterparty */}
+              <FormField
+                control={form.control}
+                name="counterparty_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Favorecido/Devedor</FormLabel>
+                    <FormControl>
+                      <CounterpartyCombobox
+                        value={field.value || null}
+                        onValueChange={(value) => field.onChange(value || undefined)}
+                        counterparties={counterparties}
+                        onQuickCreate={handleCreateCounterparty}
+                        disabled={isCreatingCounterparty}
+                        placeholder="Selecione um favorecido..."
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

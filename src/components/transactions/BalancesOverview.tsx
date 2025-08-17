@@ -43,77 +43,86 @@ export function BalancesOverview({
   // Se não há contas selecionadas, mostra apenas o card consolidado
   if (!hasSelectedAccounts) {
     return (
-      <DynamicBalanceCard
-        selectedAccountIds={[]}
-        accounts={accounts}
-        institutions={institutions}
-        balanceMap={balanceMap}
-        dateFilters={dateFilters}
-        title="Nenhuma Conta Selecionada"
-        variant="consolidated"
-      />
+      <div className="animate-fade-in">
+        <DynamicBalanceCard
+          selectedAccountIds={[]}
+          accounts={accounts}
+          institutions={institutions}
+          balanceMap={balanceMap}
+          dateFilters={dateFilters}
+          title="Nenhuma Conta Selecionada"
+          variant="consolidated"
+        />
+      </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-fade-in">
       {/* Card de Contas de Orçamento */}
       {hasBudgetAccounts && (
-        <DynamicBalanceCard
-          selectedAccountIds={budgetAccountIds}
-          accounts={accounts}
-          institutions={institutions}
-          balanceMap={balanceMap}
-          dateFilters={dateFilters}
-          title="Saldo em Conta"
-          variant="budget"
-          customIcon={<Wallet className="h-5 w-5 text-blue-600" />}
-          customTooltip="Saldo das contas de orçamento (conta corrente, poupança, etc.)"
-        />
+        <div className="hover-scale">
+          <DynamicBalanceCard
+            selectedAccountIds={budgetAccountIds}
+            accounts={accounts}
+            institutions={institutions}
+            balanceMap={balanceMap}
+            dateFilters={dateFilters}
+            title="Saldo em Conta"
+            variant="budget"
+            customIcon={<Wallet className="h-5 w-5 text-blue-600" />}
+            customTooltip="Saldo das contas de orçamento (conta corrente, poupança, etc.)"
+          />
+        </div>
       )}
 
       {/* Card de Cartões de Crédito */}
       {hasCreditAccounts && (
-        <DynamicBalanceCard
-          selectedAccountIds={creditAccountIds}
-          accounts={accounts}
-          institutions={institutions}
-          balanceMap={balanceMap}
-          dateFilters={dateFilters}
-          title="Saldo Devedor"
-          variant="credit"
-          customIcon={<CreditCard className="h-5 w-5 text-purple-600" />}
-          customTooltip="Saldo devedor dos cartões de crédito (valores negativos indicam dívida)"
-        />
+        <div className="hover-scale">
+          <DynamicBalanceCard
+            selectedAccountIds={creditAccountIds}
+            accounts={accounts}
+            institutions={institutions}
+            balanceMap={balanceMap}
+            dateFilters={dateFilters}
+            title="Saldo Devedor"
+            variant="credit"
+            customIcon={<CreditCard className="h-5 w-5 text-purple-600" />}
+            customTooltip="Saldo devedor dos cartões de crédito (valores negativos indicam dívida)"
+          />
+        </div>
       )}
 
-      {/* Card Consolidado - só aparece se há ambos os tipos ou se só há um tipo mas queremos mostrar o total */}
+      {/* Card Consolidado */}
       {(hasBudgetAccounts && hasCreditAccounts) || (selectedAccountIds.length > (budgetAccountIds.length + creditAccountIds.length)) ? (
-        <DynamicBalanceCard
-          selectedAccountIds={selectedAccountIds}
-          accounts={accounts}
-          institutions={institutions}
-          balanceMap={balanceMap}
-          dateFilters={dateFilters}
-          title="Consolidado"
-          variant="consolidated"
-          customIcon={<TrendingUp className="h-5 w-5 text-green-600" />}
-          customTooltip="Saldo consolidado de todas as contas selecionadas"
-        />
+        <div className="hover-scale">
+          <DynamicBalanceCard
+            selectedAccountIds={selectedAccountIds}
+            accounts={accounts}
+            institutions={institutions}
+            balanceMap={balanceMap}
+            dateFilters={dateFilters}
+            title="Consolidado"
+            variant="consolidated"
+            customIcon={<TrendingUp className="h-5 w-5 text-green-600" />}
+            customTooltip="Saldo consolidado de todas as contas selecionadas"
+          />
+        </div>
       ) : null}
 
-      {/* Se só há um tipo de conta, o card único já mostra tudo, então não precisamos do consolidado */}
-      {/* Mas se há contas de tipos não reconhecidos, mostramos o consolidado */}
+      {/* Se só há um tipo de conta, o card único já mostra tudo */}
       {!hasBudgetAccounts && !hasCreditAccounts && hasSelectedAccounts && (
-        <DynamicBalanceCard
-          selectedAccountIds={selectedAccountIds}
-          accounts={accounts}
-          institutions={institutions}
-          balanceMap={balanceMap}
-          dateFilters={dateFilters}
-          title="Saldo Total"
-          variant="consolidated"
-        />
+        <div className="hover-scale">
+          <DynamicBalanceCard
+            selectedAccountIds={selectedAccountIds}
+            accounts={accounts}
+            institutions={institutions}
+            balanceMap={balanceMap}
+            dateFilters={dateFilters}
+            title="Saldo Total"
+            variant="consolidated"
+          />
+        </div>
       )}
     </div>
   );

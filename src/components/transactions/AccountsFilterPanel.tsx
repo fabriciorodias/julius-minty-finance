@@ -1,9 +1,14 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Account } from '@/hooks/useAccounts';
 import { Institution } from '@/hooks/useInstitutions';
+import { Search, ChevronDown, ChevronRight, Info } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AccountsFilterPanelProps {
   accounts: Account[];
@@ -20,16 +25,28 @@ export function AccountsFilterPanel({
   onAccountSelectionChange,
   balanceMap = {},
 }: AccountsFilterPanelProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [budgetGroupOpen, setBudgetGroupOpen] = useState(true);
+  const [creditGroupOpen, setCreditGroupOpen] = useState(true);
+
   const institutionMap = institutions.reduce((acc, institution) => {
     acc[institution.id] = institution.name;
     return acc;
   }, {} as Record<string, string>);
 
   const activeAccounts = accounts.filter(account => account.is_active);
-  const budgetAccounts = activeAccounts.filter(account => account.type === 'on_budget');
-  const creditAccounts = activeAccounts.filter(account => account.type === 'credit');
+  
+  // Filter accounts by search term
+  const filteredAccounts = activeAccounts.filter(account => 
+    account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    institutionMap[account.institution_id]?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const budgetAccounts = filteredAccounts.filter(account => account.type === 'on_budget');
+  const creditAccounts = filteredAccounts.filter(account => account.type === 'credit');
 
   const isAllSelected = selectedAccountIds.length === activeAccounts.length;
+  const hasMultipleSelected = selectedAccountIds.length > 1;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -63,10 +80,37 @@ export function AccountsFilterPanel({
     }
   };
 
-  const AccountGroup = ({ title, accounts }: { title: string; accounts: Account[] }) => (
-    <div className="space-y-2">
-      <h4 className="text-sm font-medium text-muted-foreground">{title}</h4>
-      <div className="space-y-1">
+  const AccountGroup = ({ 
+    title, 
+    accounts, 
+    isOpen, 
+    onToggle 
+  }: { 
+    title: string; 
+    accounts: Account[];
+    isOpen: boolean;
+    onToggle: () => void;
+  }) => (
+    <Collapsible open={isOpen} onOpenChange={onToggle}>
+      <CollapsibleTrigger asChild>
+        <Button
+          variant="ghost"
+          className="w-full justify-between h-auto p-2 font-medium text-sm hover:bg-muted/50"
+        >
+          <span className="text-muted-foreground">{title}</span>
+          <div className="flex items-center gap-1">
+            <Badge variant="secondary" className="text-xs h-5">
+              {accounts.length}
+            </Badge>
+            {isOpen ? (
+              <ChevronDown className="h-3 w-3" />
+            ) : (
+              <ChevronRight className="h-3 w-3" />
+            )}
+          </div>
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-1 mt-2">
         {accounts.map((account) => {
           const isSelected = selectedAccountIds.includes(account.id);
           const balance = balanceMap[account.id] ?? 0;
@@ -75,10 +119,10 @@ export function AccountsFilterPanel({
             <button
               key={account.id}
               type="button"
-              className={`flex items-center justify-between w-full rounded-lg px-3 py-2 transition-colors text-left ${
+              className={`flex items-center justify-between w-full rounded-lg px-3 py-2.5 transition-all text-left group hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20 ${
                 isSelected
-                  ? 'bg-accent text-accent-foreground font-medium ring-1 ring-accent'
-                  : 'hover:bg-muted/50'
+                  ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
+                  : 'hover:bg-muted/60'
               }`}
               onClick={(e) => handleAccountClick(e, account.id)}
               onKeyDown={(e) => handleKeyDown(e, () => handleAccountClick(e as any, account.id))}
@@ -86,73 +130,127 @@ export function AccountsFilterPanel({
               aria-pressed={isSelected}
             >
               <div className="flex-1 min-w-0">
-                <div className={`text-sm font-medium truncate ${isSelected ? 'font-medium' : ''}`}>
+                <div className={`text-sm font-medium truncate transition-colors ${
+                  isSelected ? 'text-primary' : 'group-hover:text-foreground'
+                }`}>
                   {account.name}
                 </div>
                 <div className="text-xs text-muted-foreground truncate">
                   {institutionMap[account.institution_id] || 'Instituição'}
                 </div>
               </div>
-              <div className="text-sm ml-2">
+              <div className={`text-sm ml-2 font-medium transition-colors ${
+                isSelected ? 'text-primary' : ''
+              }`}>
                 {formatCurrency(balance)}
               </div>
             </button>
           );
         })}
-      </div>
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 
   return (
-    <Card className="h-fit">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center justify-between">
-          Contas
-          {selectedAccountIds.length > 0 && (
-            <Badge variant="secondary" className="text-xs">
-              {selectedAccountIds.length}
-            </Badge>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* All Accounts Toggle */}
-        <div className="border-b pb-2">
-          <button
-            type="button"
-            className={`flex items-center justify-between w-full rounded-lg px-3 py-2 transition-colors text-left ${
-              isAllSelected
-                ? 'bg-accent text-accent-foreground font-medium ring-1 ring-accent'
-                : 'hover:bg-muted/50'
-            }`}
-            onClick={handleAllClick}
-            onKeyDown={(e) => handleKeyDown(e, handleAllClick)}
-            role="button"
-            aria-pressed={isAllSelected}
-          >
-            <span className={`text-sm ${isAllSelected ? 'font-medium' : ''}`}>
-              Todas as Contas
-            </span>
-            {isAllSelected && (
-              <div className="text-sm ml-2">
-                {formatCurrency(
-                  activeAccounts.reduce((sum, account) => sum + (balanceMap[account.id] ?? 0), 0)
-                )}
-              </div>
+    <TooltipProvider>
+      <Card className="sticky top-6 h-fit shadow-sm ring-1 ring-border/50">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              Contas
+              {selectedAccountIds.length > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {selectedAccountIds.length}
+                </Badge>
+              )}
+            </CardTitle>
+            {hasMultipleSelected && (
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-4 w-4 text-muted-foreground/60" />
+                </TooltipTrigger>
+                <TooltipContent className="z-50">
+                  <p className="text-xs">Use Cmd/Ctrl + clique para multisseleção</p>
+                </TooltipContent>
+              </Tooltip>
             )}
-          </button>
-        </div>
+          </div>
+          
+          {/* Search Input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
+            <Input
+              placeholder="Buscar contas..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 h-9 text-sm"
+            />
+          </div>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          {/* All Accounts Toggle */}
+          <div className="border-b pb-3">
+            <button
+              type="button"
+              className={`flex items-center justify-between w-full rounded-lg px-3 py-2.5 transition-all text-left hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20 ${
+                isAllSelected
+                  ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
+                  : ''
+              }`}
+              onClick={handleAllClick}
+              onKeyDown={(e) => handleKeyDown(e, handleAllClick)}
+              role="button"
+              aria-pressed={isAllSelected}
+            >
+              <span className={`text-sm font-medium ${isAllSelected ? 'text-primary' : ''}`}>
+                Todas as Contas
+              </span>
+              {isAllSelected && (
+                <div className={`text-sm ml-2 font-medium ${isAllSelected ? 'text-primary' : ''}`}>
+                  {formatCurrency(
+                    activeAccounts.reduce((sum, account) => sum + (balanceMap[account.id] ?? 0), 0)
+                  )}
+                </div>
+              )}
+            </button>
+          </div>
 
-        {/* Budget Accounts */}
-        {budgetAccounts.length > 0 && (
-          <AccountGroup title="Contas de Orçamento" accounts={budgetAccounts} />
-        )}
+          {/* Budget Accounts */}
+          {budgetAccounts.length > 0 && (
+            <AccountGroup 
+              title="Contas de Orçamento" 
+              accounts={budgetAccounts}
+              isOpen={budgetGroupOpen}
+              onToggle={() => setBudgetGroupOpen(!budgetGroupOpen)}
+            />
+          )}
 
-        {/* Credit Accounts */}
-        {creditAccounts.length > 0 && (
-          <AccountGroup title="Cartões de Crédito" accounts={creditAccounts} />
-        )}
-      </CardContent>
-    </Card>
+          {/* Credit Accounts */}
+          {creditAccounts.length > 0 && (
+            <AccountGroup 
+              title="Cartões de Crédito" 
+              accounts={creditAccounts}
+              isOpen={creditGroupOpen}
+              onToggle={() => setCreditGroupOpen(!creditGroupOpen)}
+            />
+          )}
+
+          {/* No results */}
+          {searchTerm && filteredAccounts.length === 0 && (
+            <div className="text-sm text-muted-foreground text-center py-4">
+              Nenhuma conta encontrada
+            </div>
+          )}
+
+          {/* Multi-selection hint */}
+          {hasMultipleSelected && (
+            <div className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-3 border border-border/50">
+              <strong>Dica:</strong> Use Cmd/Ctrl + clique para selecionar múltiplas contas
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </TooltipProvider>
   );
 }

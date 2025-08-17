@@ -5,6 +5,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useAccountBalances } from '@/hooks/useAccountBalances';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AccountsList } from '@/components/entities/AccountsList';
+import { AccountsSummary } from '@/components/entities/AccountsSummary';
 import { InstitutionModal } from '@/components/entities/InstitutionModal';
 import { Categories } from '@/components/categories/Categories';
 
@@ -73,6 +74,12 @@ const Entidades = () => {
         </TabsList>
 
         <TabsContent value="accounts" className="space-y-6">
+          <AccountsSummary
+            accounts={accounts}
+            accountBalances={accountBalances}
+            isLoading={accountsLoading}
+          />
+          
           <AccountsList
             accounts={accounts}
             institutions={institutions}

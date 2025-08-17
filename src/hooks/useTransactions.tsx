@@ -25,6 +25,7 @@ export interface TransactionWithRelations extends Transaction {
   categories: { name: string } | null;
   accounts: { name: string } | null;
   credit_cards: { name: string } | null;
+  tags?: { name: string; color: string | null }[];
 }
 
 export interface TransactionFilters {
@@ -38,6 +39,7 @@ export interface TransactionFilters {
   status?: 'pendente' | 'concluido';
   q?: string;
   withoutCategory?: boolean;
+  tagIds?: string[]; // New field for tag filtering
 }
 
 export interface CreateTransactionData {
@@ -50,6 +52,7 @@ export interface CreateTransactionData {
   effective_date?: string;
   status: 'pendente' | 'concluido';
   type: 'receita' | 'despesa';
+  tags?: string[]; // Tag names to associate
 }
 
 export interface InstallmentData {
@@ -140,12 +143,57 @@ export function useTransactions(filters: TransactionFilters = {}) {
       if (error) throw error;
       
       // Transform the data to match our expected type structure
-      const transformedData = (data || []).map(item => ({
+      let transformedData = (data || []).map(item => ({
         ...item,
         categories: item.categories && !('error' in item.categories) ? item.categories : null,
         accounts: item.accounts && !('error' in item.accounts) ? item.accounts : null,
         credit_cards: item.credit_cards && !('error' in item.credit_cards) ? item.credit_cards : null,
       })) as TransactionWithRelations[];
+
+      // Fetch tags for each transaction
+      if (transformedData.length > 0) {
+        const transactionIds = transformedData.map(t => t.id);
+        const { data: tagsData, error: tagsError } = await supabase
+          .from('transaction_tags')
+          .select(`
+            transaction_id,
+            tags!inner (
+              id,
+              name,
+              color
+            )
+          `)
+          .in('transaction_id', transactionIds);
+
+        if (tagsError) {
+          console.error('Error fetching transaction tags:', tagsError);
+        } else {
+          // Group tags by transaction
+          const tagsByTransaction = (tagsData || []).reduce((acc, item) => {
+            if (!acc[item.transaction_id]) {
+              acc[item.transaction_id] = [];
+            }
+            acc[item.transaction_id].push({
+              name: item.tags.name,
+              color: item.tags.color,
+            });
+            return acc;
+          }, {} as Record<string, { name: string; color: string | null }[]>);
+
+          // Add tags to transactions
+          transformedData = transformedData.map(transaction => ({
+            ...transaction,
+            tags: tagsByTransaction[transaction.id] || [],
+          }));
+        }
+      }
+
+      // Apply tag filters if specified
+      if (filters.tagIds && filters.tagIds.length > 0) {
+        transformedData = transformedData.filter(transaction => 
+          transaction.tags?.some(tag => filters.tagIds!.includes(tag.name)) || false
+        );
+      }
 
       return transformedData;
     },
@@ -156,17 +204,69 @@ export function useTransactions(filters: TransactionFilters = {}) {
     mutationFn: async (transactionData: CreateTransactionData) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
+      const { tags, ...transactionFields } = transactionData;
+
+      const { data: transaction, error } = await supabase
         .from('transactions')
         .insert({
-          ...transactionData,
+          ...transactionFields,
           user_id: user.id,
         })
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+
+      // Associate tags if provided
+      if (tags && tags.length > 0) {
+        // Get or create tags
+        const tagIds = [];
+        for (const tagName of tags) {
+          let { data: existingTag, error: tagError } = await supabase
+            .from('tags')
+            .select('id')
+            .eq('user_id', user.id)
+            .ilike('name', tagName)
+            .maybeSingle();
+
+          if (tagError && tagError.code !== 'PGRST116') {
+            throw tagError;
+          }
+
+          if (!existingTag) {
+            const { data: newTag, error: createTagError } = await supabase
+              .from('tags')
+              .insert({
+                user_id: user.id,
+                name: tagName,
+              })
+              .select('id')
+              .single();
+
+            if (createTagError) throw createTagError;
+            tagIds.push(newTag.id);
+          } else {
+            tagIds.push(existingTag.id);
+          }
+        }
+
+        // Create transaction-tag associations
+        if (tagIds.length > 0) {
+          const { error: linkError } = await supabase
+            .from('transaction_tags')
+            .insert(
+              tagIds.map(tagId => ({
+                transaction_id: transaction.id,
+                tag_id: tagId,
+                user_id: user.id,
+              }))
+            );
+
+          if (linkError) throw linkError;
+        }
+      }
+
+      return transaction;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
@@ -174,6 +274,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
       queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budget-actuals'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['provisioned-totals', user?.id], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['tags', user?.id] });
       toast({
         title: "Lançamento criado",
         description: "O lançamento foi criado com sucesso.",
@@ -190,7 +291,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
   });
 
   const updateTransactionMutation = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Transaction> & { id: string }) => {
+    mutationFn: async ({ id, tags, ...updates }: Partial<Transaction> & { id: string; tags?: string[] }) => {
       const { data, error } = await supabase
         .from('transactions')
         .update(updates)
@@ -199,6 +300,63 @@ export function useTransactions(filters: TransactionFilters = {}) {
         .single();
 
       if (error) throw error;
+
+      // Update tags if provided
+      if (tags !== undefined) {
+        // Remove existing tags
+        await supabase
+          .from('transaction_tags')
+          .delete()
+          .eq('transaction_id', id);
+
+        // Add new tags
+        if (tags.length > 0) {
+          const tagIds = [];
+          for (const tagName of tags) {
+            let { data: existingTag, error: tagError } = await supabase
+              .from('tags')
+              .select('id')
+              .eq('user_id', user!.id)
+              .ilike('name', tagName)
+              .maybeSingle();
+
+            if (tagError && tagError.code !== 'PGRST116') {
+              throw tagError;
+            }
+
+            if (!existingTag) {
+              const { data: newTag, error: createTagError } = await supabase
+                .from('tags')
+                .insert({
+                  user_id: user!.id,
+                  name: tagName,
+                })
+                .select('id')
+                .single();
+
+              if (createTagError) throw createTagError;
+              tagIds.push(newTag.id);
+            } else {
+              tagIds.push(existingTag.id);
+            }
+          }
+
+          if (tagIds.length > 0) {
+            const { error: linkError } = await supabase
+              .from('transaction_tags')
+              .insert(
+                tagIds.map(tagId => ({
+                  transaction_id: id,
+                  tag_id: tagId,
+                  user_id: user!.id,
+                }))
+              );
+
+            if (linkError) throw linkError;
+          }
+        }
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -207,6 +365,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
       queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['budget-actuals'], exact: false });
       queryClient.invalidateQueries({ queryKey: ['provisioned-totals', user?.id], exact: false });
+      queryClient.invalidateQueries({ queryKey: ['tags', user?.id] });
       toast({
         title: "Lançamento atualizado",
         description: "O lançamento foi atualizado com sucesso.",

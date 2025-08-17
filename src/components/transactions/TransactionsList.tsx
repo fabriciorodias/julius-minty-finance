@@ -20,6 +20,7 @@ import { Account } from '@/hooks/useAccounts';
 import { Institution } from '@/hooks/useInstitutions';
 import { BulkActionsBar } from './BulkActionsBar';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { TransactionTags } from './TransactionTags';
 
 interface TransactionsListProps {
   transactions: TransactionWithRelations[];
@@ -219,6 +220,7 @@ export function TransactionsList({
                   <TableHead>Categoria</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
                   <TableHead>Conta</TableHead>
+                  <TableHead>Tags</TableHead>
                   <TableHead className="w-24"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -263,6 +265,9 @@ export function TransactionsList({
                       <div className="text-sm truncate">
                         {getOriginDisplay(transaction)}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <TransactionTags tags={transaction.tags || []} maxVisible={2} />
                     </TableCell>
                     <TableCell>
                       {hoveredRowId === transaction.id && (

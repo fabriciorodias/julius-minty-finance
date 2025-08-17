@@ -55,51 +55,66 @@ export function CashFlowChartBase({
     }
   };
 
-  const formatDate = (dateStr: string) => {
+  const safeFormatDate = (dateStr: any): string => {
     if (!isValidDateString(dateStr)) {
-      console.warn('Invalid date in formatDate:', dateStr);
-      return 'Data Inválida';
+      console.warn('Invalid date in safeFormatDate:', dateStr);
+      return '';
     }
     
     try {
       const parsedDate = parseISO(dateStr);
+      if (!isValid(parsedDate)) {
+        console.warn('Parsed date is invalid:', dateStr);
+        return '';
+      }
       return format(parsedDate, 'dd/MM', { locale: ptBR });
     } catch (error) {
       console.warn('Error formatting date:', dateStr, error);
-      return 'Data Inválida';
+      return '';
     }
   };
 
-  const formatDateLong = (dateStr: string) => {
+  const safeFormatDateLong = (dateStr: any): string => {
     if (!isValidDateString(dateStr)) {
-      console.warn('Invalid date in formatDateLong:', dateStr);
-      return 'Data Inválida';
+      console.warn('Invalid date in safeFormatDateLong:', dateStr);
+      return '';
     }
     
     try {
       const parsedDate = parseISO(dateStr);
+      if (!isValid(parsedDate)) {
+        console.warn('Parsed long date is invalid:', dateStr);
+        return '';
+      }
       return format(parsedDate, 'dd/MM/yyyy', { locale: ptBR });
     } catch (error) {
       console.warn('Error formatting long date:', dateStr, error);
-      return 'Data Inválida';
+      return '';
     }
   };
 
-  // Validate and filter data to ensure all dates are valid
-  const validData = data.filter(d => {
-    if (!isValidDateString(d.date)) {
-      console.warn('Invalid date found in data:', d);
-      return false;
-    }
+  // Validate and filter data with comprehensive checks
+  const validateDataPoint = (d: any): d is CashFlowDataPoint => {
+    if (!d || typeof d !== 'object') return false;
+    if (!isValidDateString(d.date)) return false;
+    if (typeof d.total !== 'number' || !isFinite(d.total)) return false;
     return true;
+  };
+
+  const validData = (data || []).filter(d => {
+    const isValid = validateDataPoint(d);
+    if (!isValid) {
+      console.warn('Invalid data point filtered out:', d);
+    }
+    return isValid;
   });
 
-  const validScenarioData = scenarioData?.filter(d => {
-    if (!isValidDateString(d.date)) {
-      console.warn('Invalid date found in scenario data:', d);
-      return false;
+  const validScenarioData = (scenarioData || []).filter(d => {
+    const isValid = validateDataPoint(d);
+    if (!isValid) {
+      console.warn('Invalid scenario data point filtered out:', d);
     }
-    return true;
+    return isValid;
   });
 
   // If no valid data, return empty state
@@ -135,10 +150,28 @@ export function CashFlowChartBase({
     originalTotal: d.total
   }));
 
-  // Safe tick formatter that handles any potential invalid dates
-  const safeTickFormatter = (value: any) => {
-    if (!value) return '';
-    return formatDate(String(value));
+  // Extra safe tick formatter that never throws
+  const ultraSafeTickFormatter = (value: any) => {
+    try {
+      if (!value) return '';
+      const formatted = safeFormatDate(String(value));
+      return formatted || '';
+    } catch (error) {
+      console.warn('Error in tick formatter:', value, error);
+      return '';
+    }
+  };
+
+  // Extra safe brush tick formatter
+  const ultraSafeBrushFormatter = (value: any) => {
+    try {
+      if (!value) return '';
+      const formatted = safeFormatDate(String(value));
+      return formatted || '';
+    } catch (error) {
+      console.warn('Error in brush formatter:', value, error);
+      return '';
+    }
   };
 
   return (
@@ -160,13 +193,20 @@ export function CashFlowChartBase({
 
           <XAxis 
             dataKey="date" 
-            tickFormatter={safeTickFormatter}
+            tickFormatter={ultraSafeTickFormatter}
             tick={{ fontSize: 12 }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis 
-            tickFormatter={(value) => formatCurrency(value).replace('R$', '').trim()}
+            tickFormatter={(value) => {
+              try {
+                return formatCurrency(value).replace('R$', '').trim();
+              } catch (error) {
+                console.warn('Error formatting currency:', value, error);
+                return String(value);
+              }
+            }}
             tick={{ fontSize: 12 }}
             axisLine={false}
             tickLine={false}
@@ -236,7 +276,7 @@ export function CashFlowChartBase({
               dataKey="date"
               height={30}
               stroke="hsl(var(--primary))"
-              tickFormatter={safeTickFormatter}
+              tickFormatter={ultraSafeBrushFormatter}
               startIndex={0}
               endIndex={Math.min(validData.length - 1, 30)}
             />
@@ -244,63 +284,75 @@ export function CashFlowChartBase({
 
           <ChartTooltip 
             content={({ active, payload, label }) => {
-              if (!active || !payload?.length || !label) return null;
-              
-              // Safely handle the label which might be invalid
-              if (!isValidDateString(label)) {
-                return null;
-              }
-              
-              const mainData = payload.find(p => p.dataKey === 'total');
-              const scenarioValue = showScenario && validScenarioData ? 
-                validScenarioData.find(d => d.date === label)?.total : null;
-              
-              return (
-                <div className="bg-background border rounded-lg shadow-lg p-4 min-w-[200px]">
-                  <p className="font-medium mb-3">
-                    {formatDateLong(label)}
-                  </p>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-0.5 rounded bg-primary"/>
-                        <span className="text-sm">Saldo Real</span>
-                      </div>
-                      <span className={`font-medium ${
-                        (mainData?.value as number || 0) < 0 ? 'text-destructive' : 'text-green-600'
-                      }`}>
-                        {formatCurrency(mainData?.value as number || 0)}
-                      </span>
-                    </div>
-                    
-                    {scenarioValue !== null && (
+              try {
+                if (!active || !payload?.length || !label) return null;
+                
+                // Extra safety check for the label
+                if (!isValidDateString(label)) {
+                  console.warn('Invalid label in tooltip:', label);
+                  return null;
+                }
+                
+                const mainData = payload.find(p => p.dataKey === 'total');
+                const scenarioValue = showScenario && validScenarioData ? 
+                  validScenarioData.find(d => d.date === label)?.total : null;
+                
+                const formattedDate = safeFormatDateLong(label);
+                if (!formattedDate) {
+                  console.warn('Could not format date for tooltip:', label);
+                  return null;
+                }
+                
+                return (
+                  <div className="bg-background border rounded-lg shadow-lg p-4 min-w-[200px]">
+                    <p className="font-medium mb-3">
+                      {formattedDate}
+                    </p>
+                    <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
-                          <div className="w-3 h-0.5 rounded bg-yellow-500" style={{ borderTop: '2px dashed' }}/>
-                          <span className="text-sm">Cenário</span>
+                          <div className="w-3 h-0.5 rounded bg-primary"/>
+                          <span className="text-sm">Saldo Real</span>
                         </div>
                         <span className={`font-medium ${
-                          scenarioValue < 0 ? 'text-destructive' : 'text-green-600'
+                          (mainData?.value as number || 0) < 0 ? 'text-destructive' : 'text-green-600'
                         }`}>
-                          {formatCurrency(scenarioValue)}
+                          {formatCurrency(mainData?.value as number || 0)}
                         </span>
                       </div>
-                    )}
-                    
-                    {scenarioValue !== null && mainData && (
-                      <div className="flex justify-between items-center pt-2 border-t">
-                        <span className="text-sm text-muted-foreground">Diferença:</span>
-                        <span className={`font-medium text-sm ${
-                          (scenarioValue - (mainData.value as number)) >= 0 ? 'text-green-600' : 'text-destructive'
-                        }`}>
-                          {(scenarioValue - (mainData.value as number)) >= 0 ? '+' : ''}
-                          {formatCurrency(scenarioValue - (mainData.value as number))}
-                        </span>
-                      </div>
-                    )}
+                      
+                      {scenarioValue !== null && (
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-0.5 rounded bg-yellow-500" style={{ borderTop: '2px dashed' }}/>
+                            <span className="text-sm">Cenário</span>
+                          </div>
+                          <span className={`font-medium ${
+                            scenarioValue < 0 ? 'text-destructive' : 'text-green-600'
+                          }`}>
+                            {formatCurrency(scenarioValue)}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {scenarioValue !== null && mainData && (
+                        <div className="flex justify-between items-center pt-2 border-t">
+                          <span className="text-sm text-muted-foreground">Diferença:</span>
+                          <span className={`font-medium text-sm ${
+                            (scenarioValue - (mainData.value as number)) >= 0 ? 'text-green-600' : 'text-destructive'
+                          }`}>
+                            {(scenarioValue - (mainData.value as number)) >= 0 ? '+' : ''}
+                            {formatCurrency(scenarioValue - (mainData.value as number))}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
+                );
+              } catch (error) {
+                console.warn('Error rendering tooltip:', error);
+                return null;
+              }
             }}
           />
         </AreaChart>

@@ -30,7 +30,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useTags } from '@/hooks/useTags';
 import { Edit2, Trash2, Plus, Save, X } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 interface TagsManagerModalProps {
   isOpen: boolean;
@@ -287,7 +287,7 @@ export function TagsManagerModal({ isOpen, onClose }: TagsManagerModalProps) {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deleteTagId} onClose={() => setDeleteTagId(null)}>
+      <AlertDialog open={!!deleteTagId} onOpenChange={() => setDeleteTagId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Tag</AlertDialogTitle>

@@ -1,4 +1,3 @@
-
 import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import { 
   LineChart, 
@@ -12,7 +11,7 @@ import {
   ReferenceLine,
   Brush
 } from 'recharts';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CashFlowDataPoint } from '@/lib/cashflow-sim';
 
@@ -41,11 +40,27 @@ export function CashFlowChartBase({
   };
 
   const formatDate = (dateStr: string) => {
-    return format(parseISO(dateStr), 'dd/MM', { locale: ptBR });
+    if (!dateStr) return '';
+    try {
+      const parsedDate = parseISO(dateStr);
+      if (!isValid(parsedDate)) return dateStr;
+      return format(parsedDate, 'dd/MM', { locale: ptBR });
+    } catch (error) {
+      console.warn('Invalid date in formatDate:', dateStr);
+      return dateStr;
+    }
   };
 
   const formatDateLong = (dateStr: string) => {
-    return format(parseISO(dateStr), 'dd/MM/yyyy', { locale: ptBR });
+    if (!dateStr) return '';
+    try {
+      const parsedDate = parseISO(dateStr);
+      if (!isValid(parsedDate)) return dateStr;
+      return format(parsedDate, 'dd/MM/yyyy', { locale: ptBR });
+    } catch (error) {
+      console.warn('Invalid date in formatDateLong:', dateStr);
+      return dateStr;
+    }
   };
 
   // Calculate min and max values for better scaling
@@ -173,7 +188,7 @@ export function CashFlowChartBase({
 
           <ChartTooltip 
             content={({ active, payload, label }) => {
-              if (!active || !payload?.length) return null;
+              if (!active || !payload?.length || !label) return null;
               
               const mainData = payload.find(p => p.dataKey === 'total');
               const scenarioValue = showScenario && scenarioData ? 

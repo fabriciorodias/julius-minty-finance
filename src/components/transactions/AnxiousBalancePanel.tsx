@@ -40,7 +40,7 @@ export function AnxiousBalancePanel({ selectedAccountIds, dateFilters }: Anxious
 
   // Filter to only asset accounts for "today's balance"
   const assetAccounts = accounts.filter(account => 
-    selectedAccountIds.includes(account.id) && account.type === 'conta_corrente'
+    selectedAccountIds.includes(account.id) && account.kind === 'asset'
   );
 
   // Calculate today's balance for asset accounts only

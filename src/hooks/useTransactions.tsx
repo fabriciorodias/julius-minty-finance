@@ -1,11 +1,8 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Database } from '@/integrations/supabase/types';
-
-type TransactionRow = Database['public']['Tables']['transactions']['Row'];
-type TransactionInsert = Database['public']['Tables']['transactions']['Insert'];
 
 export interface TransactionFilters {
   startDate?: string;
@@ -23,7 +20,29 @@ export interface TransactionFilters {
   tagIds?: string[];
 }
 
-export interface TransactionWithRelations extends TransactionRow {
+export interface Transaction {
+  id: string;
+  user_id: string;
+  description: string;
+  amount: number;
+  event_date: string;
+  effective_date?: string;
+  type: string;
+  category_id?: string;
+  account_id?: string;
+  credit_card_id?: string;
+  counterparty_id?: string;
+  status: 'pendente' | 'concluido';
+  is_reviewed: boolean;
+  notes?: string;
+  plan_id?: string;
+  installment_number?: number;
+  total_installments?: number;
+  installment_id?: string;
+  created_at: string;
+}
+
+export interface TransactionWithRelations extends Transaction {
   categories?: { name: string };
   accounts?: { name: string };
   credit_cards?: { name: string };
@@ -35,7 +54,7 @@ export interface CreateTransactionData {
   description: string;
   amount: number;
   event_date: string;
-  effective_date: string;
+  effective_date?: string;
   category_id?: string;
   account_id?: string;
   credit_card_id?: string;

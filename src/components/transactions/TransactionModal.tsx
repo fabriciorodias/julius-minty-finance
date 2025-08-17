@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -50,7 +49,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useInstitutions } from '@/hooks/useInstitutions';
 import { useTags } from '@/hooks/useTags';
 import { useCounterparties } from '@/hooks/useCounterparties';
-import { CreateTransactionData, Transaction } from '@/hooks/useTransactions';
+import { CreateTransactionData, TransactionWithRelations } from '@/hooks/useTransactions';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { CurrencyInputBRL } from '@/components/ui/currency-input-brl';
@@ -90,13 +89,7 @@ interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: CreateTransactionData) => void;
-  transaction?: Transaction & {
-    categories: { name: string } | null;
-    accounts: { name: string } | null;
-    credit_cards: { name: string } | null;
-    counterparties: { name: string } | null;
-    tags?: { name: string; color: string | null }[];
-  };
+  transaction?: TransactionWithRelations;
   isLoading?: boolean;
   prefilledAccountId?: string;
 }
@@ -267,7 +260,6 @@ export function TransactionModal({
     const finalAmount = data.type === 'receita' ? numericAmount : -numericAmount;
 
     const transactionData: CreateTransactionData = {
-      type: data.type,
       description: data.description,
       amount: finalAmount,
       event_date: data.event_date,

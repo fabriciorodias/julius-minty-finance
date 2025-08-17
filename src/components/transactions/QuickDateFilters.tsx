@@ -10,6 +10,7 @@ import { format, startOfMonth, endOfMonth, subMonths, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar as CalendarIcon, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { DateRange } from 'react-day-picker';
 
 interface QuickDateFiltersProps {
   onDateRangeSelect: (startDate: string, endDate: string) => void;
@@ -25,10 +26,7 @@ export function QuickDateFilters({
   className 
 }: QuickDateFiltersProps) {
   const [showCalendar, setShowCalendar] = useState(false);
-  const [selectedRange, setSelectedRange] = useState<{
-    from?: Date;
-    to?: Date;
-  }>({});
+  const [selectedRange, setSelectedRange] = useState<DateRange | undefined>();
   
   const today = new Date();
   
@@ -77,10 +75,10 @@ export function QuickDateFilters({
     return currentStartDate === start && currentEndDate === end;
   };
 
-  const handleCustomDateSelect = (range: { from?: Date; to?: Date }) => {
+  const handleCustomDateSelect = (range: DateRange | undefined) => {
     setSelectedRange(range);
     
-    if (range.from && range.to) {
+    if (range?.from && range?.to) {
       const start = format(range.from, 'yyyy-MM-dd');
       const end = format(range.to, 'yyyy-MM-dd');
       onDateRangeSelect(start, end);
@@ -90,7 +88,7 @@ export function QuickDateFilters({
 
   const handleClearFilters = () => {
     onDateRangeSelect('', '');
-    setSelectedRange({});
+    setSelectedRange(undefined);
   };
 
   const hasActiveFilter = currentStartDate || currentEndDate;

@@ -40,144 +40,149 @@ export function CashFlowChartBase({
     }).format(value);
   };
 
-  const isValidDateString = (dateStr: any): dateStr is string => {
-    if (!dateStr || typeof dateStr !== 'string') return false;
-    
-    // Check basic date format (YYYY-MM-DD)
-    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
-    if (!datePattern.test(dateStr)) return false;
-    
+  // Ultra-safe date validation that prevents ANY invalid date from passing through
+  const isStrictValidDate = (dateValue: any): boolean => {
     try {
-      const parsedDate = parseISO(dateStr);
-      return isValid(parsedDate);
+      if (!dateValue) return false;
+      if (typeof dateValue !== 'string') return false;
+      
+      // Check for basic string format
+      if (dateValue.length < 8) return false;
+      
+      // Check for ISO date pattern
+      const isoPattern = /^\d{4}-\d{2}-\d{2}(T.*)?$/;
+      if (!isoPattern.test(dateValue)) return false;
+      
+      // Try to parse and validate
+      const parsed = parseISO(dateValue);
+      if (!isValid(parsed)) return false;
+      
+      // Additional check: ensure the date is within reasonable bounds
+      const year = parsed.getFullYear();
+      if (year < 1900 || year > 2100) return false;
+      
+      return true;
     } catch {
       return false;
     }
   };
 
-  const safeFormatDate = (dateStr: any): string => {
-    if (!isValidDateString(dateStr)) {
-      console.warn('Invalid date in safeFormatDate:', dateStr);
-      return '';
-    }
-    
+  // Safe date formatting that NEVER throws
+  const safeDateFormat = (dateStr: any, formatStr: string = 'dd/MM'): string => {
     try {
-      const parsedDate = parseISO(dateStr);
-      if (!isValid(parsedDate)) {
-        console.warn('Parsed date is invalid:', dateStr);
+      if (!isStrictValidDate(dateStr)) {
+        console.warn('Invalid date rejected:', dateStr);
         return '';
       }
-      return format(parsedDate, 'dd/MM', { locale: ptBR });
+      
+      const parsed = parseISO(dateStr);
+      return format(parsed, formatStr, { locale: ptBR });
     } catch (error) {
-      console.warn('Error formatting date:', dateStr, error);
+      console.warn('Date formatting error:', error, 'for date:', dateStr);
       return '';
     }
   };
 
-  const safeFormatDateLong = (dateStr: any): string => {
-    if (!isValidDateString(dateStr)) {
-      console.warn('Invalid date in safeFormatDateLong:', dateStr);
-      return '';
-    }
-    
-    try {
-      const parsedDate = parseISO(dateStr);
-      if (!isValid(parsedDate)) {
-        console.warn('Parsed long date is invalid:', dateStr);
-        return '';
-      }
-      return format(parsedDate, 'dd/MM/yyyy', { locale: ptBR });
-    } catch (error) {
-      console.warn('Error formatting long date:', dateStr, error);
-      return '';
-    }
-  };
-
-  // Validate and filter data with comprehensive checks
-  const validateDataPoint = (d: any): d is CashFlowDataPoint => {
-    if (!d || typeof d !== 'object') return false;
-    if (!isValidDateString(d.date)) return false;
-    if (typeof d.total !== 'number' || !isFinite(d.total)) return false;
+  // Comprehensive data point validation
+  const isValidDataPoint = (item: any): item is CashFlowDataPoint => {
+    if (!item || typeof item !== 'object') return false;
+    if (!isStrictValidDate(item.date)) return false;
+    if (typeof item.total !== 'number' || !isFinite(item.total)) return false;
     return true;
   };
 
-  const validData = (data || []).filter(d => {
-    const isValid = validateDataPoint(d);
+  // Filter and validate all data upfront
+  const safeData = Array.isArray(data) ? data.filter(item => {
+    const isValid = isValidDataPoint(item);
     if (!isValid) {
-      console.warn('Invalid data point filtered out:', d);
+      console.warn('Filtering out invalid data point:', item);
     }
     return isValid;
-  });
+  }) : [];
 
-  const validScenarioData = (scenarioData || []).filter(d => {
-    const isValid = validateDataPoint(d);
+  const safeScenarioData = Array.isArray(scenarioData) ? scenarioData.filter(item => {
+    const isValid = isValidDataPoint(item);
     if (!isValid) {
-      console.warn('Invalid scenario data point filtered out:', d);
+      console.warn('Filtering out invalid scenario data point:', item);
     }
     return isValid;
-  });
+  }) : [];
 
-  // If no valid data, return empty state
-  if (validData.length === 0) {
+  // If no valid data, return empty state immediately
+  if (safeData.length === 0) {
     return (
       <ChartContainer config={chartConfig} className="h-full">
         <div className="flex items-center justify-center h-full text-muted-foreground">
-          <p>Nenhum dado válido para exibir</p>
+          <div className="text-center">
+            <p className="text-lg mb-2">📊</p>
+            <p>Nenhum dado válido para exibir</p>
+            <p className="text-sm mt-1">Verifique se os dados possuem datas e valores válidos</p>
+          </div>
         </div>
       </ChartContainer>
     );
   }
 
-  // Calculate min and max values for better scaling
+  // Calculate chart bounds safely
   const allValues = [
-    ...validData.map(d => d.total),
-    ...(validScenarioData?.map(d => d.total) || [])
+    ...safeData.map(d => d.total),
+    ...(safeScenarioData.map(d => d.total) || [])
   ];
   const minValue = Math.min(...allValues);
   const maxValue = Math.max(...allValues);
-  const padding = (maxValue - minValue) * 0.1;
+  const padding = Math.abs(maxValue - minValue) * 0.1 || 100; // Fallback padding
 
-  // Split data into positive and negative segments
-  const positiveData = validData.map(d => ({
+  // Create positive and negative data sets
+  const positiveData = safeData.map(d => ({
     ...d,
     total: d.total >= 0 ? d.total : 0,
     originalTotal: d.total
   }));
 
-  const negativeData = validData.map(d => ({
+  const negativeData = safeData.map(d => ({
     ...d,
     total: d.total < 0 ? d.total : 0,
     originalTotal: d.total
   }));
 
-  // Extra safe tick formatter that never throws
-  const ultraSafeTickFormatter = (value: any) => {
+  // Absolutely safe tick formatters that never throw
+  const ultraSafeTickFormatter = (value: any): string => {
     try {
       if (!value) return '';
-      const formatted = safeFormatDate(String(value));
+      const formatted = safeDateFormat(String(value));
       return formatted || '';
-    } catch (error) {
-      console.warn('Error in tick formatter:', value, error);
+    } catch {
       return '';
     }
   };
 
-  // Extra safe brush tick formatter
-  const ultraSafeBrushFormatter = (value: any) => {
+  const ultraSafeBrushFormatter = (value: any): string => {
     try {
       if (!value) return '';
-      const formatted = safeFormatDate(String(value));
+      const formatted = safeDateFormat(String(value));
       return formatted || '';
-    } catch (error) {
-      console.warn('Error in brush formatter:', value, error);
+    } catch {
       return '';
+    }
+  };
+
+  // Safe currency formatter for Y-axis
+  const safeCurrencyFormatter = (value: any): string => {
+    try {
+      if (typeof value !== 'number' || !isFinite(value)) return '0';
+      return formatCurrency(value).replace('R$', '').trim();
+    } catch {
+      return String(value);
     }
   };
 
   return (
     <ChartContainer config={chartConfig} className="h-full">
       <ResponsiveContainer width="100%" height={height}>
-        <AreaChart data={validData} margin={{ top: 20, right: 30, left: 20, bottom: showBrush ? 80 : 40 }}>
+        <AreaChart 
+          data={safeData} 
+          margin={{ top: 20, right: 30, left: 20, bottom: showBrush ? 80 : 40 }}
+        >
           <defs>
             <linearGradient id="positiveGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.8}/>
@@ -199,21 +204,14 @@ export function CashFlowChartBase({
             tickLine={false}
           />
           <YAxis 
-            tickFormatter={(value) => {
-              try {
-                return formatCurrency(value).replace('R$', '').trim();
-              } catch (error) {
-                console.warn('Error formatting currency:', value, error);
-                return String(value);
-              }
-            }}
+            tickFormatter={safeCurrencyFormatter}
             tick={{ fontSize: 12 }}
             axisLine={false}
             tickLine={false}
             domain={[minValue - padding, maxValue + padding]}
           />
 
-          {/* Zero line */}
+          {/* Zero reference line */}
           <ReferenceLine y={0} stroke="hsl(var(--border))" strokeDasharray="3 3" />
 
           {/* Negative area highlighting */}
@@ -226,7 +224,7 @@ export function CashFlowChartBase({
             />
           )}
 
-          {/* Positive area (above zero) */}
+          {/* Positive area */}
           <Area
             type="monotone"
             data={positiveData}
@@ -237,7 +235,7 @@ export function CashFlowChartBase({
             dot={false}
           />
 
-          {/* Negative area (below zero) */}
+          {/* Negative area */}
           <Area
             type="monotone"
             data={negativeData}
@@ -258,11 +256,11 @@ export function CashFlowChartBase({
           />
 
           {/* Scenario line */}
-          {showScenario && validScenarioData && validScenarioData.length > 0 && (
+          {showScenario && safeScenarioData.length > 0 && (
             <Line
               type="monotone"
               dataKey="total"
-              data={validScenarioData}
+              data={safeScenarioData}
               stroke="hsl(38, 92%, 50%)"
               strokeWidth={2}
               strokeDasharray="8 4"
@@ -270,15 +268,15 @@ export function CashFlowChartBase({
             />
           )}
 
-          {/* Brush for zooming */}
-          {showBrush && (
+          {/* Brush */}
+          {showBrush && safeData.length > 0 && (
             <Brush
               dataKey="date"
               height={30}
               stroke="hsl(var(--primary))"
               tickFormatter={ultraSafeBrushFormatter}
               startIndex={0}
-              endIndex={Math.min(validData.length - 1, 30)}
+              endIndex={Math.min(safeData.length - 1, 30)}
             />
           )}
 
@@ -287,19 +285,19 @@ export function CashFlowChartBase({
               try {
                 if (!active || !payload?.length || !label) return null;
                 
-                // Extra safety check for the label
-                if (!isValidDateString(label)) {
-                  console.warn('Invalid label in tooltip:', label);
+                // Extra validation for tooltip label
+                if (!isStrictValidDate(label)) {
+                  console.warn('Invalid tooltip label:', label);
                   return null;
                 }
                 
                 const mainData = payload.find(p => p.dataKey === 'total');
-                const scenarioValue = showScenario && validScenarioData ? 
-                  validScenarioData.find(d => d.date === label)?.total : null;
+                const scenarioValue = showScenario && safeScenarioData.length > 0 ? 
+                  safeScenarioData.find(d => d.date === label)?.total : null;
                 
-                const formattedDate = safeFormatDateLong(label);
+                const formattedDate = safeDateFormat(label, 'PPP');
                 if (!formattedDate) {
-                  console.warn('Could not format date for tooltip:', label);
+                  console.warn('Could not format tooltip date:', label);
                   return null;
                 }
                 
@@ -321,7 +319,7 @@ export function CashFlowChartBase({
                         </span>
                       </div>
                       
-                      {scenarioValue !== null && (
+                      {scenarioValue !== null && scenarioValue !== undefined && (
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-0.5 rounded bg-yellow-500" style={{ borderTop: '2px dashed' }}/>
@@ -335,7 +333,7 @@ export function CashFlowChartBase({
                         </div>
                       )}
                       
-                      {scenarioValue !== null && mainData && (
+                      {scenarioValue !== null && scenarioValue !== undefined && mainData && (
                         <div className="flex justify-between items-center pt-2 border-t">
                           <span className="text-sm text-muted-foreground">Diferença:</span>
                           <span className={`font-medium text-sm ${
@@ -350,7 +348,7 @@ export function CashFlowChartBase({
                   </div>
                 );
               } catch (error) {
-                console.warn('Error rendering tooltip:', error);
+                console.warn('Tooltip rendering error:', error);
                 return null;
               }
             }}

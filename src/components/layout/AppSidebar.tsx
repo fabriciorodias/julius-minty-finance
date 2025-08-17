@@ -20,6 +20,11 @@ const mainMenuItems = [
     icon: "dashboard"
   },
   {
+    title: "Investimentos",
+    url: "/investimentos",
+    icon: "trending_up"
+  },
+  {
     title: "Planos e Metas",
     url: "/planos",
     icon: "flag"
@@ -33,16 +38,6 @@ const mainMenuItems = [
     title: "Lançamentos",
     url: "/lancamentos",
     icon: "swap_horiz"
-  },
-  {
-    title: "Investimentos",
-    url: "/investimentos",
-    icon: "trending_up"
-  },
-  {
-    title: "Ferramentas",
-    url: "/ferramentas",
-    icon: "build"
   }
 ];
 
@@ -51,6 +46,11 @@ const settingsMenuItems = [
     title: "Ajustes",
     url: "/entidades",
     icon: "settings"
+  },
+  {
+    title: "Ferramentas",
+    url: "/ferramentas",
+    icon: "build"
   },
   {
     title: "Tutoriais",

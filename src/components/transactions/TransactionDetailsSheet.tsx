@@ -32,7 +32,8 @@ import {
   FileText,
   User,
   Hash,
-  Clock
+  Clock,
+  Copy
 } from 'lucide-react';
 import { TransactionWithRelations } from '@/hooks/useTransactions';
 import { TransactionTags } from './TransactionTags';
@@ -47,6 +48,7 @@ interface TransactionDetailsSheetProps {
   institutions: any[];
   onEdit: (transaction: TransactionWithRelations) => void;
   onDelete: (id: string) => void;
+  onDuplicate: (transaction: TransactionWithRelations) => void;
   onTagClick?: (tagName: string) => void;
 }
 
@@ -58,6 +60,7 @@ export function TransactionDetailsSheet({
   institutions,
   onEdit,
   onDelete,
+  onDuplicate,
   onTagClick,
 }: TransactionDetailsSheetProps) {
   const isMobile = useIsMobile();
@@ -76,12 +79,16 @@ export function TransactionDetailsSheet({
         e.preventDefault();
         onDelete(transaction.id);
         onOpenChange(false);
+      } else if (e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        onDuplicate(transaction);
+        onOpenChange(false);
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [open, transaction, onOpenChange, onEdit, onDelete]);
+  }, [open, transaction, onOpenChange, onEdit, onDelete, onDuplicate]);
 
   if (!transaction) return null;
 
@@ -149,7 +156,7 @@ export function TransactionDetailsSheet({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button
               variant="outline"
               size="sm"
@@ -158,6 +165,18 @@ export function TransactionDetailsSheet({
             >
               <Edit className="h-3 w-3" />
               Editar (E)
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                onDuplicate(transaction);
+                onOpenChange(false);
+              }}
+              className="flex items-center gap-2"
+            >
+              <Copy className="h-3 w-3" />
+              Duplicar (D)
             </Button>
             <Button
               variant="outline"
@@ -334,7 +353,8 @@ export function TransactionDetailsSheet({
           <SheetDescription>
             Visualize e edite os detalhes desta transação. 
             Use <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded">Esc</kbd> para fechar,{' '}
-            <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded">E</kbd> para editar.
+            <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded">E</kbd> para editar,{' '}
+            <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded">D</kbd> para duplicar.
           </SheetDescription>
         </SheetHeader>
         {content}

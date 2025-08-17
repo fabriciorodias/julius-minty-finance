@@ -46,6 +46,7 @@ export default function Lancamentos() {
   const [isCashFlowModalOpen, setIsCashFlowModalOpen] = useState(false);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionWithRelations | null>(null);
+  const [duplicateOf, setDuplicateOf] = useState<TransactionWithRelations | null>(null);
 
   // Details sheet state
   const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
@@ -106,6 +107,13 @@ export default function Lancamentos() {
 
   const handleEdit = (transaction: TransactionWithRelations) => {
     setSelectedTransaction(transaction);
+    setDuplicateOf(null);
+    setIsModalOpen(true);
+  };
+
+  const handleDuplicate = (transaction: TransactionWithRelations) => {
+    setSelectedTransaction(null);
+    setDuplicateOf(transaction);
     setIsModalOpen(true);
   };
 
@@ -180,6 +188,7 @@ export default function Lancamentos() {
   useEffect(() => {
     if (!isModalOpen) {
       setSelectedTransaction(null);
+      setDuplicateOf(null);
     }
   }, [isModalOpen]);
 
@@ -380,6 +389,7 @@ export default function Lancamentos() {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveTransaction}
         transaction={selectedTransaction}
+        duplicateOf={duplicateOf}
         isLoading={isCreating || isUpdating}
         prefilledAccountId={prefilledAccountId}
       />
@@ -420,6 +430,7 @@ export default function Lancamentos() {
         institutions={institutions}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onDuplicate={handleDuplicate}
         onTagClick={handleTagClick}
       />
     </div>

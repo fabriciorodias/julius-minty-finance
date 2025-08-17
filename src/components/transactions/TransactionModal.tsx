@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -95,6 +96,13 @@ interface TransactionModalProps {
     counterparties: { id: string; name: string } | null;
     tags?: { name: string; color: string | null }[];
   };
+  duplicateOf?: Transaction & {
+    categories: { name: string } | null;
+    accounts: { name: string } | null;
+    credit_cards: { name: string } | null;
+    counterparties: { id: string; name: string } | null;
+    tags?: { name: string; color: string | null }[];
+  } | null;
   isLoading?: boolean;
   prefilledAccountId?: string;
 }
@@ -104,6 +112,7 @@ export function TransactionModal({
   onClose,
   onSave,
   transaction,
+  duplicateOf,
   isLoading = false,
   prefilledAccountId,
 }: TransactionModalProps) {
@@ -212,6 +221,8 @@ export function TransactionModal({
   // Reset form properly when modal opens
   useEffect(() => {
     if (isOpen) {
+      const today = new Date().toISOString().slice(0, 10);
+      
       if (transaction) {
         // Determine source type based on account type
         const transactionAccount = accounts.find(acc => acc.id === transaction.account_id);
@@ -237,6 +248,30 @@ export function TransactionModal({
           account_id: transaction.account_id || undefined,
           tags: transactionTags,
         });
+      } else if (duplicateOf) {
+        // Duplicating transaction - use original data but update dates
+        const duplicateAccount = accounts.find(acc => acc.id === duplicateOf.account_id);
+        const sourceType = duplicateAccount?.type === 'credit' ? 'credit_card' : 'account';
+        
+        // Extract tag names from duplicate transaction tags
+        const duplicateTags = duplicateOf.tags?.map(tag => tag.name) || [];
+        
+        form.reset({
+          type: duplicateOf.type,
+          description: duplicateOf.description,
+          amount: Math.abs(duplicateOf.amount).toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }),
+          event_date: today,
+          is_effective: duplicateOf.status === 'concluido',
+          effective_date: duplicateOf.status === 'concluido' ? today : '',
+          category_id: duplicateOf.category_id || undefined,
+          counterparty_id: duplicateOf.counterparty_id || undefined,
+          source_type: sourceType,
+          account_id: duplicateOf.account_id || undefined,
+          tags: duplicateTags,
+        });
       } else {
         // Creating new transaction - reset to clean state with prefilled account
         const defaultAccount = prefilledAccountId || undefined;
@@ -248,7 +283,7 @@ export function TransactionModal({
           type: 'despesa',
           description: '',
           amount: '',
-          event_date: new Date().toISOString().slice(0, 10),
+          event_date: today,
           is_effective: false,
           effective_date: '',
           category_id: undefined,
@@ -259,7 +294,7 @@ export function TransactionModal({
         });
       }
     }
-  }, [isOpen, transaction, form, accounts, prefilledAccountId]);
+  }, [isOpen, transaction, duplicateOf, form, accounts, prefilledAccountId]);
 
   const handleSubmit = (data: TransactionFormData, saveAndNew: boolean = false) => {
     // Parse the formatted currency value
@@ -323,7 +358,7 @@ export function TransactionModal({
         <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
-              {transaction ? 'Editar Lançamento' : 'Novo Lançamento'}
+              {transaction ? 'Editar Lançamento' : duplicateOf ? 'Duplicar Lançamento' : 'Novo Lançamento'}
             </DialogTitle>
           </DialogHeader>
 
@@ -662,7 +697,7 @@ export function TransactionModal({
                   Cancelar
                 </Button>
                 
-                {!transaction && (
+                {!transaction && !duplicateOf && (
                   <Button 
                     type="button" 
                     variant="secondary"

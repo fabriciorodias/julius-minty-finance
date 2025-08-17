@@ -110,13 +110,6 @@ export function DynamicBalanceCard({
   };
 
   const getBalanceColor = (amount: number) => {
-    if (variant === 'credit') {
-      // Para cartão de crédito, invertemos a lógica
-      if (amount < 0) return 'text-green-600'; // Menos dívida é melhor
-      if (amount > 0) return 'text-red-600';   // Mais dívida é pior
-      return 'text-foreground';
-    }
-    
     if (amount > 0) return 'text-green-600';
     if (amount < 0) return 'text-red-600';
     return 'text-foreground';

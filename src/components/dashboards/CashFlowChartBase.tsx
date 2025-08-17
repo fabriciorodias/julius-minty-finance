@@ -40,63 +40,66 @@ export function CashFlowChartBase({
     }).format(value);
   };
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr || typeof dateStr !== 'string') return '';
+  const isValidDateString = (dateStr: any): dateStr is string => {
+    if (!dateStr || typeof dateStr !== 'string') return false;
+    
+    // Check basic date format (YYYY-MM-DD)
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+    if (!datePattern.test(dateStr)) return false;
+    
     try {
       const parsedDate = parseISO(dateStr);
-      if (!isValid(parsedDate)) {
-        console.warn('Invalid date in formatDate:', dateStr);
-        return '';
-      }
+      return isValid(parsedDate);
+    } catch {
+      return false;
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (!isValidDateString(dateStr)) {
+      console.warn('Invalid date in formatDate:', dateStr);
+      return 'Data Inválida';
+    }
+    
+    try {
+      const parsedDate = parseISO(dateStr);
       return format(parsedDate, 'dd/MM', { locale: ptBR });
     } catch (error) {
       console.warn('Error formatting date:', dateStr, error);
-      return '';
+      return 'Data Inválida';
     }
   };
 
   const formatDateLong = (dateStr: string) => {
-    if (!dateStr || typeof dateStr !== 'string') return '';
+    if (!isValidDateString(dateStr)) {
+      console.warn('Invalid date in formatDateLong:', dateStr);
+      return 'Data Inválida';
+    }
+    
     try {
       const parsedDate = parseISO(dateStr);
-      if (!isValid(parsedDate)) {
-        console.warn('Invalid date in formatDateLong:', dateStr);
-        return '';
-      }
       return format(parsedDate, 'dd/MM/yyyy', { locale: ptBR });
     } catch (error) {
       console.warn('Error formatting long date:', dateStr, error);
-      return '';
+      return 'Data Inválida';
     }
   };
 
   // Validate and filter data to ensure all dates are valid
   const validData = data.filter(d => {
-    if (!d.date || typeof d.date !== 'string') {
+    if (!isValidDateString(d.date)) {
       console.warn('Invalid date found in data:', d);
       return false;
     }
-    try {
-      const parsedDate = parseISO(d.date);
-      return isValid(parsedDate);
-    } catch (error) {
-      console.warn('Error parsing date in data:', d.date, error);
-      return false;
-    }
+    return true;
   });
 
   const validScenarioData = scenarioData?.filter(d => {
-    if (!d.date || typeof d.date !== 'string') {
+    if (!isValidDateString(d.date)) {
       console.warn('Invalid date found in scenario data:', d);
       return false;
     }
-    try {
-      const parsedDate = parseISO(d.date);
-      return isValid(parsedDate);
-    } catch (error) {
-      console.warn('Error parsing date in scenario data:', d.date, error);
-      return false;
-    }
+    return true;
   });
 
   // If no valid data, return empty state
@@ -132,6 +135,12 @@ export function CashFlowChartBase({
     originalTotal: d.total
   }));
 
+  // Safe tick formatter that handles any potential invalid dates
+  const safeTickFormatter = (value: any) => {
+    if (!value) return '';
+    return formatDate(String(value));
+  };
+
   return (
     <ChartContainer config={chartConfig} className="h-full">
       <ResponsiveContainer width="100%" height={height}>
@@ -151,7 +160,7 @@ export function CashFlowChartBase({
 
           <XAxis 
             dataKey="date" 
-            tickFormatter={formatDate}
+            tickFormatter={safeTickFormatter}
             tick={{ fontSize: 12 }}
             axisLine={false}
             tickLine={false}
@@ -227,7 +236,7 @@ export function CashFlowChartBase({
               dataKey="date"
               height={30}
               stroke="hsl(var(--primary))"
-              tickFormatter={formatDate}
+              tickFormatter={safeTickFormatter}
               startIndex={0}
               endIndex={Math.min(validData.length - 1, 30)}
             />
@@ -236,6 +245,11 @@ export function CashFlowChartBase({
           <ChartTooltip 
             content={({ active, payload, label }) => {
               if (!active || !payload?.length || !label) return null;
+              
+              // Safely handle the label which might be invalid
+              if (!isValidDateString(label)) {
+                return null;
+              }
               
               const mainData = payload.find(p => p.dataKey === 'total');
               const scenarioValue = showScenario && validScenarioData ? 

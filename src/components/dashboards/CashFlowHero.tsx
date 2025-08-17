@@ -12,7 +12,7 @@ import { useCashFlowMetrics } from '@/hooks/useCashFlowMetrics';
 import { useProvisionedTotals } from '@/hooks/useProvisionedTotals';
 import { simulateCashFlowScenario, ScenarioAdjustment } from '@/lib/cashflow-sim';
 import { safeFormatDate } from '@/lib/date-utils';
-import { format, addDays } from 'date-fns';
+import { format, addDays, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   TrendingUp, 
@@ -34,26 +34,58 @@ export function CashFlowHero({ selectedAccountIds }: CashFlowHeroProps) {
   const [mode, setMode] = useState<'calm' | 'analytical'>('calm');
   const [scenarioAdjustments, setScenarioAdjustments] = useState<ScenarioAdjustment[]>([]);
 
+  // Safe date formatting helper
+  const safeFormatDateString = (dateInput: any, formatStr: string = 'yyyy-MM-dd'): string => {
+    try {
+      if (!dateInput) return format(new Date(), formatStr);
+      
+      let dateToFormat: Date;
+      if (dateInput instanceof Date) {
+        dateToFormat = dateInput;
+      } else if (typeof dateInput === 'string') {
+        dateToFormat = new Date(dateInput);
+      } else {
+        dateToFormat = new Date();
+      }
+      
+      if (!isValid(dateToFormat)) {
+        console.warn('Invalid date in safeFormatDateString:', dateInput);
+        return format(new Date(), formatStr);
+      }
+      
+      return format(dateToFormat, formatStr);
+    } catch (error) {
+      console.warn('Error formatting date:', error, 'Input:', dateInput);
+      return format(new Date(), formatStr);
+    }
+  };
+
   // Calculate date filters based on horizon
   const dateFilters = useMemo(() => {
-    const startDate = format(new Date(), 'yyyy-MM-dd');
+    const today = new Date();
+    const startDate = safeFormatDateString(today, 'yyyy-MM-dd');
     let endDate: string;
     
-    switch (horizon) {
-      case '30d':
-        endDate = format(addDays(new Date(), 30), 'yyyy-MM-dd');
-        break;
-      case '90d':
-        endDate = format(addDays(new Date(), 90), 'yyyy-MM-dd');
-        break;
-      case '180d':
-        endDate = format(addDays(new Date(), 180), 'yyyy-MM-dd');
-        break;
-      case '12m':
-        endDate = format(addDays(new Date(), 365), 'yyyy-MM-dd');
-        break;
-      default:
-        endDate = format(addDays(new Date(), 90), 'yyyy-MM-dd');
+    try {
+      switch (horizon) {
+        case '30d':
+          endDate = safeFormatDateString(addDays(today, 30), 'yyyy-MM-dd');
+          break;
+        case '90d':
+          endDate = safeFormatDateString(addDays(today, 90), 'yyyy-MM-dd');
+          break;
+        case '180d':
+          endDate = safeFormatDateString(addDays(today, 180), 'yyyy-MM-dd');
+          break;
+        case '12m':
+          endDate = safeFormatDateString(addDays(today, 365), 'yyyy-MM-dd');
+          break;
+        default:
+          endDate = safeFormatDateString(addDays(today, 90), 'yyyy-MM-dd');
+      }
+    } catch (error) {
+      console.warn('Error calculating end date:', error);
+      endDate = safeFormatDateString(addDays(today, 90), 'yyyy-MM-dd');
     }
     
     return { startDate, endDate };

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTransactions, TransactionFilters, TransactionWithRelations, CreateTransactionData } from '@/hooks/useTransactions';
@@ -12,6 +13,7 @@ import { ImportTransactionsModal } from '@/components/transactions/ImportTransac
 import { InvoiceManagerModal } from '@/components/transactions/InvoiceManagerModal';
 import { TransactionsList } from '@/components/transactions/TransactionsList';
 import { AccountsFilterPanel } from '@/components/transactions/AccountsFilterPanel';
+import { TagsFilter } from '@/components/transactions/TagsFilter';
 import { DynamicBalanceCard } from '@/components/transactions/DynamicBalanceCard';
 import { QuickDateFilters } from '@/components/transactions/QuickDateFilters';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -25,8 +27,9 @@ export default function Lancamentos() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
-  // Local storage for selected accounts and search
+  // Local storage for selected accounts, tags and search
   const [selectedAccountIds, setSelectedAccountIds] = useLocalStorage<string[]>('selected-account-ids', []);
+  const [selectedTags, setSelectedTags] = useLocalStorage<string[]>('selected-tags', []);
   const [searchTerm, setSearchTerm] = useLocalStorage<string>('transaction-search', '');
   const [dateFilters, setDateFilters] = useLocalStorage<{ startDate?: string; endDate?: string }>('transaction-date-filters', {});
   
@@ -54,13 +57,14 @@ export default function Lancamentos() {
   const filters: TransactionFilters = useMemo(() => {
     const baseFilters: TransactionFilters = {
       accountIds: selectedAccountIds.length > 0 ? selectedAccountIds : undefined,
+      tagIds: selectedTags.length > 0 ? selectedTags : undefined,
     };
 
     if (dateFilters.startDate) baseFilters.startDate = dateFilters.startDate;
     if (dateFilters.endDate) baseFilters.endDate = dateFilters.endDate;
 
     return baseFilters;
-  }, [selectedAccountIds, dateFilters]);
+  }, [selectedAccountIds, selectedTags, dateFilters]);
 
   const {
     transactions,
@@ -106,6 +110,15 @@ export default function Lancamentos() {
 
   const handleDateRangeSelect = (startDate: string, endDate: string) => {
     setDateFilters({ startDate, endDate });
+  };
+
+  // Handle tag click from transaction list
+  const handleTagClick = (tagName: string) => {
+    if (selectedTags.includes(tagName)) {
+      setSelectedTags(selectedTags.filter(tag => tag !== tagName));
+    } else {
+      setSelectedTags([...selectedTags, tagName]);
+    }
   };
 
   const filteredTransactions = useMemo(() => {
@@ -188,14 +201,21 @@ export default function Lancamentos() {
 
       {/* Two-Panel Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Left Panel - Account Filter */}
-        <div className="lg:col-span-1">
+        {/* Left Panel - Filters */}
+        <div className="lg:col-span-1 space-y-4">
+          {/* Account Filter */}
           <AccountsFilterPanel
             accounts={accounts}
             institutions={institutions}
             selectedAccountIds={selectedAccountIds}
             onAccountSelectionChange={setSelectedAccountIds}
             balanceMap={balanceMap}
+          />
+
+          {/* Tags Filter */}
+          <TagsFilter
+            selectedTagIds={selectedTags}
+            onTagsChange={setSelectedTags}
           />
         </div>
 
@@ -236,6 +256,7 @@ export default function Lancamentos() {
             isDeleting={isDeleting}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
+            onTagClick={handleTagClick}
           />
         </div>
       </div>

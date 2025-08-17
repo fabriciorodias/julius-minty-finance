@@ -1,8 +1,17 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  useReactTable,
+  getSortedRowModel,
+  SortingState,
+  ColumnFiltersState,
+  getFilteredRowModel,
+} from "@tanstack/react-table"
 import {
   Table,
   TableBody,
@@ -10,30 +19,30 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Edit, Trash2, FileText, Plus, Search } from 'lucide-react';
-import { format, parse } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+} from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { ArrowUpDown, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Checkbox } from "@/components/ui/checkbox"
+import { cn } from "@/lib/utils";
+import { formatCurrency } from '@/lib/utils';
 import { TransactionWithRelations } from '@/hooks/useTransactions';
-import { Account } from '@/hooks/useAccounts';
-import { Institution } from '@/hooks/useInstitutions';
-import { BulkActionsBar } from './BulkActionsBar';
-import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { TransactionTags } from './TransactionTags';
 
 interface TransactionsListProps {
   transactions: TransactionWithRelations[];
-  accounts: Account[];
-  institutions: Institution[];
+  accounts: any[];
+  institutions: any[];
   isLoading: boolean;
   onEdit: (transaction: TransactionWithRelations) => void;
   onDelete: (id: string) => void;
   onBulkDelete: (ids: string[]) => void;
   onNewTransaction: () => void;
-  isDeleting?: boolean;
+  isDeleting: boolean;
   searchTerm: string;
-  onSearchChange: (value: string) => void;
+  onSearchChange: (term: string) => void;
+  onTagClick?: (tagName: string) => void;
 }
 
 export function TransactionsList({
@@ -45,278 +54,330 @@ export function TransactionsList({
   onDelete,
   onBulkDelete,
   onNewTransaction,
-  isDeleting = false,
+  isDeleting,
   searchTerm,
   onSearchChange,
+  onTagClick,
 }: TransactionsListProps) {
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
-  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
+  const [rowSelection, setRowSelection] = useState({})
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
-  // Create institution map for lookup
-  const institutionMap = React.useMemo(() => 
-    institutions.reduce((acc, institution) => {
-      acc[institution.id] = institution.name;
-      return acc;
-    }, {} as Record<string, string>), 
-  [institutions]);
+  const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
 
-  const getOriginDisplay = (transaction: TransactionWithRelations) => {
-    if (transaction.accounts) {
-      const account = accounts.find(a => a.id === transaction.account_id);
-      return `${institutionMap[account?.institution_id || '']} - ${transaction.accounts.name}`;
-    }
-    return '-';
-  };
-
-  // Helper function to safely parse date strings as local dates
-  const parseLocalDate = (dateStr: string) => {
-    return parse(dateStr, 'yyyy-MM-dd', new Date());
-  };
-
-  const formatDate = (dateStr: string) => {
-    return format(parseLocalDate(dateStr), 'dd/MM/yyyy', { locale: ptBR });
-  };
-
-  // Format currency value
-  const formatCurrency = (amount: number) => {
-    return Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(Math.abs(amount));
-  };
-
-  // Selection handlers
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedIds(transactions.map(t => t.id));
-    } else {
-      setSelectedIds([]);
-    }
-  };
-
-  const handleSelectTransaction = (id: string, checked: boolean) => {
-    if (checked) {
-      setSelectedIds(prev => [...prev, id]);
-    } else {
-      setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
-    }
-  };
-
-  const handleSingleDelete = (id: string) => {
-    setTransactionToDelete(id);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmSingleDelete = () => {
-    if (transactionToDelete) {
-      onDelete(transactionToDelete);
-      setDeleteDialogOpen(false);
-      setTransactionToDelete(null);
-    }
-  };
+  useEffect(() => {
+    const selectedIds = Object.keys(rowSelection).filter(key => rowSelection[key]);
+    setSelectedTransactionIds(selectedIds);
+  }, [rowSelection]);
 
   const handleBulkDelete = () => {
-    setBulkDeleteDialogOpen(true);
+    if (selectedTransactionIds.length > 0) {
+      onBulkDelete(selectedTransactionIds);
+      setRowSelection({});
+    }
   };
 
-  const confirmBulkDelete = () => {
-    onBulkDelete(selectedIds);
-    setBulkDeleteDialogOpen(false);
-    setSelectedIds([]);
-  };
-
-  const clearSelection = () => {
-    setSelectedIds([]);
-  };
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center space-y-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="text-muted-foreground">Carregando lançamentos...</p>
-            </div>
+  const columns: ColumnDef<TransactionWithRelations>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected()
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Selecionar todos"
+          disabled={transactions.length === 0}
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Selecionar linha"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "event_date",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2 lg:px-3"
+        >
+          Data
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const transaction = row.original;
+        return (
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">
+              {format(new Date(transaction.event_date), 'dd/MM/yyyy')}
+            </span>
+            {transaction.effective_date && transaction.effective_date !== transaction.event_date && (
+              <span className="text-xs text-muted-foreground">
+                Efetiv.: {format(new Date(transaction.effective_date), 'dd/MM/yyyy')}
+              </span>
+            )}
           </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (transactions.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col items-center justify-center py-12 space-y-4">
-            <div className="rounded-full bg-muted p-4">
-              <FileText className="h-8 w-8 text-muted-foreground" />
+        );
+      },
+    },
+    {
+      accessorKey: "description",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2 lg:px-3"
+        >
+          Descrição
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const transaction = row.original;
+        const account = accounts.find(acc => acc.id === transaction.account_id);
+        const institution = institutions.find(inst => inst.id === account?.institution_id);
+        
+        return (
+          <div className="flex flex-col min-w-0">
+            <div className="font-medium text-sm truncate">
+              {transaction.description}
             </div>
-            <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold">Nenhum lançamento encontrado</h3>
-              <p className="text-muted-foreground max-w-md">
-                Não foram encontrados lançamentos com os filtros aplicados. 
-                Tente ajustar os filtros ou criar um novo lançamento.
-              </p>
+            <div className="text-xs text-muted-foreground truncate">
+              {institution?.name} - {account?.name}
             </div>
-            <Button onClick={onNewTransaction} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Criar Primeiro Lançamento
-            </Button>
+            {transaction.installment_number && transaction.total_installments && (
+              <div className="text-xs text-blue-600 font-medium">
+                Parcela {transaction.installment_number}/{transaction.total_installments}
+              </div>
+            )}
           </div>
-        </CardContent>
-      </Card>
-    );
-  }
+        );
+      },
+    },
+    {
+      accessorKey: "categories.name",
+      header: "Categoria",
+      cell: ({ row }) => {
+        const category = row.original.categories;
+        return (
+          <div className="text-sm">
+            {category?.name || (
+              <span className="text-muted-foreground italic">Sem categoria</span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "tags",
+      header: "Tags",
+      cell: ({ row }) => {
+        const transaction = row.original;
+        return (
+          <TransactionTags 
+            tags={transaction.tags || []} 
+            maxVisible={2}
+            onTagClick={onTagClick}
+          />
+        );
+      },
+    },
+    {
+      accessorKey: "amount",
+      header: ({ column }) => (
+        <div className="text-right">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="h-8 px-2 lg:px-3"
+          >
+            Valor
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      ),
+      cell: ({ row }) => {
+        const amount = row.original.amount;
+        const status = row.original.status;
+        
+        return (
+          <div className="text-right">
+            <div className={cn(
+              "font-medium text-sm",
+              amount > 0 ? "text-green-600" : "text-red-600"
+            )}>
+              {amount > 0 ? '+' : ''}{formatCurrency(Math.abs(amount))}
+            </div>
+            {status === 'pendente' && (
+              <div className="text-xs text-amber-600 font-medium">
+                Pendente
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: () => <div className="text-right">Ações</div>,
+      cell: ({ row }) => {
+        const transaction = row.original;
 
-  const isAllSelected = selectedIds.length === transactions.length;
-  const isPartiallySelected = selectedIds.length > 0 && selectedIds.length < transactions.length;
+        return (
+          <div className="text-right">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Abrir menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => onEdit(transaction)}>
+                  <Pencil className="h-3 w-3 mr-2" />
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDelete(transaction.id)} disabled={isDeleting}>
+                  <Trash2 className="h-3 w-3 mr-2" />
+                  Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
+    },
+  ]
+
+  const table = useReactTable({
+    data: transactions,
+    columns,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      rowSelection,
+      sorting,
+      columnFilters,
+    },
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnFiltersChange: setColumnFilters,
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
+  })
 
   return (
-    <div className="space-y-4">
-      <BulkActionsBar
-        selectedCount={selectedIds.length}
-        onBulkDelete={handleBulkDelete}
-        onClearSelection={clearSelection}
-      />
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Lançamentos ({transactions.length})</CardTitle>
-          <Button onClick={onNewTransaction} size="sm" className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
+    <div className="w-full">
+      <div className="flex flex-col sm:flex-row items-center justify-between py-4">
+        <Input
+          placeholder="Buscar lançamentos..."
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="max-w-sm"
+        />
+        <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+          <Button size="sm" variant="outline" onClick={onNewTransaction}>
             Novo Lançamento
           </Button>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Buscar por descrição..."
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={handleBulkDelete}
+            disabled={selectedTransactionIds.length === 0 || isDeleting}
+          >
+            Excluir Selecionados ({selectedTransactionIds.length})
+          </Button>
+        </div>
+      </div>
 
-          {/* Transactions Table */}
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
-                    <Checkbox
-                      checked={isAllSelected}
-                      onCheckedChange={handleSelectAll}
-                      className={isPartiallySelected ? "data-[state=checked]:bg-primary/50" : ""}
-                    />
-                  </TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Beneficiário</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead>Conta</TableHead>
-                  <TableHead>Tags</TableHead>
-                  <TableHead className="w-24"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactions.map((transaction) => (
-                  <TableRow 
-                    key={transaction.id} 
-                    className="hover:bg-muted/50"
-                    onMouseEnter={() => setHoveredRowId(transaction.id)}
-                    onMouseLeave={() => setHoveredRowId(null)}
-                  >
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedIds.includes(transaction.id)}
-                        onCheckedChange={(checked) => handleSelectTransaction(transaction.id, checked as boolean)}
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium whitespace-nowrap">
-                      {formatDate(transaction.event_date)}
-                    </TableCell>
-                    <TableCell className="max-w-xs">
-                      <div className="truncate" title={transaction.description}>
-                        {transaction.description}
-                      </div>
-                      {transaction.installment_number && (
-                        <div className="text-xs text-muted-foreground">
-                          {transaction.installment_number}/{transaction.total_installments}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm">
-                        {transaction.categories?.name || 'Sem categoria'}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right font-medium whitespace-nowrap">
-                      <span className={transaction.amount >= 0 ? 'text-green-600 font-semibold' : 'text-foreground'}>
-                        {transaction.amount >= 0 ? '+' : '-'}{formatCurrency(transaction.amount)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm truncate">
-                        {getOriginDisplay(transaction)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <TransactionTags tags={transaction.tags || []} maxVisible={2} />
-                    </TableCell>
-                    <TableCell>
-                      {hoveredRowId === transaction.id && (
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onEdit(transaction)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleSingleDelete(transaction.id)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead key={header.id} className={cn(header.column.id === 'actions' ? 'text-right' : '')}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  )
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="text-center py-4">
+                  Carregando lançamentos...
+                </TableCell>
+              </TableRow>
+            )}
+            {!isLoading && transactions.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="text-center py-4">
+                  Nenhum lançamento encontrado.
+                </TableCell>
+              </TableRow>
+            )}
+            {!isLoading && transactions.length > 0 && table.getRowModel().rows.map((row) => (
+              <TableRow
+                key={row.id}
+                data-state={row.getIsSelected() && "selected"}
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id} className={cn(cell.column.id === 'actions' ? 'text-right' : '')}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
                 ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
-      {/* Delete confirmation dialogs */}
-      <DeleteConfirmationDialog
-        isOpen={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-        onConfirm={confirmSingleDelete}
-        title="Excluir lançamento"
-        description="Tem certeza que deseja excluir este lançamento? Esta ação não pode ser desfeita."
-        isLoading={isDeleting}
-      />
-
-      <DeleteConfirmationDialog
-        isOpen={bulkDeleteDialogOpen}
-        onClose={() => setBulkDeleteDialogOpen(false)}
-        onConfirm={confirmBulkDelete}
-        title="Excluir lançamentos selecionados"
-        description={`Tem certeza que deseja excluir ${selectedIds.length} lançamento${selectedIds.length > 1 ? 's' : ''}? Esta ação não pode ser desfeita.`}
-        isLoading={isDeleting}
-      />
+      <div className="flex items-center justify-between py-4">
+        <div className="flex-1 text-sm text-muted-foreground">
+          {table.getFilteredRowModel().rows.length} de {transactions.length} lançamentos
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Anterior
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Próximo
+          </Button>
+        </div>
+      </div>
     </div>
-  );
+  )
 }

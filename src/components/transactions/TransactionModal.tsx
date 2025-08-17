@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -46,10 +47,12 @@ import { cn } from '@/lib/utils';
 import { useCategories } from '@/hooks/useCategories';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useInstitutions } from '@/hooks/useInstitutions';
+import { useTags } from '@/hooks/useTags';
 import { CreateTransactionData, Transaction } from '@/hooks/useTransactions';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { CurrencyInputBRL } from '@/components/ui/currency-input-brl';
+import { TagsInput } from '@/components/ui/tags-input';
 
 const transactionSchema = z.object({
   type: z.enum(['receita', 'despesa']),
@@ -61,6 +64,7 @@ const transactionSchema = z.object({
   category_id: z.string().optional(),
   source_type: z.enum(['account', 'credit_card']),
   account_id: z.string().optional(),
+  tags: z.array(z.string()).default([]),
 }).refine((data) => {
   return !!data.account_id;
 }, {
@@ -86,6 +90,7 @@ interface TransactionModalProps {
     categories: { name: string } | null;
     accounts: { name: string } | null;
     credit_cards: { name: string } | null;
+    tags?: { name: string; color: string | null }[];
   };
   isLoading?: boolean;
   prefilledAccountId?: string;
@@ -104,6 +109,7 @@ export function TransactionModal({
   const { categories } = useCategories();
   const { accounts } = useAccounts();
   const { institutions } = useInstitutions();
+  const { tags, createTag } = useTags();
 
   // State for controlling date picker popovers
   const [eventDateOpen, setEventDateOpen] = useState(false);
@@ -121,12 +127,13 @@ export function TransactionModal({
       type: 'despesa',
       description: '',
       amount: '',
-      event_date: new Date().toISOString().slice(0, 10), // Today's date
+      event_date: new Date().toISOString().slice(0, 10),
       is_effective: false,
       effective_date: '',
       category_id: undefined,
       source_type: 'account',
       account_id: undefined,
+      tags: [],
     },
   });
 
@@ -157,6 +164,14 @@ export function TransactionModal({
     
     return false;
   });
+
+  // Create tag suggestions from existing tags
+  const tagSuggestions = tags.map(tag => tag.name);
+
+  // Handle tag creation
+  const handleCreateTag = async (tagName: string) => {
+    await createTag({ name: tagName });
+  };
 
   // Auto-select account if only one option is available
   useEffect(() => {
@@ -192,6 +207,9 @@ export function TransactionModal({
         const transactionAccount = accounts.find(acc => acc.id === transaction.account_id);
         const sourceType = transactionAccount?.type === 'credit' ? 'credit_card' : 'account';
         
+        // Extract tag names from transaction tags
+        const transactionTags = transaction.tags?.map(tag => tag.name) || [];
+        
         // Editing existing transaction
         form.reset({
           type: transaction.type,
@@ -206,6 +224,7 @@ export function TransactionModal({
           category_id: transaction.category_id || undefined,
           source_type: sourceType,
           account_id: transaction.account_id || undefined,
+          tags: transactionTags,
         });
       } else {
         // Creating new transaction - reset to clean state with prefilled account
@@ -224,6 +243,7 @@ export function TransactionModal({
           category_id: undefined,
           source_type: defaultSourceType,
           account_id: defaultAccount,
+          tags: [],
         });
       }
     }
@@ -244,6 +264,7 @@ export function TransactionModal({
       status: data.is_effective ? 'concluido' : 'pendente',
       account_id: data.account_id,
       credit_card_id: undefined,
+      tags: data.tags || [], // Always send tags array
     };
 
     onSave(transactionData);
@@ -260,6 +281,7 @@ export function TransactionModal({
         category_id: undefined,
         source_type: data.source_type,
         account_id: data.account_id,
+        tags: [],
       });
     } else {
       onClose();
@@ -420,6 +442,27 @@ export function TransactionModal({
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Tags */}
+              <FormField
+                control={form.control}
+                name="tags"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tags</FormLabel>
+                    <FormControl>
+                      <TagsInput
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Digite uma tag e pressione Enter..."
+                        suggestions={tagSuggestions}
+                        onCreateTag={handleCreateTag}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

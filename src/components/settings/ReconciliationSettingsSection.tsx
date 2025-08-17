@@ -85,7 +85,7 @@ export function ReconciliationSettingsSection() {
             <div className="flex items-center gap-2 p-2 rounded bg-amber-50 border border-amber-200">
               <Clock className="h-3 w-3 text-amber-500" />
               <span className="text-amber-700 font-medium">Conciliação antiga</span>
-              <span className="text-amber-600">- Alerta laranja (>{getThresholdInDays()} dias)</span>
+              <span className="text-amber-600">- Alerta laranja ({'>'}{ getThresholdInDays()} dias)</span>
             </div>
             <div className="flex items-center gap-2 p-2 rounded bg-green-50 border border-green-200">
               <CheckCircle className="h-3 w-3 text-green-500" />

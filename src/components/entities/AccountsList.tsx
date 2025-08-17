@@ -1,11 +1,11 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Edit2, Trash2, CreditCard, Wallet, Eye, EyeOff, Calendar, TrendingUp, Banknote, PiggyBank, TrendingDown, Building2, Home, DollarSign } from 'lucide-react';
+import { Plus, Edit2, Trash2, CreditCard, Wallet, Eye, EyeOff, Calendar, TrendingUp, Banknote, PiggyBank, TrendingDown, Building2, Home, DollarSign, CheckCircle, Clock } from 'lucide-react';
 import { AccountModal } from './AccountModal';
+import { ReconcileAccountModal } from './ReconcileAccountModal';
 import { Account, isCreditCard, isBudgetAccount, SUBTYPE_LABELS } from '@/hooks/useAccounts';
 import { Institution } from '@/hooks/useInstitutions';
 import { AccountBalance } from '@/hooks/useAccountBalances';
@@ -20,11 +20,13 @@ interface AccountsListProps {
   onCreateAccount: (accountData: any) => void;
   onUpdateAccount: (accountData: any) => void;
   onDeleteAccount: (accountId: string) => void;
+  onReconcileAccount: (accountId: string, reconciledAt: Date) => void;
   onCreateInstitution?: () => void;
   isLoading?: boolean;
   isCreating?: boolean;
   isUpdating?: boolean;
   isDeleting?: boolean;
+  isReconciling?: boolean;
 }
 
 function AccountInitialBalanceInfo({ accountId }: { accountId: string }) {
@@ -114,13 +116,16 @@ export function AccountsList({
   onCreateAccount,
   onUpdateAccount,
   onDeleteAccount,
+  onReconcileAccount,
   onCreateInstitution,
   isLoading,
   isCreating,
   isUpdating,
-  isDeleting
+  isDeleting,
+  isReconciling
 }: AccountsListProps) {
   const [showModal, setShowModal] = useState(false);
+  const [showReconcileModal, setShowReconcileModal] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<Account | undefined>();
 
   const handleEdit = (account: Account) => {
@@ -128,8 +133,18 @@ export function AccountsList({
     setShowModal(true);
   };
 
+  const handleReconcile = (account: Account) => {
+    setSelectedAccount(account);
+    setShowReconcileModal(true);
+  };
+
   const handleCloseModal = () => {
     setShowModal(false);
+    setSelectedAccount(undefined);
+  };
+
+  const handleCloseReconcileModal = () => {
+    setShowReconcileModal(false);
     setSelectedAccount(undefined);
   };
 
@@ -138,6 +153,12 @@ export function AccountsList({
       onUpdateAccount(accountData);
     } else {
       onCreateAccount(accountData);
+    }
+  };
+
+  const handleReconcileConfirm = (reconciledAt: Date) => {
+    if (selectedAccount) {
+      onReconcileAccount(selectedAccount.id, reconciledAt);
     }
   };
 
@@ -162,6 +183,40 @@ export function AccountsList({
     if (!isCreditCard(account) || !account.credit_limit) return 0;
     const balance = Math.abs(getAccountBalance(account.id));
     return (balance / account.credit_limit) * 100;
+  };
+
+  const getReconciliationStatus = (account: Account) => {
+    if (!account.last_reconciled_at) {
+      return {
+        text: 'Nunca conciliada',
+        icon: <Clock className="h-3 w-3 text-orange-500" />,
+        color: 'text-orange-600'
+      };
+    }
+
+    const reconciledDate = new Date(account.last_reconciled_at);
+    const now = new Date();
+    const daysDiff = Math.floor((now.getTime() - reconciledDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (daysDiff === 0) {
+      return {
+        text: 'Conciliada hoje',
+        icon: <CheckCircle className="h-3 w-3 text-green-500" />,
+        color: 'text-green-600'
+      };
+    } else if (daysDiff <= 7) {
+      return {
+        text: `Conciliada há ${daysDiff} ${daysDiff === 1 ? 'dia' : 'dias'}`,
+        icon: <CheckCircle className="h-3 w-3 text-green-500" />,
+        color: 'text-green-600'
+      };
+    } else {
+      return {
+        text: `Conciliada há ${daysDiff} dias`,
+        icon: <Clock className="h-3 w-3 text-orange-500" />,
+        color: 'text-orange-600'
+      };
+    }
   };
 
   // Usar as helper functions para manter compatibilidade
@@ -199,6 +254,7 @@ export function AccountsList({
           {budgetAccounts.map((account) => {
             const balance = getAccountBalance(account.id);
             const colorScheme = getKindColorScheme(account.kind);
+            const reconciliationStatus = getReconciliationStatus(account);
             
             return (
               <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${colorScheme.border} ${colorScheme.gradient} ${!account.is_active ? 'opacity-50' : ''}`}>
@@ -219,8 +275,24 @@ export function AccountsList({
                         </Badge>
                       </div>
                       <AccountInitialBalanceInfo accountId={account.id} />
+                      
+                      {/* Reconciliation Status */}
+                      <div className={`flex items-center gap-2 text-xs ${reconciliationStatus.color}`}>
+                        {reconciliationStatus.icon}
+                        <span>{reconciliationStatus.text}</span>
+                      </div>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleReconcile(account)}
+                        disabled={isReconciling}
+                        className="h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600"
+                        title="Conciliar conta"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -271,6 +343,7 @@ export function AccountsList({
             const utilization = getCreditUtilization(account);
             const availableCredit = (account.credit_limit || 0) - balance;
             const colorScheme = getKindColorScheme(account.kind);
+            const reconciliationStatus = getReconciliationStatus(account);
             
             return (
               <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${colorScheme.border} ${colorScheme.gradient} ${!account.is_active ? 'opacity-50' : ''}`}>
@@ -291,8 +364,24 @@ export function AccountsList({
                         </Badge>
                       </div>
                       <AccountInitialBalanceInfo accountId={account.id} />
+                      
+                      {/* Reconciliation Status */}
+                      <div className={`flex items-center gap-2 text-xs ${reconciliationStatus.color}`}>
+                        {reconciliationStatus.icon}
+                        <span>{reconciliationStatus.text}</span>
+                      </div>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleReconcile(account)}
+                        disabled={isReconciling}
+                        className="h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600"
+                        title="Conciliar conta"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -371,6 +460,14 @@ export function AccountsList({
         institutions={institutions}
         isLoading={isCreating || isUpdating}
         onCreateInstitution={onCreateInstitution}
+      />
+
+      <ReconcileAccountModal
+        isOpen={showReconcileModal}
+        onClose={handleCloseReconcileModal}
+        onConfirm={handleReconcileConfirm}
+        account={selectedAccount}
+        isLoading={isReconciling}
       />
     </div>
   );

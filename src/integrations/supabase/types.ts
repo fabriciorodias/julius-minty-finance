@@ -52,6 +52,7 @@ export type Database = {
           institution_id: string
           is_active: boolean
           kind: Database["public"]["Enums"]["account_kind"]
+          last_reconciled_at: string | null
           name: string
           subtype: Database["public"]["Enums"]["account_subtype"]
           type: Database["public"]["Enums"]["account_type"]
@@ -64,6 +65,7 @@ export type Database = {
           institution_id: string
           is_active?: boolean
           kind: Database["public"]["Enums"]["account_kind"]
+          last_reconciled_at?: string | null
           name: string
           subtype: Database["public"]["Enums"]["account_subtype"]
           type?: Database["public"]["Enums"]["account_type"]
@@ -76,6 +78,7 @@ export type Database = {
           institution_id?: string
           is_active?: boolean
           kind?: Database["public"]["Enums"]["account_kind"]
+          last_reconciled_at?: string | null
           name?: string
           subtype?: Database["public"]["Enums"]["account_subtype"]
           type?: Database["public"]["Enums"]["account_type"]

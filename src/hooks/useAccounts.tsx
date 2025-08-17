@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,6 +13,7 @@ export interface Account {
   subtype: 'cash' | 'bank' | 'investment' | 'property_rights' | 'other_assets' | 'credit_card' | 'loan' | 'other_liabilities';
   credit_limit?: number;
   is_active: boolean;
+  last_reconciled_at?: string;
   created_at: string;
 }
 
@@ -365,6 +365,41 @@ export function useAccounts(institutionId?: string) {
     },
   });
 
+  const reconcileAccountMutation = useMutation({
+    mutationFn: async ({ accountId, reconciledAt }: { accountId: string; reconciledAt: Date }) => {
+      const { data, error } = await supabase
+        .from('accounts')
+        .update({ last_reconciled_at: reconciledAt.toISOString() })
+        .eq('id', accountId)
+        .eq('user_id', user?.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Account reconciliation error:', error);
+        throw error;
+      }
+
+      console.log('Account reconciled successfully:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
+      toast({
+        title: "Conta conciliada",
+        description: "A conciliação foi registrada com sucesso.",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error reconciling account:', error);
+      toast({
+        title: "Erro ao conciliar conta",
+        description: error.message || "Não foi possível registrar a conciliação. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     accounts,
     isLoading,
@@ -373,8 +408,10 @@ export function useAccounts(institutionId?: string) {
     updateAccount: updateAccountMutation.mutate,
     deleteAccount: deleteAccountSafelyMutation.mutate,
     deleteAccountSafely: deleteAccountSafelyMutation.mutate,
+    reconcileAccount: reconcileAccountMutation.mutate,
     isCreating: createAccountMutation.isPending,
     isUpdating: updateAccountMutation.isPending,
     isDeleting: deleteAccountSafelyMutation.isPending,
+    isReconciling: reconcileAccountMutation.isPending,
   };
 }

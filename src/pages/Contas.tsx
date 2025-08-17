@@ -1,95 +1,82 @@
 
 import { useState } from 'react';
-import { useInstitutions } from '@/hooks/useInstitutions';
-import { useAccounts } from '@/hooks/useAccounts';
-import { useAccountBalances } from '@/hooks/useAccountBalances';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus } from 'lucide-react';
 import { AccountsList } from '@/components/entities/AccountsList';
-import { AccountsSummary } from '@/components/entities/AccountsSummary';
 import { InstitutionModal } from '@/components/entities/InstitutionModal';
+import { useAccounts } from '@/hooks/useAccounts';
+import { useInstitutions } from '@/hooks/useInstitutions';
+import { useAccountBalances } from '@/hooks/useAccountBalances';
 
-const Contas = () => {
+export default function Contas() {
   const [showInstitutionModal, setShowInstitutionModal] = useState(false);
-  const [selectedInstitution, setSelectedInstitution] = useState(null);
-  const [institutionModalFromAccount, setInstitutionModalFromAccount] = useState(false);
-
-  const {
-    institutions,
-    isLoading: institutionsLoading,
-    createInstitution,
-    updateInstitution,
-    deleteInstitution,
-    isCreating: creatingInstitution,
-    isUpdating: updatingInstitution,
-    isDeleting: deletingInstitution,
-  } = useInstitutions();
-
-  const {
-    accounts,
-    isLoading: accountsLoading,
-    createAccount,
-    updateAccount,
+  
+  const { 
+    accounts, 
+    createAccount, 
+    updateAccount, 
     deleteAccount,
-    isCreating: creatingAccount,
-    isUpdating: updatingAccount,
-    isDeleting: deletingAccount,
+    reconcileAccount,
+    isLoading: accountsLoading, 
+    isCreating, 
+    isUpdating, 
+    isDeleting,
+    isReconciling
   } = useAccounts();
+  
+  const { 
+    institutions, 
+    createInstitution, 
+    updateInstitution, 
+    deleteInstitution,
+    isLoading: institutionsLoading, 
+    isCreating: isCreatingInstitution, 
+    isUpdating: isUpdatingInstitution, 
+    isDeleting: isDeletingInstitution 
+  } = useInstitutions();
+  
+  const { balances } = useAccountBalances();
 
-  const { balances: accountBalances = [] } = useAccountBalances();
-
-  const handleCreateInstitutionFromAccount = () => {
-    setInstitutionModalFromAccount(true);
-    setShowInstitutionModal(true);
+  const handleReconcileAccount = (accountId: string, reconciledAt: Date) => {
+    reconcileAccount({ accountId, reconciledAt });
   };
 
-  const handleInstitutionModalClose = () => {
-    setShowInstitutionModal(false);
-    setSelectedInstitution(null);
-    setInstitutionModalFromAccount(false);
-  };
-
-  const handleInstitutionSubmit = (institutionData: any) => {
-    if (selectedInstitution) {
-      updateInstitution(institutionData);
-    } else {
-      createInstitution(institutionData);
-    }
-  };
+  const activeInstitutions = institutions.filter(inst => inst.is_active);
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Contas</h1>
-        <p className="text-muted-foreground mt-2">
-          Gerencie suas contas e instituições financeiras
-        </p>
+    <div className="container mx-auto p-6 space-y-8">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Contas</h1>
+          <p className="text-muted-foreground">
+            Gerencie suas contas financeiras e instituições
+          </p>
+        </div>
       </div>
 
       <Tabs defaultValue="accounts" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList>
           <TabsTrigger value="accounts">Contas</TabsTrigger>
           <TabsTrigger value="institutions">Instituições</TabsTrigger>
         </TabsList>
 
         <TabsContent value="accounts" className="space-y-6">
-          <AccountsSummary
-            accounts={accounts}
-            accountBalances={accountBalances}
-            isLoading={accountsLoading}
-          />
-          
           <AccountsList
             accounts={accounts}
             institutions={institutions}
-            accountBalances={accountBalances}
+            accountBalances={balances}
             onCreateAccount={createAccount}
             onUpdateAccount={updateAccount}
             onDeleteAccount={deleteAccount}
-            onCreateInstitution={handleCreateInstitutionFromAccount}
+            onReconcileAccount={handleReconcileAccount}
+            onCreateInstitution={() => setShowInstitutionModal(true)}
             isLoading={accountsLoading}
-            isCreating={creatingAccount}
-            isUpdating={updatingAccount}
-            isDeleting={deletingAccount}
+            isCreating={isCreating}
+            isUpdating={isUpdating}
+            isDeleting={isDeleting}
+            isReconciling={isReconciling}
           />
         </TabsContent>
 
@@ -98,43 +85,27 @@ const Contas = () => {
             <div>
               <h2 className="text-2xl font-bold">Instituições</h2>
               <p className="text-muted-foreground">
-                Adicione e gerencie as instituições financeiras
+                Gerencie as instituições financeiras onde você possui contas
               </p>
             </div>
-            <button
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
-              onClick={() => setShowInstitutionModal(true)}
-            >
+            <Button onClick={() => setShowInstitutionModal(true)}>
+              <Plus className="h-4 w-4 mr-2" />
               Nova Instituição
-            </button>
+            </Button>
           </div>
 
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {institutions.map((institution) => (
-              <div key={institution.id} className="bg-white rounded shadow p-4">
-                <h3 className="font-semibold text-lg">{institution.name}</h3>
-                <p className="text-sm text-gray-500">
-                  Criado em:{' '}
-                  {new Date(institution.created_at).toLocaleDateString()}
-                </p>
-                <div className="mt-2 flex justify-end space-x-2">
-                  <button
-                    className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                    onClick={() => {
-                      setSelectedInstitution(institution);
-                      setShowInstitutionModal(true);
-                    }}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-700"
-                    onClick={() => deleteInstitution(institution.id)}
-                  >
-                    Excluir
-                  </button>
-                </div>
-              </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {activeInstitutions.map((institution) => (
+              <Card key={institution.id} className="group hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle className="text-lg">{institution.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-sm text-muted-foreground">
+                    {accounts.filter(acc => acc.institution_id === institution.id).length} contas
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </TabsContent>
@@ -142,13 +113,10 @@ const Contas = () => {
 
       <InstitutionModal
         isOpen={showInstitutionModal}
-        onClose={handleInstitutionModalClose}
-        onSubmit={handleInstitutionSubmit}
-        institution={selectedInstitution}
-        isLoading={creatingInstitution || updatingInstitution}
+        onClose={() => setShowInstitutionModal(false)}
+        onSubmit={(data) => createInstitution(data)}
+        isLoading={isCreatingInstitution}
       />
     </div>
   );
-};
-
-export default Contas;
+}

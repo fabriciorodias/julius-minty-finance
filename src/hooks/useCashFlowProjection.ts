@@ -23,16 +23,21 @@ interface UseCashFlowProjectionParams {
     startDate?: string;
     endDate?: string;
   };
+  sampleSize?: number; // For performance optimization on long periods
 }
 
-export function useCashFlowProjection({ selectedAccountIds, dateFilters }: UseCashFlowProjectionParams) {
+export function useCashFlowProjection({ 
+  selectedAccountIds, 
+  dateFilters,
+  sampleSize 
+}: UseCashFlowProjectionParams) {
   const { user } = useAuth();
 
   const {
     data = { dataPoints: [], accounts: [] },
     isLoading,
   } = useQuery({
-    queryKey: ['cash-flow-projection', user?.id, selectedAccountIds, dateFilters],
+    queryKey: ['cash-flow-projection', user?.id, selectedAccountIds, dateFilters, sampleSize],
     queryFn: async (): Promise<{ dataPoints: CashFlowDataPoint[]; accounts: AccountInfo[] }> => {
       if (!user?.id || selectedAccountIds.length === 0) {
         return { dataPoints: [], accounts: [] };
@@ -112,7 +117,6 @@ export function useCashFlowProjection({ selectedAccountIds, dateFilters }: UseCa
       }));
 
       // Calculate current balance for each account (initial + all completed transactions)
-      // This should match the "Saldo Total" from the cards
       const currentAccountBalances: Record<string, number> = {};
       
       selectedAccountIds.forEach(accountId => {
@@ -239,11 +243,22 @@ export function useCashFlowProjection({ selectedAccountIds, dateFilters }: UseCa
         currentDate = addDays(currentDate, 1);
       }
 
-      console.log('Final data points:', dataPoints.slice(0, 5)); // Log first 5 points
-      console.log('Starting balance:', dataPoints[0]?.total);
-      console.log('Ending balance:', dataPoints[dataPoints.length - 1]?.total);
+      // Apply sampling if needed for performance (for long periods like 12 months)
+      let finalDataPoints = dataPoints;
+      if (sampleSize && dataPoints.length > sampleSize) {
+        const step = Math.floor(dataPoints.length / sampleSize);
+        finalDataPoints = dataPoints.filter((_, index) => index % step === 0);
+        // Always include the last point
+        if (finalDataPoints[finalDataPoints.length - 1] !== dataPoints[dataPoints.length - 1]) {
+          finalDataPoints.push(dataPoints[dataPoints.length - 1]);
+        }
+      }
 
-      return { dataPoints, accounts };
+      console.log('Final data points:', finalDataPoints.slice(0, 5)); // Log first 5 points
+      console.log('Starting balance:', finalDataPoints[0]?.total);
+      console.log('Ending balance:', finalDataPoints[finalDataPoints.length - 1]?.total);
+
+      return { dataPoints: finalDataPoints, accounts };
     },
     enabled: !!user?.id && selectedAccountIds.length > 0,
   });

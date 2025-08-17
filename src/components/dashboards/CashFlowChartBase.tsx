@@ -1,0 +1,198 @@
+
+import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  ResponsiveContainer, 
+  Area, 
+  AreaChart,
+  ReferenceArea,
+  ReferenceLine,
+  Brush
+} from 'recharts';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { CashFlowDataPoint } from '@/lib/cashflow-sim';
+
+interface CashFlowChartBaseProps {
+  data: CashFlowDataPoint[];
+  scenarioData?: CashFlowDataPoint[];
+  showScenario?: boolean;
+  height?: number;
+  showBrush?: boolean;
+  chartConfig: Record<string, any>;
+}
+
+export function CashFlowChartBase({ 
+  data, 
+  scenarioData, 
+  showScenario = false,
+  height = 400,
+  showBrush = false,
+  chartConfig 
+}: CashFlowChartBaseProps) {
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
+  const formatDate = (dateStr: string) => {
+    return format(parseISO(dateStr), 'dd/MM', { locale: ptBR });
+  };
+
+  const formatDateLong = (dateStr: string) => {
+    return format(parseISO(dateStr), 'dd/MM/yyyy', { locale: ptBR });
+  };
+
+  // Calculate min and max values for better scaling
+  const allValues = [
+    ...data.map(d => d.total),
+    ...(scenarioData?.map(d => d.total) || [])
+  ];
+  const minValue = Math.min(...allValues);
+  const maxValue = Math.max(...allValues);
+  const padding = (maxValue - minValue) * 0.1;
+
+  return (
+    <ChartContainer config={chartConfig} className="h-full">
+      <ResponsiveContainer width="100%" height={height}>
+        <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: showBrush ? 80 : 40 }}>
+          <defs>
+            <linearGradient id="positiveGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.3}/>
+              <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.05}/>
+            </linearGradient>
+            <linearGradient id="negativeGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="hsl(346, 77%, 49%)" stopOpacity={0.3}/>
+              <stop offset="95%" stopColor="hsl(346, 77%, 49%)" stopOpacity={0.05}/>
+            </linearGradient>
+          </defs>
+
+          <XAxis 
+            dataKey="date" 
+            tickFormatter={formatDate}
+            tick={{ fontSize: 12 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis 
+            tickFormatter={(value) => formatCurrency(value).replace('R$', '').trim()}
+            tick={{ fontSize: 12 }}
+            axisLine={false}
+            tickLine={false}
+            domain={[minValue - padding, maxValue + padding]}
+          />
+
+          {/* Zero line */}
+          <ReferenceLine y={0} stroke="hsl(var(--border))" strokeDasharray="3 3" />
+
+          {/* Negative area highlighting */}
+          {minValue < 0 && (
+            <ReferenceArea
+              y1={Math.min(minValue - padding, -100)}
+              y2={0}
+              fill="hsl(346, 77%, 49%)"
+              fillOpacity={0.05}
+            />
+          )}
+
+          {/* Main area chart */}
+          <Area
+            type="monotone"
+            dataKey="total"
+            stroke="hsl(var(--primary))"
+            strokeWidth={3}
+            fill={minValue >= 0 ? "url(#positiveGradient)" : "url(#negativeGradient)"}
+            dot={false}
+          />
+
+          {/* Scenario line */}
+          {showScenario && scenarioData && (
+            <Line
+              type="monotone"
+              dataKey="total"
+              data={scenarioData}
+              stroke="hsl(38, 92%, 50%)"
+              strokeWidth={2}
+              strokeDasharray="8 4"
+              dot={false}
+            />
+          )}
+
+          {/* Brush for zooming */}
+          {showBrush && (
+            <Brush
+              dataKey="date"
+              height={30}
+              stroke="hsl(var(--primary))"
+              tickFormatter={formatDate}
+              startIndex={0}
+              endIndex={Math.min(data.length - 1, 30)}
+            />
+          )}
+
+          <ChartTooltip 
+            content={({ active, payload, label }) => {
+              if (!active || !payload?.length) return null;
+              
+              const mainData = payload.find(p => p.dataKey === 'total');
+              const scenarioValue = showScenario && scenarioData ? 
+                scenarioData.find(d => d.date === label)?.total : null;
+              
+              return (
+                <div className="bg-background border rounded-lg shadow-lg p-4 min-w-[200px]">
+                  <p className="font-medium mb-3">
+                    {formatDateLong(label)}
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-0.5 rounded bg-primary"/>
+                        <span className="text-sm">Saldo Real</span>
+                      </div>
+                      <span className={`font-medium ${
+                        (mainData?.value as number || 0) < 0 ? 'text-destructive' : 'text-green-600'
+                      }`}>
+                        {formatCurrency(mainData?.value as number || 0)}
+                      </span>
+                    </div>
+                    
+                    {scenarioValue !== null && (
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-0.5 rounded bg-yellow-500" style={{ borderTop: '2px dashed' }}/>
+                          <span className="text-sm">Cenário</span>
+                        </div>
+                        <span className={`font-medium ${
+                          scenarioValue < 0 ? 'text-destructive' : 'text-green-600'
+                        }`}>
+                          {formatCurrency(scenarioValue)}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {scenarioValue !== null && mainData && (
+                      <div className="flex justify-between items-center pt-2 border-t">
+                        <span className="text-sm text-muted-foreground">Diferença:</span>
+                        <span className={`font-medium text-sm ${
+                          (scenarioValue - (mainData.value as number)) >= 0 ? 'text-green-600' : 'text-destructive'
+                        }`}>
+                          {(scenarioValue - (mainData.value as number)) >= 0 ? '+' : ''}
+                          {formatCurrency(scenarioValue - (mainData.value as number))}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            }}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </ChartContainer>
+  );
+}

@@ -10,12 +10,14 @@ import { ExpenseDistributionPie } from "@/components/dashboards/ExpenseDistribut
 import { InvestmentsSummary } from "@/components/dashboards/InvestmentsSummary";
 import { PortfolioCompositionChart } from "@/components/dashboards/PortfolioCompositionChart";
 import { EmergencyFundProgress } from "@/components/dashboards/EmergencyFundProgress";
+import { CashFlowHero } from "@/components/dashboards/CashFlowHero";
 import { useMonthlyBalance, useAnnualData } from "@/hooks/dashboard/useMonthlyBalance";
 import { usePlannedVsActual } from "@/hooks/dashboard/usePlannedVsActual";
 import { useExpenseDistribution } from "@/hooks/dashboard/useExpenseDistribution";
 import { usePlansCommitment, usePendingPlans, useSavingsAccumulated } from "@/hooks/dashboard/usePlansDashboard";
 import { useInvestmentsDashboard } from "@/hooks/dashboard/useInvestmentsDashboard";
 import { useEmergencyFund } from "@/hooks/dashboard/useEmergencyFund";
+import { useAccounts } from "@/hooks/useAccounts";
 import { TrendingUp, Target, PiggyBank } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -28,6 +30,10 @@ const Dashboard = () => {
 
   const year = parseInt(selectedMonth.slice(0, 4), 10);
   const selectedMonthDate = new Date(selectedMonth);
+
+  // Get accounts for cash flow projection
+  const { data: accounts } = useAccounts();
+  const allAccountIds = (accounts || []).map(account => account.id);
 
   // Monthly Balance hooks
   const { data: monthlyBalance, isLoading: isBalanceLoading } = useMonthlyBalance(selectedMonth);
@@ -67,6 +73,9 @@ const Dashboard = () => {
           onMonthChange={setSelectedMonth} 
         />
       </div>
+
+      {/* Cash Flow Hero - The star of the show */}
+      <CashFlowHero selectedAccountIds={allAccountIds} />
 
       <Tabs defaultValue="balance" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">

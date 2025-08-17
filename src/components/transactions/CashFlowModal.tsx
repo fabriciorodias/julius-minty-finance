@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, ReferenceArea } from 'recharts';
+import { CashFlowChartBase } from '@/components/dashboards/CashFlowChartBase';
 import { useCashFlowProjection } from '@/hooks/useCashFlowProjection';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -58,18 +57,6 @@ export function CashFlowModal({
       currency: 'BRL',
     }).format(value);
   };
-
-  const formatDate = (dateStr: string) => {
-    return format(parseISO(dateStr), 'dd/MM', { locale: ptBR });
-  };
-
-  // Calculate min and max values for the reference area
-  const allValues = dataPoints.flatMap(point => [
-    point.total,
-    ...accountsInfo.map(account => point[account.id] as number || 0)
-  ]);
-  const minValue = Math.min(...allValues);
-  const maxValue = Math.max(...allValues);
 
   const chartConfig = {
     total: {
@@ -160,105 +147,12 @@ export function CashFlowModal({
                 <Skeleton className="h-64 w-full" />
               </div>
             ) : (
-              <ChartContainer config={chartConfig} className="h-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={dataPoints} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                    <XAxis 
-                      dataKey="date" 
-                      tickFormatter={formatDate}
-                      tick={{ fontSize: 12 }}
-                      angle={-45}
-                      textAnchor="end"
-                      height={60}
-                    />
-                    <YAxis 
-                      tickFormatter={(value) => formatCurrency(value).replace('R$', '').trim()}
-                      tick={{ fontSize: 12 }}
-                      width={80}
-                    />
-
-                    {/* Reference area for negative values */}
-                    {minValue < 0 && (
-                      <ReferenceArea
-                        y1={minValue}
-                        y2={0}
-                        fill="hsl(var(--destructive))"
-                        fillOpacity={0.1}
-                        stroke="none"
-                      />
-                    )}
-
-                    <ChartTooltip 
-                      content={({ active, payload, label }) => {
-                        if (!active || !payload?.length) return null;
-                        
-                        return (
-                          <div className="bg-background border rounded-lg shadow-lg p-3 min-w-[200px]">
-                            <p className="font-medium mb-2">
-                              {format(parseISO(label), 'dd/MM/yyyy', { locale: ptBR })}
-                            </p>
-                            <div className="space-y-1">
-                              {payload
-                                .filter(entry => {
-                                  if (entry.dataKey === 'total') return showTotal;
-                                  return visibleAccounts.has(entry.dataKey as string);
-                                })
-                                .map((entry) => (
-                                  <div key={entry.dataKey} className="flex justify-between items-center gap-4">
-                                    <div className="flex items-center gap-2">
-                                      <div 
-                                        className="w-3 h-0.5 rounded"
-                                        style={{ backgroundColor: entry.color }}
-                                      />
-                                      <span className="text-sm">
-                                        {entry.dataKey === 'total' ? 'Total' : 
-                                          accountsInfo.find(a => a.id === entry.dataKey)?.name
-                                        }
-                                      </span>
-                                    </div>
-                                    <span className={`font-medium ${
-                                      (entry.value as number) < 0 ? 'text-destructive' : ''
-                                    }`}>
-                                      {formatCurrency(entry.value as number)}
-                                    </span>
-                                  </div>
-                                ))}
-                            </div>
-                          </div>
-                        );
-                      }}
-                    />
-
-                    {/* Total Line */}
-                    {showTotal && (
-                      <Line
-                        type="monotone"
-                        dataKey="total"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth={3}
-                        dot={false}
-                        activeDot={{ r: 4, fill: 'hsl(var(--primary))' }}
-                      />
-                    )}
-
-                    {/* Account Lines */}
-                    {accountsInfo.map((account) => 
-                      visibleAccounts.has(account.id) && (
-                        <Line
-                          key={account.id}
-                          type="monotone"
-                          dataKey={account.id}
-                          stroke={account.color}
-                          strokeWidth={2}
-                          strokeDasharray={account.id !== 'total' ? '5 5' : undefined}
-                          dot={false}
-                          activeDot={{ r: 3, fill: account.color }}
-                        />
-                      )
-                    )}
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer>
+              <CashFlowChartBase
+                data={dataPoints}
+                height={400}
+                showBrush={true}
+                chartConfig={chartConfig}
+              />
             )}
           </div>
 

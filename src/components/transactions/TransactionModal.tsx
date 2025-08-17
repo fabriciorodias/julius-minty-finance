@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,14 +34,13 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Switch } from '@/components/ui/switch';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { CalendarIcon, InfoIcon, CreditCard, Wallet, Plus } from 'lucide-react';
+import { CalendarIcon, InfoIcon, CreditCard, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -48,8 +48,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useInstitutions } from '@/hooks/useInstitutions';
 import { useTags } from '@/hooks/useTags';
-import { useCounterparties } from '@/hooks/useCounterparties';
-import { CreateTransactionData, TransactionWithRelations } from '@/hooks/useTransactions';
+import { CreateTransactionData, Transaction } from '@/hooks/useTransactions';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { CurrencyInputBRL } from '@/components/ui/currency-input-brl';
@@ -65,8 +64,6 @@ const transactionSchema = z.object({
   category_id: z.string().optional(),
   source_type: z.enum(['account', 'credit_card']),
   account_id: z.string().optional(),
-  counterparty_id: z.string().optional(),
-  is_reviewed: z.boolean(),
   tags: z.array(z.string()).default([]),
 }).refine((data) => {
   return !!data.account_id;
@@ -89,7 +86,12 @@ interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: CreateTransactionData) => void;
-  transaction?: TransactionWithRelations;
+  transaction?: Transaction & {
+    categories: { name: string } | null;
+    accounts: { name: string } | null;
+    credit_cards: { name: string } | null;
+    tags?: { name: string; color: string | null }[];
+  };
   isLoading?: boolean;
   prefilledAccountId?: string;
 }
@@ -108,12 +110,10 @@ export function TransactionModal({
   const { accounts } = useAccounts();
   const { institutions } = useInstitutions();
   const { tags, createTag } = useTags();
-  const { counterparties, createCounterparty } = useCounterparties();
 
   // State for controlling date picker popovers
   const [eventDateOpen, setEventDateOpen] = useState(false);
   const [effectiveDateOpen, setEffectiveDateOpen] = useState(false);
-  const [showNewCounterpartyInput, setShowNewCounterpartyInput] = useState(false);
 
   // Create maps for institution lookup
   const institutionMap = institutions.reduce((acc, institution) => {
@@ -133,8 +133,6 @@ export function TransactionModal({
       category_id: undefined,
       source_type: 'account',
       account_id: undefined,
-      counterparty_id: undefined,
-      is_reviewed: false,
       tags: [],
     },
   });
@@ -152,10 +150,12 @@ export function TransactionModal({
 
   // Filter accounts based on source type and status
   const availableAccounts = accounts.filter(account => {
+    // For editing, show the current account even if inactive
     if (transaction && transaction.account_id === account.id) {
       return true;
     }
     
+    // Filter by source type and active status
     if (sourceType === 'account') {
       return account.is_active && account.type === 'on_budget';
     } else if (sourceType === 'credit_card') {
@@ -171,12 +171,6 @@ export function TransactionModal({
   // Handle tag creation
   const handleCreateTag = async (tagName: string) => {
     await createTag({ name: tagName });
-  };
-
-  // Handle counterparty creation
-  const handleCreateCounterparty = async (name: string) => {
-    await createCounterparty({ name });
-    setShowNewCounterpartyInput(false);
   };
 
   // Auto-select account if only one option is available
@@ -199,8 +193,8 @@ export function TransactionModal({
       console.log('Modal opened, refreshing data...');
       queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['categories', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['counterparties', user?.id] });
       
+      // Force immediate refetch of accounts
       queryClient.refetchQueries({ queryKey: ['accounts', user?.id] });
     }
   }, [isOpen, queryClient, user?.id]);
@@ -209,13 +203,16 @@ export function TransactionModal({
   useEffect(() => {
     if (isOpen) {
       if (transaction) {
+        // Determine source type based on account type
         const transactionAccount = accounts.find(acc => acc.id === transaction.account_id);
         const sourceType = transactionAccount?.type === 'credit' ? 'credit_card' : 'account';
         
+        // Extract tag names from transaction tags
         const transactionTags = transaction.tags?.map(tag => tag.name) || [];
         
+        // Editing existing transaction
         form.reset({
-          type: transaction.type as 'receita' | 'despesa',
+          type: transaction.type,
           description: transaction.description,
           amount: Math.abs(transaction.amount).toLocaleString('pt-BR', {
             minimumFractionDigits: 2,
@@ -227,11 +224,10 @@ export function TransactionModal({
           category_id: transaction.category_id || undefined,
           source_type: sourceType,
           account_id: transaction.account_id || undefined,
-          counterparty_id: transaction.counterparty_id || undefined,
-          is_reviewed: transaction.is_reviewed,
           tags: transactionTags,
         });
       } else {
+        // Creating new transaction - reset to clean state with prefilled account
         const defaultAccount = prefilledAccountId || undefined;
         const defaultSourceType = defaultAccount 
           ? (accounts.find(acc => acc.id === defaultAccount)?.type === 'credit' ? 'credit_card' : 'account')
@@ -247,8 +243,6 @@ export function TransactionModal({
           category_id: undefined,
           source_type: defaultSourceType,
           account_id: defaultAccount,
-          counterparty_id: undefined,
-          is_reviewed: false,
           tags: [],
         });
       }
@@ -256,10 +250,12 @@ export function TransactionModal({
   }, [isOpen, transaction, form, accounts, prefilledAccountId]);
 
   const handleSubmit = (data: TransactionFormData, saveAndNew: boolean = false) => {
+    // Parse the formatted currency value
     const numericAmount = parseFloat(data.amount.replace(/\./g, '').replace(',', '.'));
     const finalAmount = data.type === 'receita' ? numericAmount : -numericAmount;
 
     const transactionData: CreateTransactionData = {
+      type: data.type,
       description: data.description,
       amount: finalAmount,
       event_date: data.event_date,
@@ -268,14 +264,13 @@ export function TransactionModal({
       status: data.is_effective ? 'concluido' : 'pendente',
       account_id: data.account_id,
       credit_card_id: undefined,
-      counterparty_id: data.counterparty_id,
-      is_reviewed: data.is_reviewed,
-      tags: data.tags || [],
+      tags: data.tags || [], // Always send tags array
     };
 
     onSave(transactionData);
 
     if (saveAndNew && !transaction) {
+      // Reset form for new transaction, keeping some defaults
       form.reset({
         type: data.type,
         description: '',
@@ -286,8 +281,6 @@ export function TransactionModal({
         category_id: undefined,
         source_type: data.source_type,
         account_id: data.account_id,
-        counterparty_id: undefined,
-        is_reviewed: false,
         tags: [],
       });
     } else {
@@ -454,74 +447,6 @@ export function TransactionModal({
                 )}
               />
 
-              {/* Counterparty */}
-              <FormField
-                control={form.control}
-                name="counterparty_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {transactionType === 'receita' ? 'Devedor' : 'Favorecido'}
-                    </FormLabel>
-                    <div className="flex gap-2">
-                      <Select onValueChange={field.onChange} value={field.value || ""}>
-                        <FormControl>
-                          <SelectTrigger className="flex-1">
-                            <SelectValue placeholder={
-                              transactionType === 'receita' 
-                                ? "Selecione um devedor" 
-                                : "Selecione um favorecido"
-                            } />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="none">Nenhum</SelectItem>
-                          {counterparties.map((counterparty) => (
-                            <SelectItem key={counterparty.id} value={counterparty.id}>
-                              {counterparty.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setShowNewCounterpartyInput(!showNewCounterpartyInput)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    {showNewCounterpartyInput && (
-                      <div className="flex gap-2 mt-2">
-                        <Input
-                          placeholder="Nome da contraparte"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              const input = e.target as HTMLInputElement;
-                              if (input.value.trim()) {
-                                handleCreateCounterparty(input.value.trim());
-                                input.value = '';
-                              }
-                            }
-                          }}
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowNewCounterpartyInput(false)}
-                        >
-                          Cancelar
-                        </Button>
-                      </div>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               {/* Tags */}
               <FormField
                 control={form.control}
@@ -618,30 +543,6 @@ export function TransactionModal({
                       </SelectContent>
                     </Select>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Review Status */}
-              <FormField
-                control={form.control}
-                name="is_reviewed"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">
-                        Lançamento Revisado
-                      </FormLabel>
-                      <div className="text-sm text-muted-foreground">
-                        Marque se este lançamento foi revisado por você
-                      </div>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
                   </FormItem>
                 )}
               />

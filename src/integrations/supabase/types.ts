@@ -164,42 +164,6 @@ export type Database = {
           },
         ]
       }
-      counterparties: {
-        Row: {
-          created_at: string
-          document: string | null
-          email: string | null
-          id: string
-          is_active: boolean
-          name: string
-          phone: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          document?: string | null
-          email?: string | null
-          id?: string
-          is_active?: boolean
-          name: string
-          phone?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          document?: string | null
-          email?: string | null
-          id?: string
-          is_active?: boolean
-          name?: string
-          phone?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       credit_cards: {
         Row: {
           card_limit: number
@@ -640,7 +604,6 @@ export type Database = {
           account_id: string | null
           amount: number
           category_id: string | null
-          counterparty_id: string | null
           created_at: string
           credit_card_id: string | null
           description: string
@@ -649,8 +612,6 @@ export type Database = {
           id: string
           installment_id: string | null
           installment_number: number | null
-          is_reviewed: boolean
-          notes: string | null
           status: string
           total_installments: number | null
           type: string
@@ -660,7 +621,6 @@ export type Database = {
           account_id?: string | null
           amount: number
           category_id?: string | null
-          counterparty_id?: string | null
           created_at?: string
           credit_card_id?: string | null
           description: string
@@ -669,8 +629,6 @@ export type Database = {
           id?: string
           installment_id?: string | null
           installment_number?: number | null
-          is_reviewed?: boolean
-          notes?: string | null
           status?: string
           total_installments?: number | null
           type: string
@@ -680,7 +638,6 @@ export type Database = {
           account_id?: string | null
           amount?: number
           category_id?: string | null
-          counterparty_id?: string | null
           created_at?: string
           credit_card_id?: string | null
           description?: string
@@ -689,8 +646,6 @@ export type Database = {
           id?: string
           installment_id?: string | null
           installment_number?: number | null
-          is_reviewed?: boolean
-          notes?: string | null
           status?: string
           total_installments?: number | null
           type?: string
@@ -709,13 +664,6 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_counterparty_id_fkey"
-            columns: ["counterparty_id"]
-            isOneToOne: false
-            referencedRelation: "counterparties"
             referencedColumns: ["id"]
           },
           {

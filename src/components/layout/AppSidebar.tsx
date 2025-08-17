@@ -1,3 +1,4 @@
+
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Sidebar,
@@ -43,7 +44,7 @@ const mainMenuItems = [
 
 const settingsMenuItems = [
   {
-    title: "Ajustes",
+    title: "Plano de Contas",
     url: "/entidades",
     icon: "settings"
   },

@@ -1,4 +1,3 @@
-
 import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import { 
   LineChart, 
@@ -63,8 +62,10 @@ export function CashFlowChartBase({
         <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: showBrush ? 80 : 40 }}>
           <defs>
             <linearGradient id="positiveGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.05}/>
+              <stop offset="0%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.8}/>
+              <stop offset="30%" stopColor="hsl(150, 70%, 45%)" stopOpacity={0.6}/>
+              <stop offset="70%" stopColor="hsl(158, 64%, 52%)" stopOpacity={0.3}/>
+              <stop offset="100%" stopColor="hsl(174, 100%, 33%)" stopOpacity={0.1}/>
             </linearGradient>
             <linearGradient id="negativeGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="hsl(346, 77%, 49%)" stopOpacity={0.3}/>
@@ -104,9 +105,9 @@ export function CashFlowChartBase({
           <Area
             type="monotone"
             dataKey="total"
-            stroke="hsl(var(--primary))"
+            stroke="hsl(142, 76%, 36%)"
             strokeWidth={3}
-            fill={minValue >= 0 ? "url(#positiveGradient)" : "url(#negativeGradient)"}
+            fill="url(#positiveGradient)"
             dot={false}
           />
 

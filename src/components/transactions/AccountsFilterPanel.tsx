@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Account } from '@/hooks/useAccounts';
 import { Institution } from '@/hooks/useInstitutions';
@@ -11,6 +10,7 @@ interface AccountsFilterPanelProps {
   institutions: Institution[];
   selectedAccountIds: string[];
   onAccountSelectionChange: (accountIds: string[]) => void;
+  balanceMap?: Record<string, number>;
 }
 
 export function AccountsFilterPanel({
@@ -18,6 +18,7 @@ export function AccountsFilterPanel({
   institutions,
   selectedAccountIds,
   onAccountSelectionChange,
+  balanceMap = {},
 }: AccountsFilterPanelProps) {
   const institutionMap = institutions.reduce((acc, institution) => {
     acc[institution.id] = institution.name;
@@ -29,21 +30,36 @@ export function AccountsFilterPanel({
   const creditAccounts = activeAccounts.filter(account => account.type === 'credit');
 
   const isAllSelected = selectedAccountIds.length === activeAccounts.length;
-  const isPartiallySelected = selectedAccountIds.length > 0 && selectedAccountIds.length < activeAccounts.length;
 
-  const handleAllAccountsToggle = (checked: boolean) => {
-    if (checked) {
-      onAccountSelectionChange(activeAccounts.map(account => account.id));
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
+  const handleAllClick = () => {
+    onAccountSelectionChange(activeAccounts.map(account => account.id));
+  };
+
+  const handleAccountClick = (e: React.MouseEvent, accountId: string) => {
+    if (e.metaKey || e.ctrlKey) {
+      // Multi-selection: toggle the account
+      if (selectedAccountIds.includes(accountId)) {
+        onAccountSelectionChange(selectedAccountIds.filter(id => id !== accountId));
+      } else {
+        onAccountSelectionChange([...selectedAccountIds, accountId]);
+      }
     } else {
-      onAccountSelectionChange([]);
+      // Single selection: select only this account
+      onAccountSelectionChange([accountId]);
     }
   };
 
-  const handleAccountToggle = (accountId: string, checked: boolean) => {
-    if (checked) {
-      onAccountSelectionChange([...selectedAccountIds, accountId]);
-    } else {
-      onAccountSelectionChange(selectedAccountIds.filter(id => id !== accountId));
+  const handleKeyDown = (e: React.KeyboardEvent, action: () => void) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      action();
     }
   };
 
@@ -51,20 +67,38 @@ export function AccountsFilterPanel({
     <div className="space-y-2">
       <h4 className="text-sm font-medium text-muted-foreground">{title}</h4>
       <div className="space-y-1">
-        {accounts.map((account) => (
-          <div key={account.id} className="flex items-center space-x-3 py-1">
-            <Checkbox
-              checked={selectedAccountIds.includes(account.id)}
-              onCheckedChange={(checked) => handleAccountToggle(account.id, checked as boolean)}
-            />
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate">{account.name}</div>
-              <div className="text-xs text-muted-foreground truncate">
-                {institutionMap[account.institution_id] || 'Instituição'}
+        {accounts.map((account) => {
+          const isSelected = selectedAccountIds.includes(account.id);
+          const balance = balanceMap[account.id] ?? 0;
+          
+          return (
+            <button
+              key={account.id}
+              type="button"
+              className={`flex items-center justify-between w-full rounded-lg px-3 py-2 transition-colors text-left ${
+                isSelected
+                  ? 'bg-accent text-accent-foreground font-medium ring-1 ring-accent'
+                  : 'hover:bg-muted/50'
+              }`}
+              onClick={(e) => handleAccountClick(e, account.id)}
+              onKeyDown={(e) => handleKeyDown(e, () => handleAccountClick(e as any, account.id))}
+              role="button"
+              aria-pressed={isSelected}
+            >
+              <div className="flex-1 min-w-0">
+                <div className={`text-sm font-medium truncate ${isSelected ? 'font-medium' : ''}`}>
+                  {account.name}
+                </div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {institutionMap[account.institution_id] || 'Instituição'}
+                </div>
               </div>
-            </div>
-          </div>
-        ))}
+              <div className="text-sm text-muted-foreground ml-2">
+                {formatCurrency(balance)}
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -83,13 +117,30 @@ export function AccountsFilterPanel({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* All Accounts Toggle */}
-        <div className="flex items-center space-x-3 py-2 border-b">
-          <Checkbox
-            checked={isAllSelected}
-            onCheckedChange={handleAllAccountsToggle}
-            className={isPartiallySelected ? "data-[state=checked]:bg-primary/50" : ""}
-          />
-          <span className="text-sm font-medium">Todas as Contas</span>
+        <div className="border-b pb-2">
+          <button
+            type="button"
+            className={`flex items-center justify-between w-full rounded-lg px-3 py-2 transition-colors text-left ${
+              isAllSelected
+                ? 'bg-accent text-accent-foreground font-medium ring-1 ring-accent'
+                : 'hover:bg-muted/50'
+            }`}
+            onClick={handleAllClick}
+            onKeyDown={(e) => handleKeyDown(e, handleAllClick)}
+            role="button"
+            aria-pressed={isAllSelected}
+          >
+            <span className={`text-sm ${isAllSelected ? 'font-medium' : ''}`}>
+              Todas as Contas
+            </span>
+            {isAllSelected && (
+              <div className="text-sm text-muted-foreground ml-2">
+                {formatCurrency(
+                  activeAccounts.reduce((sum, account) => sum + (balanceMap[account.id] ?? 0), 0)
+                )}
+              </div>
+            )}
+          </button>
         </div>
 
         {/* Budget Accounts */}

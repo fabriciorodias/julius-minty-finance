@@ -194,6 +194,7 @@ export default function Lancamentos() {
             institutions={institutions}
             selectedAccountIds={selectedAccountIds}
             onAccountSelectionChange={setSelectedAccountIds}
+            balanceMap={balanceMap}
           />
         </div>
 

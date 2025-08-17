@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 export interface Transaction {
   id: string;
@@ -9,6 +9,7 @@ export interface Transaction {
   account_id: string | null;
   credit_card_id: string | null;
   category_id: string | null;
+  counterparty_id: string | null;
   description: string;
   amount: number;
   event_date: string;
@@ -18,6 +19,9 @@ export interface Transaction {
   installment_id: string | null;
   installment_number: number | null;
   total_installments: number | null;
+  is_reviewed: boolean;
+  notes: string | null;
+  plan_id: string | null;
   created_at: string;
 }
 
@@ -25,6 +29,7 @@ export interface TransactionWithRelations extends Transaction {
   categories: { name: string } | null;
   accounts: { name: string } | null;
   credit_cards: { name: string } | null;
+  counterparties: { name: string } | null;
   tags?: { name: string; color: string | null }[];
 }
 
@@ -34,25 +39,30 @@ export interface TransactionFilters {
   endDate?: string;
   categoryId?: string;
   accountId?: string;
-  accountIds?: string[]; // New field for multiple account filtering
+  accountIds?: string[];
   creditCardId?: string;
+  counterpartyId?: string;
   status?: 'pendente' | 'concluido';
+  isReviewed?: boolean;
   q?: string;
   withoutCategory?: boolean;
-  tagIds?: string[]; // New field for tag filtering
+  tagIds?: string[];
 }
 
 export interface CreateTransactionData {
   account_id?: string;
   credit_card_id?: string;
   category_id?: string;
+  counterparty_id?: string;
   description: string;
   amount: number;
   event_date: string;
   effective_date?: string;
   status: 'pendente' | 'concluido';
   type: 'receita' | 'despesa';
-  tags?: string[]; // Tag names to associate
+  is_reviewed?: boolean;
+  notes?: string;
+  tags?: string[];
 }
 
 export interface InstallmentData {
@@ -93,11 +103,13 @@ export function useTransactions(filters: TransactionFilters = {}) {
           ),
           credit_cards!left (
             name
+          ),
+          counterparties!left (
+            name
           )
         `)
         .eq('user_id', user.id);
 
-      // Apply filters
       if (filters.startDate || filters.endDate) {
         const dateColumn = filters.dateBase === 'effective' ? 'effective_date' : 'event_date';
         
@@ -114,16 +126,22 @@ export function useTransactions(filters: TransactionFilters = {}) {
         query = query.eq('category_id', filters.categoryId);
       }
 
-      // Handle multiple account IDs (new functionality)
       if (filters.accountIds && filters.accountIds.length > 0) {
         query = query.in('account_id', filters.accountIds);
       } else if (filters.accountId) {
-        // Keep backward compatibility with single accountId
         query = query.eq('account_id', filters.accountId);
       }
 
       if (filters.creditCardId) {
         query = query.eq('credit_card_id', filters.creditCardId);
+      }
+
+      if (filters.counterpartyId) {
+        query = query.eq('counterparty_id', filters.counterpartyId);
+      }
+
+      if (filters.isReviewed !== undefined) {
+        query = query.eq('is_reviewed', filters.isReviewed);
       }
 
       if (filters.status) {
@@ -142,15 +160,14 @@ export function useTransactions(filters: TransactionFilters = {}) {
 
       if (error) throw error;
       
-      // Transform the data to match our expected type structure
       let transformedData = (data || []).map(item => ({
         ...item,
         categories: item.categories && !('error' in item.categories) ? item.categories : null,
         accounts: item.accounts && !('error' in item.accounts) ? item.accounts : null,
         credit_cards: item.credit_cards && !('error' in item.credit_cards) ? item.credit_cards : null,
+        counterparties: item.counterparties && !('error' in item.counterparties) ? item.counterparties : null,
       })) as TransactionWithRelations[];
 
-      // Fetch tags for each transaction
       if (transformedData.length > 0) {
         const transactionIds = transformedData.map(t => t.id);
         const { data: tagsData, error: tagsError } = await supabase
@@ -168,7 +185,6 @@ export function useTransactions(filters: TransactionFilters = {}) {
         if (tagsError) {
           console.error('Error fetching transaction tags:', tagsError);
         } else {
-          // Group tags by transaction
           const tagsByTransaction = (tagsData || []).reduce((acc, item) => {
             if (!acc[item.transaction_id]) {
               acc[item.transaction_id] = [];
@@ -180,7 +196,6 @@ export function useTransactions(filters: TransactionFilters = {}) {
             return acc;
           }, {} as Record<string, { name: string; color: string | null }[]>);
 
-          // Add tags to transactions
           transformedData = transformedData.map(transaction => ({
             ...transaction,
             tags: tagsByTransaction[transaction.id] || [],
@@ -188,7 +203,6 @@ export function useTransactions(filters: TransactionFilters = {}) {
         }
       }
 
-      // Apply tag filters if specified
       if (filters.tagIds && filters.tagIds.length > 0) {
         transformedData = transformedData.filter(transaction => 
           transaction.tags?.some(tag => filters.tagIds!.includes(tag.name)) || false
@@ -217,9 +231,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
 
       if (error) throw error;
 
-      // Associate tags if provided
       if (tags && tags.length > 0) {
-        // Get or create tags
         const tagIds = [];
         for (const tagName of tags) {
           let { data: existingTag, error: tagError } = await supabase
@@ -250,7 +262,6 @@ export function useTransactions(filters: TransactionFilters = {}) {
           }
         }
 
-        // Create transaction-tag associations
         if (tagIds.length > 0) {
           const { error: linkError } = await supabase
             .from('transaction_tags')
@@ -301,15 +312,12 @@ export function useTransactions(filters: TransactionFilters = {}) {
 
       if (error) throw error;
 
-      // Update tags if provided
       if (tags !== undefined) {
-        // Remove existing tags
         await supabase
           .from('transaction_tags')
           .delete()
           .eq('transaction_id', id);
 
-        // Add new tags
         if (tags.length > 0) {
           const tagIds = [];
           for (const tagName of tags) {

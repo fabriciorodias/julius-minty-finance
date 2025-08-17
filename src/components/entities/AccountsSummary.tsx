@@ -6,13 +6,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { 
   TrendingUp, 
   TrendingDown, 
-  CreditCard, 
   Wallet, 
   Info,
-  DollarSign,
-  Target
+  Zap
 } from 'lucide-react';
-import { Account, isCreditCard } from '@/hooks/useAccounts';
+import { Account } from '@/hooks/useAccounts';
 import { AccountBalance } from '@/hooks/useAccountBalances';
 
 interface AccountsSummaryProps {
@@ -37,43 +35,34 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
   // Cálculos dos dados do resumo
   const assetAccounts = accounts.filter(acc => acc.kind === 'asset' && acc.is_active);
   const liabilityAccounts = accounts.filter(acc => acc.kind === 'liability' && acc.is_active);
-  const creditAccounts = accounts.filter(isCreditCard).filter(acc => acc.is_active);
 
   const totalAssetBalance = assetAccounts.reduce((total, account) => {
     return total + getAccountBalance(account.id);
   }, 0);
 
-  // Total utilizado agora inclui TODOS os passivos (cartões, empréstimos, etc.)
-  const totalLiabilityUsed = liabilityAccounts.reduce((total, account) => {
+  const totalLiabilityBalance = liabilityAccounts.reduce((total, account) => {
     const balance = getAccountBalance(account.id);
     // Como os saldos de passivos são negativos, usamos Math.abs para mostrar valor positivo
     return total + Math.abs(balance);
   }, 0);
 
-  const totalCreditLimit = creditAccounts.reduce((total, account) => {
-    return total + (account.credit_limit || 0);
-  }, 0);
-
-  const totalCreditUsed = creditAccounts.reduce((total, account) => {
-    const balance = getAccountBalance(account.id);
-    return total + Math.abs(balance);
-  }, 0);
-
-  const totalAvailableCredit = totalCreditLimit - totalCreditUsed;
-
-  const creditUtilizationPercentage = totalCreditLimit > 0 
-    ? (totalCreditUsed / totalCreditLimit) * 100 
-    : 0;
+  // Liquidez imediata = Total de Ativos - Total de Passivos
+  const immediateLiquidity = totalAssetBalance - totalLiabilityBalance;
+  
+  // Percentual de liquidez (Ativos / Passivos * 100)
+  const liquidityPercentage = totalLiabilityBalance > 0 
+    ? (totalAssetBalance / totalLiabilityBalance) * 100 
+    : totalAssetBalance > 0 ? 100 : 0;
 
   if (isLoading) {
     return (
       <div className="space-y-4 mb-6">
         <div>
           <h2 className="text-xl font-semibold mb-2">Resumo das Contas</h2>
-          <p className="text-muted-foreground text-sm">Visão geral dos seus saldos e limites</p>
+          <p className="text-muted-foreground text-sm">Visão geral dos seus saldos e liquidez</p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          {[1, 2, 3, 4, 5].map((i) => (
+        <div className="grid gap-4 md:grid-cols-3">
+          {[1, 2, 3].map((i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader className="pb-3">
                 <Skeleton className="h-4 w-24" />
@@ -93,10 +82,10 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
       <div className="space-y-4 mb-6">
         <div>
           <h2 className="text-xl font-semibold mb-2">Resumo das Contas</h2>
-          <p className="text-muted-foreground text-sm">Visão geral dos seus saldos e limites</p>
+          <p className="text-muted-foreground text-sm">Visão geral dos seus saldos e liquidez</p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-3">
           {/* Total em Ativos */}
           <Card className="bg-gradient-to-br from-blue-50 via-blue-50/50 to-indigo-50/80 border-blue-200/60 shadow-sm ring-1 ring-blue-100/50 hover:shadow-md transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
@@ -127,12 +116,12 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
             </CardContent>
           </Card>
 
-          {/* Total Utilizado (Todos os Passivos) */}
-          <Card className="bg-gradient-to-br from-purple-50 via-purple-50/50 to-pink-50/80 border-purple-200/60 shadow-sm ring-1 ring-purple-100/50 hover:shadow-md transition-all duration-200">
+          {/* Total em Passivos */}
+          <Card className="bg-gradient-to-br from-red-50 via-red-50/50 to-pink-50/80 border-red-200/60 shadow-sm ring-1 ring-red-100/50 hover:shadow-md transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <div className="flex items-center gap-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground/90">
-                  Total Utilizado
+                  Total em Passivos
                 </CardTitle>
                 <Tooltip>
                   <TooltipTrigger>
@@ -140,16 +129,16 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
                   </TooltipTrigger>
                   <TooltipContent className="z-50 bg-popover">
                     <p className="text-xs max-w-xs">
-                      Valor total utilizado em todos os passivos (cartões, empréstimos, etc.)
+                      Valor total de todos os passivos (cartões, empréstimos, etc.)
                     </p>
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <TrendingDown className="h-5 w-5 text-purple-600 opacity-80" />
+              <TrendingDown className="h-5 w-5 text-red-600 opacity-80" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold tracking-tight text-purple-600">
-                {formatCurrency(totalLiabilityUsed)}
+              <div className="text-2xl font-bold tracking-tight text-red-600">
+                {formatCurrency(totalLiabilityBalance)}
               </div>
               <p className="text-xs text-muted-foreground/70 mt-1">
                 {liabilityAccounts.length} passivo{liabilityAccounts.length !== 1 ? 's' : ''}
@@ -157,12 +146,16 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
             </CardContent>
           </Card>
 
-          {/* Limite Total */}
-          <Card className="bg-gradient-to-br from-amber-50 via-amber-50/50 to-orange-50/80 border-amber-200/60 shadow-sm ring-1 ring-amber-100/50 hover:shadow-md transition-all duration-200">
+          {/* Liquidez Imediata */}
+          <Card className={`shadow-sm ring-1 hover:shadow-md transition-all duration-200 ${
+            immediateLiquidity >= 0 
+              ? 'bg-gradient-to-br from-green-50 via-green-50/50 to-emerald-50/80 border-green-200/60 ring-green-100/50'
+              : 'bg-gradient-to-br from-amber-50 via-amber-50/50 to-orange-50/80 border-amber-200/60 ring-amber-100/50'
+          }`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <div className="flex items-center gap-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground/90">
-                  Limite Total
+                  Liquidez Imediata
                 </CardTitle>
                 <Tooltip>
                   <TooltipTrigger>
@@ -170,97 +163,36 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
                   </TooltipTrigger>
                   <TooltipContent className="z-50 bg-popover">
                     <p className="text-xs max-w-xs">
-                      Soma de todos os limites de cartões de crédito
+                      Diferença entre ativos e passivos (Ativos - Passivos)
                     </p>
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <DollarSign className="h-5 w-5 text-amber-600 opacity-80" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold tracking-tight text-amber-600">
-                {formatCurrency(totalCreditLimit)}
-              </div>
-              <p className="text-xs text-muted-foreground/70 mt-1">
-                Limite disponível
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Crédito Disponível */}
-          <Card className="bg-gradient-to-br from-green-50 via-green-50/50 to-emerald-50/80 border-green-200/60 shadow-sm ring-1 ring-green-100/50 hover:shadow-md transition-all duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground/90">
-                  Crédito Disponível
-                </CardTitle>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-3 w-3 text-muted-foreground/60 hover:text-muted-foreground transition-colors" />
-                  </TooltipTrigger>
-                  <TooltipContent className="z-50 bg-popover">
-                    <p className="text-xs max-w-xs">
-                      Limite total menos o valor já utilizado nos cartões
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <TrendingUp className="h-5 w-5 text-green-600 opacity-80" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold tracking-tight text-green-600">
-                {formatCurrency(totalAvailableCredit)}
-              </div>
-              <p className="text-xs text-muted-foreground/70 mt-1">
-                Ainda disponível
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Utilização % */}
-          <Card className="bg-gradient-to-br from-slate-50 via-slate-50/50 to-gray-50/80 border-slate-200/60 shadow-sm ring-1 ring-slate-100/50 hover:shadow-md transition-all duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground/90">
-                  Utilização
-                </CardTitle>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-3 w-3 text-muted-foreground/60 hover:text-muted-foreground transition-colors" />
-                  </TooltipTrigger>
-                  <TooltipContent className="z-50 bg-popover">
-                    <p className="text-xs max-w-xs">
-                      Percentual do limite total que está sendo utilizado
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <Target className="h-5 w-5 text-slate-600 opacity-80" />
+              <Zap className={`h-5 w-5 opacity-80 ${
+                immediateLiquidity >= 0 ? 'text-green-600' : 'text-amber-600'
+              }`} />
             </CardHeader>
             <CardContent>
               <div className="flex items-baseline gap-2">
                 <span className={`text-2xl font-bold tracking-tight ${
-                  creditUtilizationPercentage > 80 ? 'text-red-600' : 
-                  creditUtilizationPercentage > 50 ? 'text-amber-600' : 
-                  'text-green-600'
+                  immediateLiquidity >= 0 ? 'text-green-600' : 'text-amber-600'
                 }`}>
-                  {creditUtilizationPercentage.toFixed(1)}%
+                  {formatCurrency(immediateLiquidity)}
                 </span>
                 <Badge 
                   variant="outline" 
                   className={`text-xs ${
-                    creditUtilizationPercentage > 80 ? 'border-red-300/60 bg-red-50/80 text-red-700' : 
-                    creditUtilizationPercentage > 50 ? 'border-amber-300/60 bg-amber-50/80 text-amber-700' : 
-                    'border-green-300/60 bg-green-50/80 text-green-700'
+                    liquidityPercentage >= 150 ? 'border-green-300/60 bg-green-50/80 text-green-700' :
+                    liquidityPercentage >= 100 ? 'border-blue-300/60 bg-blue-50/80 text-blue-700' :
+                    liquidityPercentage >= 50 ? 'border-amber-300/60 bg-amber-50/80 text-amber-700' :
+                    'border-red-300/60 bg-red-50/80 text-red-700'
                   }`}
                 >
-                  {creditUtilizationPercentage > 80 ? 'Alto' : 
-                   creditUtilizationPercentage > 50 ? 'Médio' : 
-                   'Baixo'}
+                  {liquidityPercentage.toFixed(0)}%
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground/70 mt-1">
-                do limite total
+                {immediateLiquidity >= 0 ? 'Saldo positivo' : 'Saldo negativo'}
               </p>
             </CardContent>
           </Card>

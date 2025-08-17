@@ -12,7 +12,8 @@ import Planos from "./pages/Planos";
 import Planejamento from "./pages/Planejamento";
 import Lancamentos from "./pages/Lancamentos";
 import Investimentos from "./pages/Investimentos";
-import Entidades from "./pages/Entidades";
+import Contas from "./pages/Contas";
+import Configuracoes from "./pages/Configuracoes";
 import Tutoriais from "./pages/Tutoriais";
 import Ferramentas from "./pages/Ferramentas";
 import Profile from "./pages/Profile";
@@ -95,11 +96,24 @@ const App = () => {
                   </AppLayout>
                 </ProtectedRoute>
               } />
-              <Route path="/entidades" element={
+              <Route path="/contas" element={
                 <ProtectedRoute>
                   <AppLayout>
-                    <Entidades />
+                    <Contas />
                   </AppLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/configuracoes" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Configuracoes />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+              {/* Redirect from old route to new route for backward compatibility */}
+              <Route path="/entidades" element={
+                <ProtectedRoute>
+                  <Navigate to="/contas" replace />
                 </ProtectedRoute>
               } />
               <Route path="/ferramentas" element={

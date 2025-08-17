@@ -39,13 +39,18 @@ const mainMenuItems = [
     title: "Lançamentos",
     url: "/lancamentos",
     icon: "swap_horiz"
+  },
+  {
+    title: "Contas",
+    url: "/contas",
+    icon: "account_balance"
   }
 ];
 
 const settingsMenuItems = [
   {
-    title: "Plano de Contas",
-    url: "/entidades",
+    title: "Configurações",
+    url: "/configuracoes",
     icon: "settings"
   },
   {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -18,13 +17,13 @@ import { AccountsFilterPanel } from '@/components/transactions/AccountsFilterPan
 import { TagsFilter } from '@/components/transactions/TagsFilter';
 import { QuickDateFilters } from '@/components/transactions/QuickDateFilters';
 import { FiltersMobileDrawer } from '@/components/transactions/FiltersMobileDrawer';
+import { AnxiousBalancePanel } from '@/components/transactions/AnxiousBalancePanel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Upload, CreditCard, AlertTriangle, TrendingUp, Plus, MoreHorizontal, Filter } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { CashFlowModal } from '@/components/transactions/CashFlowModal';
-import { BalancesOverview } from '@/components/transactions/BalancesOverview';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function Lancamentos() {
@@ -338,12 +337,9 @@ export default function Lancamentos() {
 
           {/* Right Panel - Main Content */}
           <div className={`${isMobile ? 'col-span-1' : 'lg:col-span-3'} space-y-6 animate-fade-in`}>
-            {/* Enhanced Balances Overview */}
-            <BalancesOverview
+            {/* New Anxious Balance Panel */}
+            <AnxiousBalancePanel
               selectedAccountIds={selectedAccountIds}
-              accounts={accounts}
-              institutions={institutions}
-              balanceMap={balanceMap}
               dateFilters={dateFilters}
             />
 

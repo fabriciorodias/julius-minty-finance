@@ -52,11 +52,13 @@ export function AccountModal({
 
   useEffect(() => {
     if (account) {
+      console.log('Setting form data for existing account:', account);
       setFormData({
         name: account.name,
         institution_id: account.institution_id,
-        kind: account.kind,
-        subtype: account.subtype,
+        // Garantir que kind e subtype sejam válidos
+        kind: account.kind || 'asset',
+        subtype: account.subtype || (account.kind === 'liability' ? 'credit_card' : 'bank'),
         credit_limit: account.credit_limit?.toString() || '',
         initial_balance: initialBalance?.amount ? Math.abs(initialBalance.amount).toLocaleString('pt-BR', {
           minimumFractionDigits: 2,
@@ -80,10 +82,12 @@ export function AccountModal({
   }, [account, initialBalance, isOpen]);
 
   const handleKindChange = (kind: 'asset' | 'liability') => {
+    const newSubtype = kind === 'asset' ? 'bank' : 'credit_card';
+    console.log('Changing kind to:', kind, 'and subtype to:', newSubtype);
     setFormData({ 
       ...formData, 
       kind, 
-      subtype: kind === 'asset' ? 'bank' : 'credit_card',
+      subtype: newSubtype,
       credit_limit: '' 
     });
   };
@@ -94,6 +98,14 @@ export function AccountModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('Submitting form data:', formData);
+    
+    // Validar que os valores obrigatórios estão preenchidos
+    if (!formData.kind || !formData.subtype) {
+      console.error('Kind or subtype is missing:', { kind: formData.kind, subtype: formData.subtype });
+      return;
+    }
     
     const submitData: any = {
       name: formData.name,
@@ -116,6 +128,8 @@ export function AccountModal({
       submitData.balance_date = formData.balance_date;
     }
 
+    console.log('Final submit data:', submitData);
+
     if (account) {
       onSubmit({ id: account.id, ...submitData });
     } else {
@@ -128,6 +142,8 @@ export function AccountModal({
 
   const isFormValid = formData.name && 
     formData.institution_id && 
+    formData.kind &&
+    formData.subtype &&
     (formData.subtype !== 'credit_card' || formData.credit_limit) &&
     (!formData.initial_balance || formData.balance_date);
 
@@ -238,7 +254,10 @@ export function AccountModal({
             </Label>
             <Select
               value={formData.subtype}
-              onValueChange={(value: Account['subtype']) => setFormData({ ...formData, subtype: value })}
+              onValueChange={(value: Account['subtype']) => {
+                console.log('Changing subtype to:', value);
+                setFormData({ ...formData, subtype: value });
+              }}
               required
             >
               <SelectTrigger className="h-12">

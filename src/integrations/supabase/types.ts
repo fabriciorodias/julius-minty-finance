@@ -53,6 +53,9 @@ export type Database = {
           is_active: boolean
           kind: Database["public"]["Enums"]["account_kind"]
           last_reconciled_at: string | null
+          last_reconciliation_method:
+            | Database["public"]["Enums"]["reconciliation_method"]
+            | null
           name: string
           subtype: Database["public"]["Enums"]["account_subtype"]
           type: Database["public"]["Enums"]["account_type"]
@@ -66,6 +69,9 @@ export type Database = {
           is_active?: boolean
           kind: Database["public"]["Enums"]["account_kind"]
           last_reconciled_at?: string | null
+          last_reconciliation_method?:
+            | Database["public"]["Enums"]["reconciliation_method"]
+            | null
           name: string
           subtype: Database["public"]["Enums"]["account_subtype"]
           type?: Database["public"]["Enums"]["account_type"]
@@ -79,6 +85,9 @@ export type Database = {
           is_active?: boolean
           kind?: Database["public"]["Enums"]["account_kind"]
           last_reconciled_at?: string | null
+          last_reconciliation_method?:
+            | Database["public"]["Enums"]["reconciliation_method"]
+            | null
           name?: string
           subtype?: Database["public"]["Enums"]["account_subtype"]
           type?: Database["public"]["Enums"]["account_type"]
@@ -770,6 +779,7 @@ export type Database = {
         | "loan"
         | "other_liabilities"
       account_type: "on_budget" | "credit"
+      reconciliation_method: "manual" | "automacao" | "open_finance"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -909,6 +919,7 @@ export const Constants = {
         "other_liabilities",
       ],
       account_type: ["on_budget", "credit"],
+      reconciliation_method: ["manual", "automacao", "open_finance"],
     },
   },
 } as const

@@ -1,12 +1,13 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Edit2, Trash2, CreditCard, Wallet, Eye, EyeOff, Calendar, TrendingUp, Banknote, PiggyBank, TrendingDown, Building2, Home, DollarSign, CheckCircle, Clock } from 'lucide-react';
+import { Plus, Edit2, Trash2, CreditCard, Wallet, Eye, EyeOff, Calendar, TrendingUp, Banknote, PiggyBank, TrendingDown, Building2, Home, DollarSign, CheckCircle, Clock, User, Zap, Building } from 'lucide-react';
 import { AccountModal } from './AccountModal';
 import { ReconcileAccountModal } from './ReconcileAccountModal';
-import { Account, isCreditCard, isBudgetAccount, SUBTYPE_LABELS } from '@/hooks/useAccounts';
+import { Account, isCreditCard, isBudgetAccount, SUBTYPE_LABELS, RECONCILIATION_METHOD_LABELS } from '@/hooks/useAccounts';
 import { Institution } from '@/hooks/useInstitutions';
 import { AccountBalance } from '@/hooks/useAccountBalances';
 import { useAccountInitialBalance } from '@/hooks/useAccountInitialBalance';
@@ -82,6 +83,22 @@ function getSubtypeIcon(subtype: Account['subtype'], size: 'sm' | 'md' = 'md') {
       return <DollarSign className={`${iconSize} text-orange-600`} />;
     default:
       return <Wallet className={`${iconSize} text-gray-600`} />;
+  }
+}
+
+// Helper function to get reconciliation method icon
+function getReconciliationMethodIcon(method?: Account['last_reconciliation_method']) {
+  if (!method) return null;
+  
+  switch (method) {
+    case 'manual':
+      return <User className="h-3 w-3" />;
+    case 'automacao':
+      return <Zap className="h-3 w-3" />;
+    case 'open_finance':
+      return <Building className="h-3 w-3" />;
+    default:
+      return null;
   }
 }
 
@@ -190,7 +207,8 @@ export function AccountsList({
       return {
         text: 'Nunca conciliada',
         icon: <Clock className="h-3 w-3 text-orange-500" />,
-        color: 'text-orange-600'
+        color: 'text-orange-600',
+        method: null
       };
     }
 
@@ -198,23 +216,31 @@ export function AccountsList({
     const now = new Date();
     const daysDiff = Math.floor((now.getTime() - reconciledDate.getTime()) / (1000 * 60 * 60 * 24));
 
+    const methodIcon = getReconciliationMethodIcon(account.last_reconciliation_method);
+    const methodLabel = account.last_reconciliation_method 
+      ? RECONCILIATION_METHOD_LABELS[account.last_reconciliation_method]
+      : 'Manual';
+
     if (daysDiff === 0) {
       return {
         text: 'Conciliada hoje',
         icon: <CheckCircle className="h-3 w-3 text-green-500" />,
-        color: 'text-green-600'
+        color: 'text-green-600',
+        method: { icon: methodIcon, label: methodLabel }
       };
     } else if (daysDiff <= 7) {
       return {
         text: `Conciliada há ${daysDiff} ${daysDiff === 1 ? 'dia' : 'dias'}`,
         icon: <CheckCircle className="h-3 w-3 text-green-500" />,
-        color: 'text-green-600'
+        color: 'text-green-600',
+        method: { icon: methodIcon, label: methodLabel }
       };
     } else {
       return {
         text: `Conciliada há ${daysDiff} dias`,
         icon: <Clock className="h-3 w-3 text-orange-500" />,
-        color: 'text-orange-600'
+        color: 'text-orange-600',
+        method: { icon: methodIcon, label: methodLabel }
       };
     }
   };
@@ -280,6 +306,12 @@ export function AccountsList({
                       <div className={`flex items-center gap-2 text-xs ${reconciliationStatus.color}`}>
                         {reconciliationStatus.icon}
                         <span>{reconciliationStatus.text}</span>
+                        {reconciliationStatus.method && (
+                          <div className="flex items-center gap-1 ml-2">
+                            {reconciliationStatus.method.icon}
+                            <span>({reconciliationStatus.method.label})</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -369,6 +401,12 @@ export function AccountsList({
                       <div className={`flex items-center gap-2 text-xs ${reconciliationStatus.color}`}>
                         {reconciliationStatus.icon}
                         <span>{reconciliationStatus.text}</span>
+                        {reconciliationStatus.method && (
+                          <div className="flex items-center gap-1 ml-2">
+                            {reconciliationStatus.method.icon}
+                            <span>({reconciliationStatus.method.label})</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

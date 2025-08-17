@@ -3,13 +3,14 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, CheckCircle } from 'lucide-react';
+import { CalendarIcon, CheckCircle, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Account } from '@/hooks/useAccounts';
+import { Account, RECONCILIATION_METHOD_LABELS } from '@/hooks/useAccounts';
 
 interface ReconcileAccountModalProps {
   isOpen: boolean;
@@ -51,6 +52,12 @@ export function ReconcileAccountModal({
         <div className="space-y-6">
           <div className="p-4 bg-muted/20 rounded-lg">
             <h3 className="font-medium text-base mb-2">{account.name}</h3>
+            <div className="flex items-center gap-2 mb-2">
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                <User className="h-3 w-3 mr-1" />
+                Forma: Manual
+              </Badge>
+            </div>
             <p className="text-sm text-muted-foreground">
               A conciliação ajuda a manter seus registros atualizados e identificar possíveis discrepâncias.
             </p>
@@ -120,6 +127,11 @@ export function ReconcileAccountModal({
               <p className="text-sm text-blue-800">
                 <strong>Última conciliação:</strong>{' '}
                 {format(new Date(account.last_reconciled_at), "PPP 'às' HH:mm", { locale: ptBR })}
+                {account.last_reconciliation_method && (
+                  <span className="ml-2">
+                    ({RECONCILIATION_METHOD_LABELS[account.last_reconciliation_method]})
+                  </span>
+                )}
               </p>
             </div>
           )}

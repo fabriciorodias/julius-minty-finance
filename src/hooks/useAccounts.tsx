@@ -14,6 +14,7 @@ export interface Account {
   credit_limit?: number;
   is_active: boolean;
   last_reconciled_at?: string;
+  last_reconciliation_method?: 'manual' | 'automacao' | 'open_finance';
   created_at: string;
 }
 
@@ -36,6 +37,13 @@ export const SUBTYPE_LABELS: Record<Account['subtype'], string> = {
   credit_card: 'Cartão de Crédito',
   loan: 'Empréstimos',
   other_liabilities: 'Outros Passivos',
+};
+
+// Mapeamento de métodos de conciliação para labels em português
+export const RECONCILIATION_METHOD_LABELS: Record<NonNullable<Account['last_reconciliation_method']>, string> = {
+  manual: 'Manual',
+  automacao: 'Automação',
+  open_finance: 'Open Finance',
 };
 
 // Agrupamento de subtipos por kind
@@ -366,10 +374,17 @@ export function useAccounts(institutionId?: string) {
   });
 
   const reconcileAccountMutation = useMutation({
-    mutationFn: async ({ accountId, reconciledAt }: { accountId: string; reconciledAt: Date }) => {
+    mutationFn: async ({ accountId, reconciledAt, method = 'manual' }: { 
+      accountId: string; 
+      reconciledAt: Date; 
+      method?: 'manual' | 'automacao' | 'open_finance' 
+    }) => {
       const { data, error } = await supabase
         .from('accounts')
-        .update({ last_reconciled_at: reconciledAt.toISOString() })
+        .update({ 
+          last_reconciled_at: reconciledAt.toISOString(),
+          last_reconciliation_method: method
+        })
         .eq('id', accountId)
         .eq('user_id', user?.id)
         .select()

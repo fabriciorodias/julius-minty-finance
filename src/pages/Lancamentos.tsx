@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useTransactions, TransactionFilters, TransactionWithRelations, CreateTransactionData } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
@@ -12,6 +13,7 @@ import { InstallmentRecurringModal } from '@/components/transactions/Installment
 import { ImportTransactionsModal } from '@/components/transactions/ImportTransactionsModal';
 import { InvoiceManagerModal } from '@/components/transactions/InvoiceManagerModal';
 import { TransactionsList } from '@/components/transactions/TransactionsList';
+import { TransactionDetailsSheet } from '@/components/transactions/TransactionDetailsSheet';
 import { AccountsFilterPanel } from '@/components/transactions/AccountsFilterPanel';
 import { TagsFilter } from '@/components/transactions/TagsFilter';
 import { DynamicBalanceCard } from '@/components/transactions/DynamicBalanceCard';
@@ -26,6 +28,7 @@ import { BalancesOverview } from '@/components/transactions/BalancesOverview';
 export default function Lancamentos() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   // Local storage for selected accounts, tags and search
   const [selectedAccountIds, setSelectedAccountIds] = useLocalStorage<string[]>('selected-account-ids', []);
@@ -40,6 +43,10 @@ export default function Lancamentos() {
   const [isCashFlowModalOpen, setIsCashFlowModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionWithRelations | null>(null);
 
+  // Details sheet state
+  const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
+  const [detailsTransaction, setDetailsTransaction] = useState<TransactionWithRelations | null>(null);
+
   const { categories } = useCategories();
   const { accounts } = useAccounts();
   const { institutions } = useInstitutions();
@@ -52,6 +59,18 @@ export default function Lancamentos() {
       setSelectedAccountIds(activeAccountIds);
     }
   }, [accounts, selectedAccountIds.length, setSelectedAccountIds]);
+
+  // Handle URL synchronization for details view
+  useEffect(() => {
+    const viewTxId = searchParams.get('viewTx');
+    if (viewTxId && transactions.length > 0) {
+      const transaction = transactions.find(tx => tx.id === viewTxId);
+      if (transaction) {
+        setDetailsTransaction(transaction);
+        setIsDetailsSheetOpen(true);
+      }
+    }
+  }, [searchParams, transactions]);
 
   // Build transaction filters
   const filters: TransactionFilters = useMemo(() => {
@@ -118,6 +137,28 @@ export default function Lancamentos() {
       setSelectedTags(selectedTags.filter(tag => tag !== tagName));
     } else {
       setSelectedTags([...selectedTags, tagName]);
+    }
+  };
+
+  // Handle row click to open details
+  const handleRowClick = (transaction: TransactionWithRelations) => {
+    setDetailsTransaction(transaction);
+    setIsDetailsSheetOpen(true);
+    // Update URL with transaction ID
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('viewTx', transaction.id);
+    setSearchParams(newSearchParams);
+  };
+
+  // Handle details sheet close
+  const handleDetailsSheetClose = (open: boolean) => {
+    setIsDetailsSheetOpen(open);
+    if (!open) {
+      setDetailsTransaction(null);
+      // Remove viewTx from URL
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('viewTx');
+      setSearchParams(newSearchParams);
     }
   };
 
@@ -257,6 +298,7 @@ export default function Lancamentos() {
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             onTagClick={handleTagClick}
+            onRowClick={handleRowClick}
           />
         </div>
       </div>
@@ -296,6 +338,18 @@ export default function Lancamentos() {
         accounts={accounts}
         institutions={institutions}
         dateFilters={dateFilters}
+      />
+
+      {/* Transaction Details Sheet */}
+      <TransactionDetailsSheet
+        open={isDetailsSheetOpen}
+        onOpenChange={handleDetailsSheetClose}
+        transaction={detailsTransaction}
+        accounts={accounts}
+        institutions={institutions}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onTagClick={handleTagClick}
       />
     </div>
   );

@@ -43,6 +43,7 @@ interface TransactionsListProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
   onTagClick?: (tagName: string) => void;
+  onRowClick?: (transaction: TransactionWithRelations) => void;
 }
 
 export function TransactionsList({
@@ -58,6 +59,7 @@ export function TransactionsList({
   searchTerm,
   onSearchChange,
   onTagClick,
+  onRowClick,
 }: TransactionsListProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])
@@ -75,6 +77,21 @@ export function TransactionsList({
       onBulkDelete(selectedTransactionIds);
       setRowSelection({});
     }
+  };
+
+  const handleRowClick = (transaction: TransactionWithRelations, event: React.MouseEvent) => {
+    // Don't trigger row click if clicking on interactive elements
+    const target = event.target as HTMLElement;
+    if (
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('[role="menuitem"]') ||
+      target.closest('.dropdown-trigger')
+    ) {
+      return;
+    }
+
+    onRowClick?.(transaction);
   };
 
   const columns: ColumnDef<TransactionWithRelations>[] = [
@@ -95,6 +112,7 @@ export function TransactionsList({
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
           aria-label="Selecionar linha"
+          onClick={(e) => e.stopPropagation()}
         />
       ),
       enableSorting: false,
@@ -240,7 +258,11 @@ export function TransactionsList({
           <div className="text-right">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
+                <Button 
+                  variant="ghost" 
+                  className="h-8 w-8 p-0 dropdown-trigger"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <span className="sr-only">Abrir menu</span>
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
@@ -348,6 +370,8 @@ export function TransactionsList({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={(e) => handleRowClick(row.original, e)}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id} className={cn(cell.column.id === 'actions' ? 'text-right' : '')}>

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus } from 'lucide-react';
 import { AccountsList } from '@/components/entities/AccountsList';
+import { AccountsSummary } from '@/components/entities/AccountsSummary';
 import { InstitutionModal } from '@/components/entities/InstitutionModal';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useInstitutions } from '@/hooks/useInstitutions';
@@ -63,6 +64,12 @@ export default function Contas() {
         </TabsList>
 
         <TabsContent value="accounts" className="space-y-6">
+          <AccountsSummary
+            accounts={accounts}
+            accountBalances={balances}
+            isLoading={accountsLoading}
+          />
+          
           <AccountsList
             accounts={accounts}
             institutions={institutions}

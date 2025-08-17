@@ -215,7 +215,7 @@ export function TransactionModal({
         const transactionTags = transaction.tags?.map(tag => tag.name) || [];
         
         form.reset({
-          type: transaction.type,
+          type: transaction.type as 'receita' | 'despesa',
           description: transaction.description,
           amount: Math.abs(transaction.amount).toLocaleString('pt-BR', {
             minimumFractionDigits: 2,

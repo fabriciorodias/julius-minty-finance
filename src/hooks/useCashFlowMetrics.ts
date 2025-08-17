@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { CashFlowDataPoint } from '@/lib/cashflow-sim';
 
-interface CashFlowMetrics {
+export interface CashFlowMetrics {
   liquidityNow: number;
   worstDayBalance: number;
   worstDayDate: string;

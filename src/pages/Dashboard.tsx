@@ -31,8 +31,8 @@ const Dashboard = () => {
   const year = parseInt(selectedMonth.slice(0, 4), 10);
   const selectedMonthDate = new Date(selectedMonth);
 
-  // Get accounts for cash flow projection
-  const { data: accounts } = useAccounts();
+  // Get accounts for cash flow projection - fix: use accounts instead of data
+  const { accounts } = useAccounts();
   const allAccountIds = (accounts || []).map(account => account.id);
 
   // Monthly Balance hooks

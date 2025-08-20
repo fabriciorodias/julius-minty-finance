@@ -179,8 +179,8 @@ export function ImportTransactionsModal({ isOpen, onClose, onSuccess }: ImportTr
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh]">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl w-full max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-mint-text-primary font-bold flex items-center gap-2">
             {currentStep === 'preview' && (
               <Button
@@ -196,99 +196,103 @@ export function ImportTransactionsModal({ isOpen, onClose, onSuccess }: ImportTr
           </DialogTitle>
         </DialogHeader>
 
-        {currentStep === 'selection' && (
-          <form onSubmit={handleSubmit(handlePreview)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="source_account_id" className="text-mint-text-primary font-medium">
-                Conta de Origem
-              </Label>
-              <Select onValueChange={handleAccountSelect} value={selectedAccountId}>
-                <SelectTrigger className="mint-input">
-                  <SelectValue placeholder="Selecione a conta" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sourceOptions.map((option: AccountOption) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.source_account_id && (
-                <p className="text-sm text-red-500">Conta de origem é obrigatória</p>
-              )}
-            </div>
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {currentStep === 'selection' && (
+            <form onSubmit={handleSubmit(handlePreview)} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="source_account_id" className="text-mint-text-primary font-medium">
+                  Conta de Origem
+                </Label>
+                <Select onValueChange={handleAccountSelect} value={selectedAccountId}>
+                  <SelectTrigger className="mint-input">
+                    <SelectValue placeholder="Selecione a conta" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sourceOptions.map((option: AccountOption) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.source_account_id && (
+                  <p className="text-sm text-red-500">Conta de origem é obrigatória</p>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="csv_file" className="text-mint-text-primary font-medium">
-                Arquivo CSV/OFX
-              </Label>
-              <Input
-                id="csv_file"
-                type="file"
-                accept=".csv,.ofx"
-                onChange={handleFileChange}
-                className="mint-input"
-              />
-              {errors.csv_file && (
-                <p className="text-sm text-red-500">Arquivo é obrigatório</p>
-              )}
-              {!csvFile && (
-                <p className="text-sm text-mint-text-secondary">
-                  Selecione um arquivo CSV ou OFX para importar as transações.
-                </p>
-              )}
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="csv_file" className="text-mint-text-primary font-medium">
+                  Arquivo CSV/OFX
+                </Label>
+                <Input
+                  id="csv_file"
+                  type="file"
+                  accept=".csv,.ofx"
+                  onChange={handleFileChange}
+                  className="mint-input"
+                />
+                {errors.csv_file && (
+                  <p className="text-sm text-red-500">Arquivo é obrigatório</p>
+                )}
+                {!csvFile && (
+                  <p className="text-sm text-mint-text-secondary">
+                    Selecione um arquivo CSV ou OFX para importar as transações.
+                  </p>
+                )}
+              </div>
 
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                disabled={isLoading}
-                className="flex-1"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={isLoading || !csvFile || !selectedAccountId}
-                className="flex-1"
-              >
-                {isLoading ? 'Processando...' : 'Avançar'}
-              </Button>
-            </div>
-          </form>
-        )}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleClose}
+                  disabled={isLoading}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isLoading || !csvFile || !selectedAccountId}
+                  className="flex-1"
+                >
+                  {isLoading ? 'Processando...' : 'Avançar'}
+                </Button>
+              </div>
+            </form>
+          )}
 
-        {currentStep === 'preview' && (
-          <div className="space-y-4">
-            <TransactionImportPreview
-              transactions={previewTransactions}
-              selectedStartIndex={selectedStartIndex}
-              onStartIndexChange={setSelectedStartIndex}
-            />
+          {currentStep === 'preview' && (
+            <div className="h-full flex flex-col">
+              <div className="flex-1 min-h-0">
+                <TransactionImportPreview
+                  transactions={previewTransactions}
+                  selectedStartIndex={selectedStartIndex}
+                  onStartIndexChange={setSelectedStartIndex}
+                />
+              </div>
 
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleBackToSelection}
-                disabled={isLoading}
-                className="flex-1"
-              >
-                Voltar
-              </Button>
-              <Button
-                onClick={handleImport}
-                disabled={isLoading}
-                className="flex-1"
-              >
-                {isLoading ? 'Importando...' : 'Importar Transações'}
-              </Button>
+              <div className="flex gap-3 pt-4 flex-shrink-0 border-t mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleBackToSelection}
+                  disabled={isLoading}
+                  className="flex-1"
+                >
+                  Voltar
+                </Button>
+                <Button
+                  onClick={handleImport}
+                  disabled={isLoading}
+                  className="flex-1"
+                >
+                  {isLoading ? 'Importando...' : 'Importar Transações'}
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

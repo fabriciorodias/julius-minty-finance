@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -40,26 +39,29 @@ serve(async (req) => {
 
     const formData = await req.formData()
     const file = formData.get('file') as File
-    const importType = formData.get('importType') as string // 'account' or 'credit_card'
+    const mode = formData.get('mode') as string // 'preview' or 'import'
     const sourceId = formData.get('sourceId') as string
+    const startIndex = formData.get('startIndex') ? parseInt(formData.get('startIndex') as string) : 0
 
-    console.log('Import request:', { fileName: file?.name, importType, sourceId, fileSize: file?.size })
+    console.log('Import request:', { fileName: file?.name, mode, sourceId, startIndex, fileSize: file?.size })
 
-    if (!file || !importType || !sourceId) {
+    if (!file || !mode || !sourceId) {
       return new Response(
-        JSON.stringify({ error: 'Arquivo, tipo de importação e origem são obrigatórios' }),
+        JSON.stringify({ error: 'Arquivo, modo e origem são obrigatórios' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Process the file directly in memory (no need for storage upload)
+    // Process the file directly in memory
     const fileContent = await file.text()
     console.log('File content length:', fileContent.length)
     
     let transactions;
     try {
       transactions = await parseFile(fileContent, file.type, file.name)
-      console.log('Parsed transactions count:', transactions.length)
+      // Sort transactions by date descending (most recent first)
+      transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      console.log('Parsed and sorted transactions count:', transactions.length)
     } catch (parseError) {
       console.error('Parse error:', parseError)
       return new Response(
@@ -75,8 +77,46 @@ serve(async (req) => {
       )
     }
 
+    // Preview mode: return parsed transactions for user selection
+    if (mode === 'preview') {
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          transactions: transactions.map((transaction, index) => ({
+            index,
+            description: transaction.description,
+            amount: transaction.amount,
+            date: transaction.date
+          }))
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Import mode: get account details to determine import type
+    const { data: account, error: accountError } = await supabaseClient
+      .from('accounts')
+      .select('subtype')
+      .eq('id', sourceId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (accountError || !account) {
+      console.error('Account error:', accountError)
+      return new Response(
+        JSON.stringify({ error: 'Conta não encontrada' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const importType = account.subtype === 'credit_card' ? 'credit_card' : 'account'
+
+    // Select transactions from startIndex onwards
+    const transactionsToImport = transactions.slice(startIndex)
+    console.log(`Importing ${transactionsToImport.length} transactions starting from index ${startIndex}`)
+
     // Insert transactions into database
-    const transactionsToInsert = transactions.map(transaction => ({
+    const transactionsToInsert = transactionsToImport.map(transaction => ({
       user_id: user.id,
       account_id: importType === 'account' ? sourceId : null,
       credit_card_id: importType === 'credit_card' ? sourceId : null,

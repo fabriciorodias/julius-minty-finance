@@ -93,33 +93,53 @@ serve(async (req) => {
       )
     }
 
-    // Import mode: get account details to determine import type
+    // Import mode: Check if sourceId is an account or credit card
+    console.log('Checking source type for ID:', sourceId)
+    
+    // First check if it's an account
     const { data: account, error: accountError } = await supabaseClient
       .from('accounts')
-      .select('subtype')
+      .select('id, name, type')
       .eq('id', sourceId)
       .eq('user_id', user.id)
       .single()
 
-    if (accountError || !account) {
-      console.error('Account error:', accountError)
-      return new Response(
-        JSON.stringify({ error: 'Conta não encontrada' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    let isAccount = false
+    let isCreditCard = false
 
-    const importType = account.subtype === 'credit_card' ? 'credit_card' : 'account'
+    if (account && !accountError) {
+      isAccount = true
+      console.log('Source is an account:', account.name, account.type)
+    } else {
+      // Check if it's a credit card
+      const { data: creditCard, error: creditCardError } = await supabaseClient
+        .from('credit_cards')
+        .select('id, name')
+        .eq('id', sourceId)
+        .eq('user_id', user.id)
+        .single()
+
+      if (creditCard && !creditCardError) {
+        isCreditCard = true
+        console.log('Source is a credit card:', creditCard.name)
+      } else {
+        console.error('Source not found in accounts or credit_cards:', { accountError, creditCardError })
+        return new Response(
+          JSON.stringify({ error: 'Conta ou cartão não encontrado' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
 
     // Select transactions from index 0 to startIndex (inclusive) - this imports selected transaction and all newer ones
     const transactionsToImport = transactions.slice(0, startIndex + 1)
     console.log(`Importing ${transactionsToImport.length} transactions from index 0 to ${startIndex} (inclusive)`)
 
-    // Insert transactions into database
+    // Insert transactions into database with correct account/credit card assignment
     const transactionsToInsert = transactionsToImport.map(transaction => ({
       user_id: user.id,
-      account_id: importType === 'account' ? sourceId : null,
-      credit_card_id: importType === 'credit_card' ? sourceId : null,
+      account_id: isAccount ? sourceId : null,
+      credit_card_id: isCreditCard ? sourceId : null,
       category_id: null, // Always null for imported transactions
       description: transaction.description,
       amount: transaction.amount,
@@ -130,6 +150,7 @@ serve(async (req) => {
     }))
 
     console.log('Inserting transactions:', transactionsToInsert.length)
+    console.log('Sample transaction to insert:', transactionsToInsert[0])
 
     const { data, error: insertError } = await supabaseClient
       .from('transactions')

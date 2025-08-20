@@ -58,8 +58,8 @@ export function TransactionImportPreview({
                   className="flex-shrink-0"
                 />
                 
-                {/* Valor - coluna fixa */}
-                <div className="text-right">
+                {/* Valor - coluna fixa alinhada à esquerda */}
+                <div className="text-left">
                   <p className={`text-sm font-bold ${
                     transaction.amount >= 0 
                       ? 'text-green-600' 

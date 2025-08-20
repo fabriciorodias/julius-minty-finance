@@ -111,9 +111,9 @@ serve(async (req) => {
 
     const importType = account.subtype === 'credit_card' ? 'credit_card' : 'account'
 
-    // Select transactions from startIndex onwards
-    const transactionsToImport = transactions.slice(startIndex)
-    console.log(`Importing ${transactionsToImport.length} transactions starting from index ${startIndex}`)
+    // Select transactions from index 0 to startIndex (inclusive) - this imports selected transaction and all newer ones
+    const transactionsToImport = transactions.slice(0, startIndex + 1)
+    console.log(`Importing ${transactionsToImport.length} transactions from index 0 to ${startIndex} (inclusive)`)
 
     // Insert transactions into database
     const transactionsToInsert = transactionsToImport.map(transaction => ({

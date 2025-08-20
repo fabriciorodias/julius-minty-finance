@@ -103,7 +103,8 @@ export function ImportTransactionsModal({ isOpen, onClose, onSuccess }: ImportTr
 
       if (data.success && data.transactions) {
         setPreviewTransactions(data.transactions);
-        setSelectedStartIndex(0);
+        // Por padrão, selecionar todas as transações (índice da mais antiga)
+        setSelectedStartIndex(data.transactions.length - 1);
         setCurrentStep('preview');
       } else {
         throw new Error(data.error || 'Erro ao processar arquivo');

@@ -24,7 +24,8 @@ export function TransactionImportPreview({
   selectedStartIndex, 
   onStartIndexChange 
 }: TransactionImportPreviewProps) {
-  const transactionsToImport = transactions.length - selectedStartIndex;
+  // Calcular quantas transações serão importadas: da selecionada (índice) até a mais recente (índice 0)
+  const transactionsToImport = selectedStartIndex + 1;
 
   return (
     <div className="space-y-4">

@@ -288,6 +288,7 @@ export function TransactionsList({
   const table = useReactTable({
     data: transactions,
     columns,
+    getRowId: (row) => row.id,
     onRowSelectionChange: setRowSelection,
     state: {
       rowSelection,

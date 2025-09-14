@@ -1,6 +1,7 @@
 
 import { Categories } from '@/components/categories/Categories';
 import { ReconciliationSettingsSection } from '@/components/settings/ReconciliationSettingsSection';
+import { ResetSettingsSection } from '@/components/settings/ResetSettingsSection';
 
 const Configuracoes = () => {
   return (
@@ -21,6 +22,14 @@ const Configuracoes = () => {
         <div>
           <h2 className="text-2xl font-bold mb-4">Conciliação de Contas</h2>
           <ReconciliationSettingsSection />
+        </div>
+
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Reset do Sistema</h2>
+          <p className="text-muted-foreground mb-4">
+            <strong>Atenção:</strong> As opções abaixo removem dados permanentemente do sistema.
+          </p>
+          <ResetSettingsSection />
         </div>
       </div>
     </div>

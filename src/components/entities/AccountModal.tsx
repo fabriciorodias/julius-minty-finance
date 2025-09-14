@@ -44,6 +44,7 @@ export function AccountModal({
     credit_limit: '',
     is_active: true,
     initial_balance: '',
+    initial_balance_numeric: 0,
     balance_date: new Date(),
   });
 
@@ -59,6 +60,7 @@ export function AccountModal({
         credit_limit: account.credit_limit?.toString() || '',
         is_active: account.is_active,
         initial_balance: initialBalance?.amount ? Math.abs(initialBalance.amount).toString() : '',
+        initial_balance_numeric: initialBalance?.amount ? Math.abs(initialBalance.amount) : 0,
         balance_date: initialBalance?.balance_date ? new Date(initialBalance.balance_date) : new Date(),
       });
     } else {
@@ -70,6 +72,7 @@ export function AccountModal({
         credit_limit: '',
         is_active: true,
         initial_balance: '',
+        initial_balance_numeric: 0,
         balance_date: new Date(),
       });
     }
@@ -93,8 +96,8 @@ export function AccountModal({
     }
 
     // Tratar saldo inicial
-    if (formData.initial_balance) {
-      const initialBalanceValue = parseFloat(formData.initial_balance);
+    if (formData.initial_balance_numeric) {
+      const initialBalanceValue = formData.initial_balance_numeric;
       
       // Para passivos, garantir que o valor seja negativo
       // O trigger do banco vai garantir isso, mas vamos normalizar aqui também
@@ -220,7 +223,7 @@ export function AccountModal({
               <Label htmlFor="credit_limit">Limite do Cartão</Label>
               <CurrencyInputBRL
                 value={formData.credit_limit}
-                onChange={(value) => setFormData(prev => ({ ...prev, credit_limit: value }))}
+                onChange={(value, numericValue) => setFormData(prev => ({ ...prev, credit_limit: numericValue.toString() }))}
               />
             </div>
           )}
@@ -231,8 +234,8 @@ export function AccountModal({
                 {formData.kind === 'asset' ? 'Saldo Inicial' : 'Valor Inicial'}
               </Label>
               <CurrencyInputBRL
-                value={formData.initial_balance}
-                onChange={(value) => setFormData(prev => ({ ...prev, initial_balance: value }))}
+                value={formData.initial_balance_numeric}
+                onChange={(value, numericValue) => setFormData(prev => ({ ...prev, initial_balance: value, initial_balance_numeric: numericValue }))}
               />
             </div>
 

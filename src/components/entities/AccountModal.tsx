@@ -17,6 +17,8 @@ import { Account, SUBTYPE_LABELS, ASSET_SUBTYPES, LIABILITY_SUBTYPES } from '@/h
 import { Institution } from '@/hooks/useInstitutions';
 import { useAccountInitialBalance } from '@/hooks/useAccountInitialBalance';
 
+console.log('AccountModal: Component imported successfully');
+
 interface AccountModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -36,6 +38,7 @@ export function AccountModal({
   isLoading = false,
   onCreateInstitution
 }: AccountModalProps) {
+  console.log('AccountModal: Component rendering...');
   const [formData, setFormData] = useState({
     name: '',
     institution_id: '',

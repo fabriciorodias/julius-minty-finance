@@ -12,6 +12,7 @@ import { useInstitutions } from '@/hooks/useInstitutions';
 import { useAccountBalances } from '@/hooks/useAccountBalances';
 
 export default function Contas() {
+  console.log('Contas: Component rendering...');
   const [showInstitutionModal, setShowInstitutionModal] = useState(false);
   
   const { 

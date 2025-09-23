@@ -3,13 +3,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Edit2, Trash2, CreditCard, Wallet, Eye, EyeOff, Calendar, TrendingUp, Banknote, PiggyBank, TrendingDown, Building2, Home, DollarSign, CheckCircle, Clock, User, Zap, Building, AlertTriangle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Plus, Edit2, Trash2, CreditCard, Wallet, Eye, EyeOff, Calendar, TrendingUp, Banknote, PiggyBank, TrendingDown, Building2, Home, DollarSign, CheckCircle, Clock, User, Zap, Building, AlertTriangle, Star, MoreHorizontal } from 'lucide-react';
 import { AccountModal } from './AccountModal';
 import { ReconcileAccountModal } from './ReconcileAccountModal';
 import { Account, isCreditCard, SUBTYPE_LABELS, RECONCILIATION_METHOD_LABELS } from '@/hooks/useAccounts';
 import { Institution } from '@/hooks/useInstitutions';
 import { AccountBalance } from '@/hooks/useAccountBalances';
 import { useAccountInitialBalance } from '@/hooks/useAccountInitialBalance';
+import { useProfile } from '@/hooks/useProfile';
+import { useDefaultAccounts } from '@/hooks/useDefaultAccounts';
 import { useReconciliationSettings } from '@/hooks/useReconciliationSettings';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -169,6 +172,8 @@ export function AccountsList({
   const [showReconcileModal, setShowReconcileModal] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<Account | undefined>();
   const { settings } = useReconciliationSettings();
+  const { setFavoriteExpenseAccount, setFavoriteIncomeAccount } = useProfile();
+  const { isDefaultAccount } = useDefaultAccounts();
 
   const handleEdit = (account: Account) => {
     setSelectedAccount(account);
@@ -315,7 +320,10 @@ export function AccountsList({
                 {reconciliationStatus.isAlert && (
                   <div className={`inline-flex items-center justify-center w-2 h-2 rounded-full ${reconciliationStatus.alertLevel === 'critical' ? 'bg-red-500' : 'bg-amber-500'} animate-pulse`} />
                 )}
-                {account.name}
+                 {account.name}
+                 {(isDefaultAccount(account.id, 'despesa') || isDefaultAccount(account.id, 'receita')) && (
+                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                 )}
               </CardTitle>
               <p className="text-sm text-muted-foreground font-medium">
                 {getInstitutionName(account.institution_id)}
@@ -355,18 +363,47 @@ export function AccountsList({
                 size="sm"
                 onClick={() => handleEdit(account)}
                 className="h-8 w-8 p-0"
+                title="Editar conta"
               >
                 <Edit2 className="h-4 w-4" />
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onDeleteAccount(account.id)}
-                disabled={isDeleting}
-                className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    title="Mais opções"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem 
+                    onClick={() => setFavoriteExpenseAccount(account.id)}
+                    className={isDefaultAccount(account.id, 'despesa') ? 'bg-accent' : ''}
+                  >
+                    <Star className="mr-2 h-4 w-4" />
+                    {isDefaultAccount(account.id, 'despesa') ? 'Padrão para Despesas' : 'Definir como Padrão para Despesas'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setFavoriteIncomeAccount(account.id)}
+                    className={isDefaultAccount(account.id, 'receita') ? 'bg-accent' : ''}
+                  >
+                    <Star className="mr-2 h-4 w-4" />
+                    {isDefaultAccount(account.id, 'receita') ? 'Padrão para Receitas' : 'Definir como Padrão para Receitas'}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={() => onDeleteAccount(account.id)}
+                    disabled={isDeleting}
+                    className="text-red-600"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Excluir
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </CardHeader>

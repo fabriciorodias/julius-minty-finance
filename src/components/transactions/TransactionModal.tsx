@@ -70,6 +70,7 @@ import { CurrencyInputBRL } from '@/components/ui/currency-input-brl';
 import { TagsInput } from '@/components/ui/tags-input';
 import { useCounterparties } from '@/hooks/useCounterparties';
 import { CounterpartyCombobox } from './CounterpartyCombobox';
+import { useDefaultAccounts } from '@/hooks/useDefaultAccounts';
 
 const transactionSchema = z.object({
   type: z.enum(['receita', 'despesa']),
@@ -138,6 +139,7 @@ export function TransactionModal({
   const { institutions } = useInstitutions();
   const { tags, createTag } = useTags();
   const { counterparties, createCounterparty, isCreating: isCreatingCounterparty } = useCounterparties();
+  const { getDefaultAccount } = useDefaultAccounts();
 
   // State for controlling date picker popovers and collapsible sections
   const [eventDateOpen, setEventDateOpen] = useState(false);
@@ -208,12 +210,32 @@ export function TransactionModal({
     createCounterparty({ name });
   };
 
-  // Auto-select account if only one option is available
+  // Auto-select account based on transaction type and user preferences
   useEffect(() => {
-    if (availableAccounts.length === 1 && !form.getValues('account_id')) {
-      form.setValue('account_id', availableAccounts[0].id);
+    if (!form.getValues('account_id') && availableAccounts.length > 0) {
+      const transactionType = form.getValues('type');
+      
+      // First priority: prefilled account
+      if (prefilledAccountId && availableAccounts.some(acc => acc.id === prefilledAccountId)) {
+        form.setValue('account_id', prefilledAccountId);
+        return;
+      }
+      
+      // Second priority: user's favorite account for this transaction type
+      if (transactionType) {
+        const defaultAccount = getDefaultAccount(transactionType);
+        if (defaultAccount && availableAccounts.some(acc => acc.id === defaultAccount.id)) {
+          form.setValue('account_id', defaultAccount.id);
+          return;
+        }
+      }
+      
+      // Third priority: only one account available
+      if (availableAccounts.length === 1) {
+        form.setValue('account_id', availableAccounts[0].id);
+      }
     }
-  }, [availableAccounts, form]);
+  }, [availableAccounts, form, prefilledAccountId, getDefaultAccount]);
 
   // Auto-fill effective date when marking as effective
   useEffect(() => {

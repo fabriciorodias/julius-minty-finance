@@ -563,6 +563,8 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          favorite_expense_account_id: string | null
+          favorite_income_account_id: string | null
           first_name: string | null
           gender: string | null
           id: string
@@ -572,6 +574,8 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          favorite_expense_account_id?: string | null
+          favorite_income_account_id?: string | null
           first_name?: string | null
           gender?: string | null
           id: string
@@ -581,6 +585,8 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          favorite_expense_account_id?: string | null
+          favorite_income_account_id?: string | null
           first_name?: string | null
           gender?: string | null
           id?: string

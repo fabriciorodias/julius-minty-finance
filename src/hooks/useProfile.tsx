@@ -12,6 +12,8 @@ interface Profile {
   gender: string | null;
   avatar_url: string | null;
   updated_at: string;
+  favorite_expense_account_id: string | null;
+  favorite_income_account_id: string | null;
 }
 
 export function useProfile() {
@@ -104,12 +106,22 @@ export function useProfile() {
     },
   });
 
+  const setFavoriteExpenseAccount = (accountId: string | null) => {
+    updateProfileMutation.mutate({ favorite_expense_account_id: accountId });
+  };
+
+  const setFavoriteIncomeAccount = (accountId: string | null) => {
+    updateProfileMutation.mutate({ favorite_income_account_id: accountId });
+  };
+
   return {
     profile,
     isLoading,
     error,
     updateProfile: updateProfileMutation.mutate,
     uploadAvatar: uploadAvatarMutation.mutate,
+    setFavoriteExpenseAccount,
+    setFavoriteIncomeAccount,
     isUpdating: updateProfileMutation.isPending,
     isUploading: uploadAvatarMutation.isPending,
   };

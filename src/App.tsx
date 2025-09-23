@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Planos from "./pages/Planos";
 import Planejamento from "./pages/Planejamento";
 import Lancamentos from "./pages/Lancamentos";
+import LancamentosRecorrentes from "./pages/LancamentosRecorrentes";
 import Investimentos from "./pages/Investimentos";
 import Contas from "./pages/Contas";
 import Configuracoes from "./pages/Configuracoes";
@@ -88,6 +89,11 @@ const App = () => {
                   <AppLayout>
                     <Lancamentos />
                   </AppLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/lancamentos/recorrentes" element={
+                <ProtectedRoute>
+                  <LancamentosRecorrentes />
                 </ProtectedRoute>
               } />
               <Route path="/investimentos" element={

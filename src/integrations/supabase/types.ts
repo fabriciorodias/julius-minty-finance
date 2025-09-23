@@ -596,6 +596,78 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_transactions: {
+        Row: {
+          account_id: string | null
+          amount: number | null
+          auto_categorize: boolean | null
+          category_id: string | null
+          counterparty_id: string | null
+          created_at: string
+          day_of_month: number | null
+          description: string
+          expected_amount: number
+          id: string
+          last_payment_date: string | null
+          next_due_date: string
+          notes: string | null
+          notification_days: number | null
+          recurrence_pattern: string
+          status: string
+          template_name: string
+          type: string
+          updated_at: string
+          user_id: string
+          variance_tolerance: number | null
+        }
+        Insert: {
+          account_id?: string | null
+          amount?: number | null
+          auto_categorize?: boolean | null
+          category_id?: string | null
+          counterparty_id?: string | null
+          created_at?: string
+          day_of_month?: number | null
+          description: string
+          expected_amount?: number
+          id?: string
+          last_payment_date?: string | null
+          next_due_date: string
+          notes?: string | null
+          notification_days?: number | null
+          recurrence_pattern?: string
+          status?: string
+          template_name: string
+          type: string
+          updated_at?: string
+          user_id: string
+          variance_tolerance?: number | null
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number | null
+          auto_categorize?: boolean | null
+          category_id?: string | null
+          counterparty_id?: string | null
+          created_at?: string
+          day_of_month?: number | null
+          description?: string
+          expected_amount?: number
+          id?: string
+          last_payment_date?: string | null
+          next_due_date?: string
+          notes?: string | null
+          notification_days?: number | null
+          recurrence_pattern?: string
+          status?: string
+          template_name?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+          variance_tolerance?: number | null
+        }
+        Relationships: []
+      }
       tags: {
         Row: {
           color: string | null
@@ -756,6 +828,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_next_due_date: {
+        Args: {
+          p_current_date: string
+          p_day_of_month?: number
+          p_recurrence_pattern: string
+        }
+        Returns: string
+      }
       get_account_balances: {
         Args: { p_as_of_date?: string }
         Returns: {
@@ -770,6 +850,24 @@ export type Database = {
           budgeted_amount: number
           category_id: string
           category_type: string
+        }[]
+      }
+      get_recurring_transactions_analytics: {
+        Args: { p_user_id: string }
+        Returns: {
+          account_name: string
+          avg_last_3_months: number
+          category_name: string
+          counterparty_name: string
+          days_until_due: number
+          description: string
+          expected_amount: number
+          id: string
+          last_amount: number
+          next_due_date: string
+          status: string
+          template_name: string
+          variance_percentage: number
         }[]
       }
     }

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,7 +18,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -35,12 +35,27 @@ import {
 } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { CalendarIcon, InfoIcon, CreditCard, Wallet } from 'lucide-react';
+import { 
+  CalendarIcon, 
+  InfoIcon, 
+  CreditCard, 
+  Wallet, 
+  TrendingUp, 
+  TrendingDown, 
+  ChevronDown, 
+  Plus,
+  Sparkles 
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -124,9 +139,10 @@ export function TransactionModal({
   const { tags, createTag } = useTags();
   const { counterparties, createCounterparty, isCreating: isCreatingCounterparty } = useCounterparties();
 
-  // State for controlling date picker popovers
+  // State for controlling date picker popovers and collapsible sections
   const [eventDateOpen, setEventDateOpen] = useState(false);
   const [effectiveDateOpen, setEffectiveDateOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   // Create maps for institution lookup
   const institutionMap = institutions.reduce((acc, institution) => {
@@ -355,365 +371,433 @@ export function TransactionModal({
   return (
     <TooltipProvider>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">
+        <DialogContent className="sm:max-w-[540px] max-h-[95vh] overflow-y-auto p-0">
+          <DialogHeader className="px-6 pt-6 pb-4">
+            <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
               {transaction ? 'Editar Lançamento' : duplicateOf ? 'Duplicar Lançamento' : 'Novo Lançamento'}
             </DialogTitle>
           </DialogHeader>
 
           <Form {...form}>
-            <form className="space-y-6">
-              {/* Transaction Type */}
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-base font-medium">Tipo de Lançamento</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        className="flex space-x-6"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="receita" id="receita" />
-                          <label htmlFor="receita" className="font-medium text-green-600">Receita</label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="despesa" id="despesa" />
-                          <label htmlFor="despesa" className="font-medium text-red-600">Despesa</label>
-                        </div>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Description and Amount in same row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descrição</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Descrição do lançamento" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Valor</FormLabel>
-                      <FormControl>
-                        <CurrencyInputBRL
-                          value={field.value}
-                          onChange={(formatted) => field.onChange(formatted)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Event Date */}
-              <FormField
-                control={form.control}
-                name="event_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Data do Evento</FormLabel>
-                    <Popover open={eventDateOpen} onOpenChange={setEventDateOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(parseInputDate(field.value), "dd/MM/yyyy", { locale: ptBR })
-                            ) : (
-                              <span>Selecione a data</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value ? parseInputDate(field.value) : undefined}
-                          onSelect={(date) => handleDateSelect(date, field.onChange, setEventDateOpen)}
-                          locale={ptBR}
-                          className="p-3"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Category */}
-              <FormField
-                control={form.control}
-                name="category_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Categoria {transactionType === 'receita' ? 'de Receita' : 'de Despesa'}
-                    </FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma categoria" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">Sem categoria</SelectItem>
-                        {filteredCategories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Counterparty */}
-              <FormField
-                control={form.control}
-                name="counterparty_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Favorecido/Devedor</FormLabel>
-                    <FormControl>
-                      <CounterpartyCombobox
-                        value={field.value || null}
-                        onValueChange={(value) => field.onChange(value || undefined)}
-                        counterparties={counterparties}
-                        onQuickCreate={handleCreateCounterparty}
-                        disabled={isCreatingCounterparty}
-                        placeholder="Selecione um favorecido..."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Tags */}
-              <FormField
-                control={form.control}
-                name="tags"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tags</FormLabel>
-                    <FormControl>
-                      <TagsInput
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Digite uma tag e pressione Enter..."
-                        suggestions={tagSuggestions}
-                        onCreateTag={handleCreateTag}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Source Type */}
-              <FormField
-                control={form.control}
-                name="source_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Origem do Lançamento</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          form.setValue('account_id', undefined);
-                        }}
-                        value={field.value}
-                        className="flex space-x-6"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="account" id="account" />
-                          <Wallet className="h-4 w-4" />
-                          <label htmlFor="account">Conta</label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="credit_card" id="credit_card" />
-                          <CreditCard className="h-4 w-4" />
-                          <label htmlFor="credit_card">Cartão de Crédito</label>
-                        </div>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Account Selection */}
-              <FormField
-                control={form.control}
-                name="account_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {sourceType === 'credit_card' ? 'Cartão de Crédito' : 'Conta'}
-                    </FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={
-                            sourceType === 'credit_card' 
-                              ? "Selecione um cartão" 
-                              : "Selecione uma conta"
-                          } />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {availableAccounts.length === 0 ? (
-                          <SelectItem value="no-accounts" disabled>
-                            {sourceType === 'credit_card' 
-                              ? 'Nenhum cartão ativo encontrado' 
-                              : 'Nenhuma conta ativa encontrada'}
-                          </SelectItem>
-                        ) : (
-                          availableAccounts.map((account) => (
-                            <SelectItem key={account.id} value={account.id}>
-                              <div className="flex items-center gap-2">
-                                {sourceType === 'credit_card' ? <CreditCard className="h-4 w-4" /> : <Wallet className="h-4 w-4" />}
-                                <span>
-                                  {institutionMap[account.institution_id] || 'Instituição'} - {account.name}
-                                  {!account.is_active && ' (Inativa)'}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Effective Status and Date */}
-              <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
-                <FormField
-                  control={form.control}
-                  name="is_effective"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel className="flex items-center gap-2">
-                          Lançamento Efetivado
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <InfoIcon className="h-4 w-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Marque se o valor já foi debitado/creditado na conta</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </FormLabel>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-
-                {isEffective && (
+            <form className="px-6 pb-6 space-y-6">
+              {/* LANÇAMENTO RÁPIDO - Main Card */}
+              <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <div className="h-2 w-2 bg-primary rounded-full"></div>
+                    Lançamento Rápido
+                    <Badge variant="secondary" className="text-xs">Essencial</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Transaction Type - Enhanced Buttons */}
                   <FormField
                     control={form.control}
-                    name="effective_date"
+                    name="type"
                     render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Data de Efetivação</FormLabel>
-                        <Popover open={effectiveDateOpen} onOpenChange={setEffectiveDateOpen}>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {field.value ? (
-                                  format(parseInputDate(field.value), "dd/MM/yyyy", { locale: ptBR })
-                                ) : (
-                                  <span>Selecione a data</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value ? parseInputDate(field.value) : undefined}
-                              onSelect={(date) => handleDateSelect(date, field.onChange, setEffectiveDateOpen)}
-                              locale={ptBR}
-                              className="p-3"
-                            />
-                          </PopoverContent>
-                        </Popover>
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Tipo</FormLabel>
+                        <FormControl>
+                          <div className="grid grid-cols-2 gap-3">
+                            <Button
+                              type="button"
+                              variant={field.value === 'receita' ? 'default' : 'outline'}
+                              size="lg"
+                              onClick={() => field.onChange('receita')}
+                              className={cn(
+                                "h-12 flex items-center justify-center gap-2 transition-all",
+                                field.value === 'receita' 
+                                  ? "bg-green-600 hover:bg-green-700 text-white border-green-600" 
+                                  : "hover:border-green-300 hover:bg-green-50"
+                              )}
+                            >
+                              <TrendingUp className="h-4 w-4" />
+                              Receita
+                            </Button>
+                            <Button
+                              type="button"
+                              variant={field.value === 'despesa' ? 'default' : 'outline'}
+                              size="lg"
+                              onClick={() => field.onChange('despesa')}
+                              className={cn(
+                                "h-12 flex items-center justify-center gap-2 transition-all",
+                                field.value === 'despesa' 
+                                  ? "bg-red-600 hover:bg-red-700 text-white border-red-600" 
+                                  : "hover:border-red-300 hover:bg-red-50"
+                              )}
+                            >
+                              <TrendingDown className="h-4 w-4" />
+                              Despesa
+                            </Button>
+                          </div>
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                )}
-              </div>
+
+                  {/* Description */}
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Descrição</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Ex: Supermercado, Salário, Conta de luz..." 
+                            {...field} 
+                            className="h-11"
+                            autoFocus
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Amount and Date Row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="amount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium">Valor</FormLabel>
+                          <FormControl>
+                            <CurrencyInputBRL
+                              value={field.value}
+                              onChange={(formatted) => field.onChange(formatted)}
+                              className="h-11 text-base font-medium"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="event_date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium">Data</FormLabel>
+                          <Popover open={eventDateOpen} onOpenChange={setEventDateOpen}>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "h-11 w-full justify-start text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {field.value ? (
+                                    format(parseInputDate(field.value), "dd/MM/yyyy", { locale: ptBR })
+                                  ) : (
+                                    <span>Hoje</span>
+                                  )}
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value ? parseInputDate(field.value) : undefined}
+                                onSelect={(date) => handleDateSelect(date, field.onChange, setEventDateOpen)}
+                                locale={ptBR}
+                                className="p-3 pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Account/Credit Card Selection */}
+                  <FormField
+                    control={form.control}
+                    name="source_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Origem</FormLabel>
+                        <FormControl>
+                          <div className="grid grid-cols-2 gap-3">
+                            <Button
+                              type="button"
+                              variant={field.value === 'account' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => {
+                                field.onChange('account');
+                                form.setValue('account_id', '');
+                              }}
+                              className="flex items-center gap-2"
+                            >
+                              <Wallet className="h-4 w-4" />
+                              Conta
+                            </Button>
+                            <Button
+                              type="button"
+                              variant={field.value === 'credit_card' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => {
+                                field.onChange('credit_card');
+                                form.setValue('account_id', '');
+                              }}
+                              className="flex items-center gap-2"
+                            >
+                              <CreditCard className="h-4 w-4" />
+                              Cartão
+                            </Button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="account_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">
+                          {sourceType === 'account' ? 'Conta' : 'Cartão de Crédito'}
+                        </FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder={`Selecione ${sourceType === 'account' ? 'uma conta' : 'um cartão'}`} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {availableAccounts.map((account) => (
+                              <SelectItem key={account.id} value={account.id}>
+                                <div className="flex items-center gap-2">
+                                  {sourceType === 'account' ? (
+                                    <Wallet className="h-4 w-4" />
+                                  ) : (
+                                    <CreditCard className="h-4 w-4" />
+                                  )}
+                                  <span>{account.name}</span>
+                                  {institutionMap[account.institution_id] && (
+                                    <Badge variant="outline" className="ml-auto text-xs">
+                                      {institutionMap[account.institution_id]}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* DETALHES ADICIONAIS - Collapsible Card */}
+              <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
+                <CollapsibleTrigger asChild>
+                  <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-medium flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Plus className={cn("h-4 w-4 transition-transform", detailsOpen && "rotate-45")} />
+                          Detalhes Adicionais
+                          <Badge variant="outline" className="text-xs">Opcional</Badge>
+                        </div>
+                        <ChevronDown className={cn("h-4 w-4 transition-transform", detailsOpen && "rotate-180")} />
+                      </CardTitle>
+                    </CardHeader>
+                  </Card>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <Card className="mt-3">
+                    <CardContent className="pt-6 space-y-4">
+                      {/* Category */}
+                      <FormField
+                        control={form.control}
+                        name="category_id"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm font-medium">
+                              Categoria {transactionType === 'receita' ? 'de Receita' : 'de Despesa'}
+                            </FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                              <FormControl>
+                                <SelectTrigger className="h-10">
+                                  <SelectValue placeholder="Selecione uma categoria" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="none">Sem categoria</SelectItem>
+                                {filteredCategories.map((category) => (
+                                  <SelectItem key={category.id} value={category.id}>
+                                    {category.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Counterparty */}
+                      <FormField
+                        control={form.control}
+                        name="counterparty_id"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm font-medium">Favorecido/Devedor</FormLabel>
+                            <FormControl>
+                              <CounterpartyCombobox
+                                value={field.value || null}
+                                onValueChange={(value) => field.onChange(value || undefined)}
+                                counterparties={counterparties}
+                                onQuickCreate={handleCreateCounterparty}
+                                disabled={isCreatingCounterparty}
+                                placeholder="Selecione um favorecido..."
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Tags */}
+                      <FormField
+                        control={form.control}
+                        name="tags"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-sm font-medium">Tags</FormLabel>
+                            <FormControl>
+                              <TagsInput
+                                value={field.value}
+                                onChange={field.onChange}
+                                placeholder="Digite uma tag e pressione Enter..."
+                                suggestions={tagSuggestions}
+                                onCreateTag={handleCreateTag}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {/* Effective Status and Date */}
+                      <div className="space-y-3">
+                        <FormField
+                          control={form.control}
+                          name="is_effective"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel className="text-sm font-medium">
+                                  Lançamento Efetivado
+                                </FormLabel>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <InfoIcon className="h-4 w-4 text-muted-foreground inline ml-1" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    Marque se o lançamento já foi efetivado/realizado
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+
+                        {isEffective && (
+                          <FormField
+                            control={form.control}
+                            name="effective_date"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-col">
+                                <FormLabel className="text-sm font-medium">Data de Efetivação</FormLabel>
+                                <Popover open={effectiveDateOpen} onOpenChange={setEffectiveDateOpen}>
+                                  <PopoverTrigger asChild>
+                                    <FormControl>
+                                      <Button
+                                        variant="outline"
+                                        className={cn(
+                                          "h-10 w-full justify-start text-left font-normal",
+                                          !field.value && "text-muted-foreground"
+                                        )}
+                                      >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {field.value ? (
+                                          format(parseInputDate(field.value), "dd/MM/yyyy", { locale: ptBR })
+                                        ) : (
+                                          <span>Selecione a data</span>
+                                        )}
+                                      </Button>
+                                    </FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                      mode="single"
+                                      selected={field.value ? parseInputDate(field.value) : undefined}
+                                      onSelect={(date) => handleDateSelect(date, field.onChange, setEffectiveDateOpen)}
+                                      locale={ptBR}
+                                      className="p-3 pointer-events-auto"
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </CollapsibleContent>
+              </Collapsible>
 
               {/* Action Buttons */}
-              <div className="flex justify-end space-x-2 pt-4 border-t">
-                <Button type="button" variant="outline" onClick={onClose}>
+              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  disabled={isLoading}
+                  className="flex-1 h-11"
+                >
                   Cancelar
                 </Button>
-                
-                {!transaction && !duplicateOf && (
-                  <Button 
-                    type="button" 
+                {!transaction && (
+                  <Button
+                    type="button"
                     variant="secondary"
-                    disabled={isLoading}
                     onClick={form.handleSubmit((data) => handleSubmit(data, true))}
+                    disabled={isLoading}
+                    className="flex-1 h-11"
                   >
-                    {isLoading ? 'Salvando...' : 'Salvar e criar novo'}
+                    Salvar e Novo
                   </Button>
                 )}
-                
-                <Button 
-                  type="button" 
-                  disabled={isLoading}
+                <Button
+                  type="submit"
                   onClick={form.handleSubmit((data) => handleSubmit(data, false))}
+                  disabled={isLoading}
+                  className="flex-1 h-11 bg-primary hover:bg-primary/90"
                 >
-                  {isLoading ? 'Salvando...' : 'Salvar'}
+                  {isLoading ? 'Salvando...' : transaction ? 'Atualizar' : 'Salvar'}
                 </Button>
               </div>
             </form>

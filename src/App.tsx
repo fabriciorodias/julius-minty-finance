@@ -22,6 +22,7 @@ import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import NotFound from "./pages/NotFound";
+import ImportarTransacoes from "./pages/ImportarTransacoes";
 import { useState } from "react";
 
 console.log('App.tsx: App component loading...');
@@ -135,6 +136,11 @@ const App = () => {
                   <AppLayout>
                     <Profile />
                   </AppLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/importar" element={
+                <ProtectedRoute>
+                  <ImportarTransacoes />
                 </ProtectedRoute>
               } />
               

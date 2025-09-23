@@ -241,7 +241,7 @@ export default function Lancamentos() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 z-50 bg-popover">
-                  <DropdownMenuItem onClick={() => setIsImportModalOpen(true)}>
+                  <DropdownMenuItem onClick={() => window.location.href = '/importar'}>
                     <Upload className="h-4 w-4 mr-2" />
                     Importar Extratos/Faturas
                   </DropdownMenuItem>

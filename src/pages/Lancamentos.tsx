@@ -20,7 +20,7 @@ import { FiltersMobileDrawer } from '@/components/transactions/FiltersMobileDraw
 import { AnxiousBalancePanel } from '@/components/transactions/AnxiousBalancePanel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Upload, CreditCard, AlertTriangle, TrendingUp, Plus, MoreHorizontal, Filter } from 'lucide-react';
+import { Upload, CreditCard, AlertTriangle, TrendingUp, Plus, MoreHorizontal, Filter, Repeat } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { CashFlowModal } from '@/components/transactions/CashFlowModal';
@@ -222,6 +222,17 @@ export default function Lancamentos() {
             </div>
             
             <div className="flex items-center gap-3">
+              {/* Recurring Transactions Button */}
+              <Button 
+                onClick={() => window.location.href = '/lancamentos/recorrentes'} 
+                variant="outline"
+                size="default"
+                className="hover-scale"
+              >
+                <Repeat className="h-4 w-4 mr-2" />
+                Contas Recorrentes
+              </Button>
+              
               {/* Primary CTA */}
               <Button 
                 onClick={() => setIsModalOpen(true)} 

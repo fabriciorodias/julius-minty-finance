@@ -8,7 +8,7 @@ import { RecurringTransactionsTimeline } from "@/components/transactions/Recurri
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Calendar, BarChart3, Settings } from "lucide-react";
+import { Plus, Calendar, BarChart3, Settings, ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function LancamentosRecorrentes() {
@@ -53,11 +53,22 @@ export default function LancamentosRecorrentes() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Contas Recorrentes</h1>
-            <p className="text-muted-foreground mt-1">
-              Gerencie suas contas fixas mensais de forma inteligente
-            </p>
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => window.location.href = '/lancamentos'}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Lançamentos
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Contas Recorrentes</h1>
+              <p className="text-muted-foreground mt-1">
+                Gerencie suas contas fixas mensais de forma inteligente
+              </p>
+            </div>
           </div>
           
           <Button 

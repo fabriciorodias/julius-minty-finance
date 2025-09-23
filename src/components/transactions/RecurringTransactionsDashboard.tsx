@@ -202,7 +202,7 @@ export function RecurringTransactionsDashboard({
                       ))}
                     </Pie>
                     <Tooltip 
-                      formatter={[(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Valor']]}
+                      formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Valor']}
                     />
                   </PieChart>
                 </ResponsiveContainer>

@@ -98,15 +98,37 @@ serve(async (req) => {
       throw new Error('Invalid response format from AI service');
     }
 
+    console.log('Processing N8N response structure...');
+
     // Transform N8N response to our expected format
     let categorizedTransactions: CategorizedTransaction[] = [];
+    let rawCategorizedTransactions: any[] = [];
 
-    if (n8nResult.categorized_transactions && Array.isArray(n8nResult.categorized_transactions)) {
-      categorizedTransactions = n8nResult.categorized_transactions.map((ct: any) => ({
+    // Handle different possible response formats from N8N
+    if (Array.isArray(n8nResult) && n8nResult.length > 0) {
+      // Format: [{ response: { output: { categorized_transactions: [...] } } }]
+      console.log('Detected array format response from N8N');
+      if (n8nResult[0]?.response?.output?.categorized_transactions) {
+        rawCategorizedTransactions = n8nResult[0].response.output.categorized_transactions;
+        console.log('Extracted categorized_transactions from nested structure');
+      }
+    } else if (n8nResult.output?.categorized_transactions) {
+      // Format: { output: { categorized_transactions: [...] } }
+      console.log('Detected direct output format response from N8N');
+      rawCategorizedTransactions = n8nResult.output.categorized_transactions;
+    } else if (n8nResult.categorized_transactions && Array.isArray(n8nResult.categorized_transactions)) {
+      // Format: { categorized_transactions: [...] }
+      console.log('Detected flat format response from N8N');
+      rawCategorizedTransactions = n8nResult.categorized_transactions;
+    }
+
+    if (rawCategorizedTransactions.length > 0) {
+      console.log(`Processing ${rawCategorizedTransactions.length} categorized transactions`);
+      categorizedTransactions = rawCategorizedTransactions.map((ct: any) => ({
         id: ct.id || ct.transaction_id,
         category_id: ct.category_id || undefined,
         category_name: ct.category_name || undefined,
-        confidence: ct.confidence || undefined,
+        confidence: ct.confidence ? parseFloat(ct.confidence.toString()) : undefined,
       }));
     } else {
       // Fallback: return transactions without categorization

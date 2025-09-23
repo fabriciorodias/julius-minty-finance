@@ -127,7 +127,7 @@ export function InstallmentRecurringModal({
     const baseTransaction: Partial<CreateTransactionData> = {
       description: data.description,
       amount: data.type === 'receita' ? data.amount : -data.amount,
-      category_id: data.category_id || null,
+      category_id: data.category_id === "none" ? null : data.category_id || null,
       account_id: data.account_id,
       status: data.status,
     };
@@ -254,14 +254,14 @@ export function InstallmentRecurringModal({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Categoria</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <Select onValueChange={field.onChange} value={field.value === null ? "none" : field.value || "none"}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione uma categoria" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Sem categoria</SelectItem>
+                          <SelectItem value="none">Sem categoria</SelectItem>
                           {categories.map((category) => (
                             <SelectItem key={category.id} value={category.id}>
                               {category.name}
@@ -455,14 +455,14 @@ export function InstallmentRecurringModal({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Categoria</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <Select onValueChange={field.onChange} value={field.value === null ? "none" : field.value || "none"}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione uma categoria" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Sem categoria</SelectItem>
+                          <SelectItem value="none">Sem categoria</SelectItem>
                           {categories.map((category) => (
                             <SelectItem key={category.id} value={category.id}>
                               {category.name}

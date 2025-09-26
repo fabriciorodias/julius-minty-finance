@@ -64,8 +64,9 @@ serve(async (req) => {
       console.log('Parsed and sorted transactions count:', transactions.length)
     } catch (parseError) {
       console.error('Parse error:', parseError)
+      const errorMessage = parseError instanceof Error ? parseError.message : 'Erro desconhecido'
       return new Response(
-        JSON.stringify({ error: `Erro ao processar arquivo: ${parseError.message}` }),
+        JSON.stringify({ error: `Erro ao processar arquivo: ${errorMessage}` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -296,7 +297,8 @@ function parseCSV(content: string): ParsedTransaction[] {
         console.warn(`Skipping invalid transaction on line ${i + 1}:`, { date, description, amount })
       }
     } catch (error) {
-      console.warn(`Error parsing line ${i + 1}:`, error.message)
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+      console.warn(`Error parsing line ${i + 1}:`, errorMessage)
     }
   }
 

@@ -112,6 +112,28 @@ serve(async (req) => {
       )
     }
 
+    // Test signed URL accessibility before sending to N8N
+    try {
+      console.log('Testing signed URL accessibility...')
+      const testResponse = await fetch(imageUrl, { method: 'HEAD' })
+      console.log('Signed URL test response status:', testResponse.status)
+      console.log('Signed URL test response headers:', Object.fromEntries(testResponse.headers.entries()))
+      
+      if (!testResponse.ok) {
+        console.error('Signed URL is not accessible:', testResponse.status, testResponse.statusText)
+        return new Response(
+          JSON.stringify({ error: 'Erro ao criar acesso válido à imagem' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    } catch (urlTestError) {
+      console.error('Error testing signed URL:', urlTestError)
+      return new Response(
+        JSON.stringify({ error: 'Erro ao validar acesso à imagem' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Send to N8N webhook for OCR processing
     const n8nWebhookUrl = Deno.env.get('N8N_OCR_WEBHOOK_URL')
     if (!n8nWebhookUrl) {
@@ -123,18 +145,46 @@ serve(async (req) => {
     }
 
     console.log('Sending to N8N webhook:', n8nWebhookUrl)
+
+    // Enhanced payload with more metadata for N8N
+    const n8nPayload = {
+      imageUrl,
+      userId: user.id,
+      fileName: file.name,
+      originalFileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      mimeType: file.type,
+      sourceId: sourceId,
+      timestamp: new Date().toISOString(),
+      uploadTimestamp: timestamp,
+      // Add headers that N8N might need for HTTP requests
+      requestHeaders: {
+        'Content-Type': file.type,
+        'Accept': 'application/json, image/*, */*',
+        'User-Agent': 'Supabase-Edge-Function/1.0',
+        'Cache-Control': 'no-cache'
+      },
+      // Additional metadata
+      metadata: {
+        uploadedAt: new Date().toISOString(),
+        processor: 'supabase-ocr-extract',
+        version: '1.0',
+        supabaseUrl: Deno.env.get('SUPABASE_URL'),
+        bucketName: 'imports'
+      }
+    }
+
+    console.log('Enhanced N8N payload:', JSON.stringify(n8nPayload, null, 2))
     
     const n8nResponse = await fetch(n8nWebhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': 'Supabase-Edge-Function/1.0'
       },
-      body: JSON.stringify({
-        imageUrl: imageUrl,
-        userId: user.id,
-        fileName: file.name,
-        timestamp: timestamp
-      }),
+      body: JSON.stringify(n8nPayload),
     })
 
     console.log('N8N response status:', n8nResponse.status)
@@ -152,11 +202,15 @@ serve(async (req) => {
         console.error('Could not read N8N error response body')
       }
       
-      // Provide more specific error messages based on status code
+      // Provide more specific error messages based on status code and content
       let userMessage = 'Erro no processamento OCR.'
       
       if (n8nResponse.status === 500) {
-        userMessage = 'O serviço de OCR está temporariamente indisponível. Tente novamente em alguns minutos.'
+        if (errorBody.includes('No binary data was found to return')) {
+          userMessage = 'O sistema não conseguiu acessar a imagem enviada. Tente fazer upload novamente ou verifique se a imagem não está corrompida.'
+        } else {
+          userMessage = 'O serviço de OCR está temporariamente indisponível. Tente novamente em alguns minutos.'
+        }
       } else if (n8nResponse.status === 404) {
         userMessage = 'Serviço de OCR não encontrado. Verifique a configuração.'
       } else if (n8nResponse.status === 400) {

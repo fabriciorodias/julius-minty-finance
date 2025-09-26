@@ -16,6 +16,7 @@ import { useDefaultAccounts } from '@/hooks/useDefaultAccounts';
 import { useReconciliationSettings } from '@/hooks/useReconciliationSettings';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { getBalanceColors, formatBalanceWithSign, calculateBalanceIntensities } from '@/lib/balance-colors';
 
 interface AccountsListProps {
   accounts: Account[];
@@ -300,6 +301,14 @@ export function AccountsList({
 
   const { assetGroups, liabilityGroups, assetAccounts, liabilityAccounts } = getAccountGroups(accounts);
 
+  // Calcula as intensidades de cor para todos os saldos
+  const balanceMap = accountBalances.reduce((acc, balance) => {
+    acc[balance.account_id] = balance.current_balance;
+    return acc;
+  }, {} as Record<string, number>);
+  
+  const intensityMap = calculateBalanceIntensities(accounts, balanceMap);
+
   if (isLoading) {
     return <div>Carregando contas...</div>;
   }
@@ -308,9 +317,15 @@ export function AccountsList({
     const balance = getAccountBalance(account.id);
     const colorScheme = getKindColorScheme(account.kind);
     const reconciliationStatus = getReconciliationStatus(account);
+    const intensity = intensityMap[account.id] || 1;
+    const balanceColors = getBalanceColors({
+      balance,
+      accountKind: account.kind,
+      intensity: intensity as any
+    });
     
     return (
-      <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${colorScheme.border} ${colorScheme.gradient} ${!account.is_active ? 'opacity-50' : ''} ${reconciliationStatus.isAlert ? 'ring-2 ring-offset-1' : ''} ${reconciliationStatus.alertLevel === 'critical' ? 'ring-red-200' : reconciliationStatus.alertLevel === 'warning' ? 'ring-amber-200' : ''}`}>
+      <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${balanceColors.borderColor} ${balanceColors.bgColor} ${!account.is_active ? 'opacity-50' : ''} ${reconciliationStatus.isAlert ? 'ring-2 ring-offset-1' : ''} ${reconciliationStatus.alertLevel === 'critical' ? 'ring-red-200' : reconciliationStatus.alertLevel === 'warning' ? 'ring-amber-200' : ''} hover:shadow-md`}>
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="space-y-2 flex-1">
@@ -447,16 +462,17 @@ export function AccountsList({
                 <span className="text-sm font-medium text-muted-foreground">
                   {account.kind === 'asset' ? 'Saldo Atual' : 'Valor Devido'}
                 </span>
-                <span className={`text-lg font-bold ${
-                  account.kind === 'asset' 
-                    ? (balance >= 0 ? 'text-green-600' : 'text-red-600')
-                    : 'text-red-600'
-                }`}>
-                  {account.kind === 'asset' 
-                    ? formatCurrency(balance)
-                    : formatCurrency(Math.abs(balance))
-                  }
+                <span className={`text-lg font-bold ${balanceColors.textColor}`}>
+                  {formatBalanceWithSign(balance, account.kind, balanceColors.showNegativeSign)}
                 </span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {account.kind === 'asset' 
+                  ? balance >= 0 
+                    ? 'Ativo positivo' 
+                    : 'Ativo com saldo negativo' 
+                  : 'Passivo/Dívida'
+                }
               </div>
             </div>
           )}

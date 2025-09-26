@@ -9,6 +9,7 @@ import { Institution } from '@/hooks/useInstitutions';
 import { Search, ChevronDown, ChevronRight, Info } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getBalanceColors, formatBalanceWithSign, calculateBalanceIntensities } from '@/lib/balance-colors';
 
 interface AccountsFilterPanelProps {
   accounts: Account[];
@@ -48,12 +49,8 @@ export function AccountsFilterPanel({
   const isAllSelected = selectedAccountIds.length === activeAccounts.length;
   const hasMultipleSelected = selectedAccountIds.length > 1;
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
+  // Calcula as intensidades de cor para todos os saldos
+  const intensityMap = calculateBalanceIntensities(activeAccounts, balanceMap);
 
   const handleAllClick = () => {
     onAccountSelectionChange(activeAccounts.map(account => account.id));
@@ -114,37 +111,69 @@ export function AccountsFilterPanel({
         {accounts.map((account) => {
           const isSelected = selectedAccountIds.includes(account.id);
           const balance = balanceMap[account.id] ?? 0;
+          const intensity = intensityMap[account.id] || 1;
+          const balanceColors = getBalanceColors({
+            balance,
+            accountKind: account.kind,
+            intensity: intensity as any
+          });
           
           return (
-            <button
-              key={account.id}
-              type="button"
-              className={`flex items-center justify-between w-full rounded-lg px-3 py-2.5 transition-all text-left group hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-                isSelected
-                  ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
-                  : 'hover:bg-muted/60'
-              }`}
-              onClick={(e) => handleAccountClick(e, account.id)}
-              onKeyDown={(e) => handleKeyDown(e, () => handleAccountClick(e as any, account.id))}
-              role="button"
-              aria-pressed={isSelected}
-            >
-              <div className="flex-1 min-w-0">
-                <div className={`text-sm font-medium truncate transition-colors ${
-                  isSelected ? 'text-primary' : 'group-hover:text-foreground'
-                }`}>
-                  {account.name}
-                </div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {institutionMap[account.institution_id] || 'Instituição'}
-                </div>
-              </div>
-              <div className={`text-sm ml-2 font-medium transition-colors ${
-                isSelected ? 'text-primary' : ''
-              }`}>
-                {account.kind === 'liability' ? formatCurrency(Math.abs(balance)) : formatCurrency(balance)}
-              </div>
-            </button>
+            <TooltipProvider key={account.id}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className={`relative flex items-center justify-between w-full rounded-lg px-3 py-2.5 transition-all text-left group hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/20 border-l-4 ${
+                      isSelected
+                        ? 'bg-primary/10 text-primary ring-1 ring-primary/20 border-l-primary'
+                        : `hover:bg-muted/60 ${balanceColors.borderColor}`
+                    } ${balanceColors.bgColor} hover:shadow-sm`}
+                    onClick={(e) => handleAccountClick(e, account.id)}
+                    onKeyDown={(e) => handleKeyDown(e, () => handleAccountClick(e as any, account.id))}
+                    role="button"
+                    aria-pressed={isSelected}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-medium truncate transition-colors ${
+                        isSelected ? 'text-primary' : 'group-hover:text-foreground'
+                      }`}>
+                        {account.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {institutionMap[account.institution_id] || 'Instituição'}
+                      </div>
+                    </div>
+                    <div className={`text-sm ml-2 font-bold transition-colors ${
+                      isSelected ? 'text-primary' : balanceColors.textColor
+                    }`}>
+                      {formatBalanceWithSign(balance, account.kind, balanceColors.showNegativeSign)}
+                    </div>
+                    
+                    {/* Indicador visual de intensidade */}
+                    <div className={`absolute top-1 right-1 w-2 h-2 rounded-full opacity-60 ${balanceColors.bgColor.replace('bg-', 'bg-').replace('-bg-', '-')}`} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="z-50">
+                  <div className="text-xs space-y-1">
+                    <p className="font-medium">
+                      {account.kind === 'asset' ? 'Ativo' : 'Passivo'}: {account.name}
+                    </p>
+                    <p className={balanceColors.textColor}>
+                      {formatBalanceWithSign(balance, account.kind, balanceColors.showNegativeSign)}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {account.kind === 'asset' 
+                        ? balance >= 0 
+                          ? 'Saldo positivo (bom)' 
+                          : 'Saldo negativo (atenção)'
+                        : 'Dívida/Obrigação'
+                      }
+                    </p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           );
         })}
       </CollapsibleContent>
@@ -208,7 +237,10 @@ export function AccountsFilterPanel({
               </span>
               {isAllSelected && (
                 <div className={`text-sm ml-2 font-medium ${isAllSelected ? 'text-primary' : ''}`}>
-                  {formatCurrency(
+                  {new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  }).format(
                     activeAccounts.reduce((sum, account) => {
                       const balance = balanceMap[account.id] ?? 0;
                       return account.kind === 'asset' ? sum + balance : sum + Math.abs(balance);

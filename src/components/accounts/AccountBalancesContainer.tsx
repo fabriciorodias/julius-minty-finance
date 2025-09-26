@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Account } from '@/hooks/useAccounts';
 import { Institution } from '@/hooks/useInstitutions';
 import { Wallet, Building } from 'lucide-react';
+import { getBalanceColors, formatBalanceWithSign, calculateBalanceIntensities } from '@/lib/balance-colors';
 
 interface AccountBalancesContainerProps {
   accounts: Account[];
@@ -25,13 +26,6 @@ export function AccountBalancesContainer({
   onSelectAccount, 
   isLoading 
 }: AccountBalancesContainerProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
-
   const totalBalance = accounts.reduce((sum, account) => {
     return sum + (balanceMap[account.id] || 0);
   }, 0);
@@ -41,6 +35,16 @@ export function AccountBalancesContainer({
     acc[institution.id] = institution;
     return acc;
   }, {} as Record<string, Institution>);
+
+  // Calcula as intensidades de cor para todos os saldos
+  const intensityMap = calculateBalanceIntensities(accounts, balanceMap);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
 
   if (isLoading) {
     return (
@@ -86,15 +90,21 @@ export function AccountBalancesContainer({
               const balance = balanceMap[account.id] || 0;
               const isSelected = selectedAccountId === account.id;
               const institution = institutionMap[account.institution_id];
+              const intensity = intensityMap[account.id] || 1;
+              const balanceColors = getBalanceColors({
+                balance,
+                accountKind: account.kind,
+                intensity: intensity as any
+              });
               
               return (
                 <Card
                   key={account.id}
-                  className={`cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${
+                  className={`cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] border-l-4 ${
                     isSelected 
-                      ? 'ring-2 ring-primary shadow-md' 
-                      : 'hover:bg-muted/50'
-                  }`}
+                      ? 'ring-2 ring-primary shadow-md border-l-primary' 
+                      : `hover:bg-muted/50 ${balanceColors.borderColor}`
+                  } ${balanceColors.bgColor}`}
                   onClick={() => onSelectAccount(account.id)}
                 >
                   <CardContent className="p-4">
@@ -118,12 +128,11 @@ export function AccountBalancesContainer({
                         </div>
                       </div>
                       <div className="text-right ml-2">
-                        <div className={`font-bold text-sm ${
-                          balance >= 0 
-                            ? 'text-green-600 dark:text-green-400' 
-                            : 'text-red-600 dark:text-red-400'
-                        }`}>
-                          {formatCurrency(balance)}
+                        <div className={`font-bold text-sm ${balanceColors.textColor}`}>
+                          {formatBalanceWithSign(balance, account.kind, balanceColors.showNegativeSign)}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {account.kind === 'asset' ? 'Ativo' : 'Passivo'}
                         </div>
                       </div>
                     </div>

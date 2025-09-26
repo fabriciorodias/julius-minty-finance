@@ -28,6 +28,78 @@
     --ring: 174 100% 33%; /* #00A693 - Verde principal */
     --radius: 0.5rem;
     --orange: 25 95% 53%; /* #F97316 - Laranja para lançamentos recorrentes */
+
+    /* Balance Colors - Asset Positive (Green progression) */
+    --balance-asset-positive-1: 142 76% 36%;   /* Dark green */
+    --balance-asset-positive-2: 142 71% 41%;   
+    --balance-asset-positive-3: 142 69% 46%;   
+    --balance-asset-positive-4: 142 66% 51%;   
+    --balance-asset-positive-5: 142 64% 56%;   
+    --balance-asset-positive-6: 142 62% 61%;   
+    --balance-asset-positive-7: 142 59% 66%;   
+    --balance-asset-positive-8: 142 57% 71%;   
+    --balance-asset-positive-9: 142 55% 76%;   
+    --balance-asset-positive-10: 142 52% 81%;  /* Light green */
+
+    /* Balance Colors - Asset Positive Backgrounds */
+    --balance-asset-positive-bg-1: 142 45% 95%;   
+    --balance-asset-positive-bg-2: 142 47% 93%;   
+    --balance-asset-positive-bg-3: 142 49% 91%;   
+    --balance-asset-positive-bg-4: 142 51% 89%;   
+    --balance-asset-positive-bg-5: 142 53% 87%;   
+    --balance-asset-positive-bg-6: 142 55% 85%;   
+    --balance-asset-positive-bg-7: 142 57% 83%;   
+    --balance-asset-positive-bg-8: 142 59% 81%;   
+    --balance-asset-positive-bg-9: 142 61% 79%;   
+    --balance-asset-positive-bg-10: 142 63% 77%;  
+
+    /* Balance Colors - Negative/Liability (Yellow to Red progression) */
+    --balance-negative-1: 48 100% 50%;      /* Yellow */
+    --balance-negative-2: 45 100% 50%;      
+    --balance-negative-3: 40 100% 50%;      
+    --balance-negative-4: 35 100% 50%;      
+    --balance-negative-5: 30 100% 50%;      /* Orange */
+    --balance-negative-6: 25 100% 50%;      
+    --balance-negative-7: 20 100% 50%;      
+    --balance-negative-8: 15 100% 50%;      
+    --balance-negative-9: 10 100% 50%;      
+    --balance-negative-10: 0 100% 50%;      /* Red */
+
+    /* Balance Colors - Negative/Liability Backgrounds */
+    --balance-negative-bg-1: 48 100% 95%;   
+    --balance-negative-bg-2: 45 100% 93%;   
+    --balance-negative-bg-3: 40 100% 91%;   
+    --balance-negative-bg-4: 35 100% 89%;   
+    --balance-negative-bg-5: 30 100% 87%;   
+    --balance-negative-bg-6: 25 100% 85%;   
+    --balance-negative-bg-7: 20 100% 83%;   
+    --balance-negative-bg-8: 15 100% 81%;   
+    --balance-negative-bg-9: 10 100% 79%;   
+    --balance-negative-bg-10: 0 100% 77%;   
+
+    /* Balance Colors - Liability specific (Red progression) */
+    --balance-liability-1: 0 70% 50%;       
+    --balance-liability-2: 0 75% 48%;       
+    --balance-liability-3: 0 80% 46%;       
+    --balance-liability-4: 0 85% 44%;       
+    --balance-liability-5: 0 90% 42%;       
+    --balance-liability-6: 0 95% 40%;       
+    --balance-liability-7: 0 100% 38%;      
+    --balance-liability-8: 0 100% 36%;      
+    --balance-liability-9: 0 100% 34%;      
+    --balance-liability-10: 0 100% 32%;     
+
+    /* Balance Colors - Liability Backgrounds */
+    --balance-liability-bg-1: 0 70% 96%;    
+    --balance-liability-bg-2: 0 75% 94%;    
+    --balance-liability-bg-3: 0 80% 92%;    
+    --balance-liability-bg-4: 0 85% 90%;    
+    --balance-liability-bg-5: 0 90% 88%;    
+    --balance-liability-bg-6: 0 95% 86%;    
+    --balance-liability-bg-7: 0 100% 84%;   
+    --balance-liability-bg-8: 0 100% 82%;   
+    --balance-liability-bg-9: 0 100% 80%;   
+    --balance-liability-bg-10: 0 100% 78%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -91,6 +163,106 @@
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+/* Balance Color Utility Classes */
+.text-balance-asset-positive-1 { color: hsl(var(--balance-asset-positive-1)); }
+.text-balance-asset-positive-2 { color: hsl(var(--balance-asset-positive-2)); }
+.text-balance-asset-positive-3 { color: hsl(var(--balance-asset-positive-3)); }
+.text-balance-asset-positive-4 { color: hsl(var(--balance-asset-positive-4)); }
+.text-balance-asset-positive-5 { color: hsl(var(--balance-asset-positive-5)); }
+.text-balance-asset-positive-6 { color: hsl(var(--balance-asset-positive-6)); }
+.text-balance-asset-positive-7 { color: hsl(var(--balance-asset-positive-7)); }
+.text-balance-asset-positive-8 { color: hsl(var(--balance-asset-positive-8)); }
+.text-balance-asset-positive-9 { color: hsl(var(--balance-asset-positive-9)); }
+.text-balance-asset-positive-10 { color: hsl(var(--balance-asset-positive-10)); }
+
+.bg-balance-asset-positive-bg-1 { background-color: hsl(var(--balance-asset-positive-bg-1)); }
+.bg-balance-asset-positive-bg-2 { background-color: hsl(var(--balance-asset-positive-bg-2)); }
+.bg-balance-asset-positive-bg-3 { background-color: hsl(var(--balance-asset-positive-bg-3)); }
+.bg-balance-asset-positive-bg-4 { background-color: hsl(var(--balance-asset-positive-bg-4)); }
+.bg-balance-asset-positive-bg-5 { background-color: hsl(var(--balance-asset-positive-bg-5)); }
+.bg-balance-asset-positive-bg-6 { background-color: hsl(var(--balance-asset-positive-bg-6)); }
+.bg-balance-asset-positive-bg-7 { background-color: hsl(var(--balance-asset-positive-bg-7)); }
+.bg-balance-asset-positive-bg-8 { background-color: hsl(var(--balance-asset-positive-bg-8)); }
+.bg-balance-asset-positive-bg-9 { background-color: hsl(var(--balance-asset-positive-bg-9)); }
+.bg-balance-asset-positive-bg-10 { background-color: hsl(var(--balance-asset-positive-bg-10)); }
+
+.border-balance-asset-positive-1 { border-color: hsl(var(--balance-asset-positive-1)); }
+.border-balance-asset-positive-2 { border-color: hsl(var(--balance-asset-positive-2)); }
+.border-balance-asset-positive-3 { border-color: hsl(var(--balance-asset-positive-3)); }
+.border-balance-asset-positive-4 { border-color: hsl(var(--balance-asset-positive-4)); }
+.border-balance-asset-positive-5 { border-color: hsl(var(--balance-asset-positive-5)); }
+.border-balance-asset-positive-6 { border-color: hsl(var(--balance-asset-positive-6)); }
+.border-balance-asset-positive-7 { border-color: hsl(var(--balance-asset-positive-7)); }
+.border-balance-asset-positive-8 { border-color: hsl(var(--balance-asset-positive-8)); }
+.border-balance-asset-positive-9 { border-color: hsl(var(--balance-asset-positive-9)); }
+.border-balance-asset-positive-10 { border-color: hsl(var(--balance-asset-positive-10)); }
+
+.text-balance-negative-1 { color: hsl(var(--balance-negative-1)); }
+.text-balance-negative-2 { color: hsl(var(--balance-negative-2)); }
+.text-balance-negative-3 { color: hsl(var(--balance-negative-3)); }
+.text-balance-negative-4 { color: hsl(var(--balance-negative-4)); }
+.text-balance-negative-5 { color: hsl(var(--balance-negative-5)); }
+.text-balance-negative-6 { color: hsl(var(--balance-negative-6)); }
+.text-balance-negative-7 { color: hsl(var(--balance-negative-7)); }
+.text-balance-negative-8 { color: hsl(var(--balance-negative-8)); }
+.text-balance-negative-9 { color: hsl(var(--balance-negative-9)); }
+.text-balance-negative-10 { color: hsl(var(--balance-negative-10)); }
+
+.bg-balance-negative-bg-1 { background-color: hsl(var(--balance-negative-bg-1)); }
+.bg-balance-negative-bg-2 { background-color: hsl(var(--balance-negative-bg-2)); }
+.bg-balance-negative-bg-3 { background-color: hsl(var(--balance-negative-bg-3)); }
+.bg-balance-negative-bg-4 { background-color: hsl(var(--balance-negative-bg-4)); }
+.bg-balance-negative-bg-5 { background-color: hsl(var(--balance-negative-bg-5)); }
+.bg-balance-negative-bg-6 { background-color: hsl(var(--balance-negative-bg-6)); }
+.bg-balance-negative-bg-7 { background-color: hsl(var(--balance-negative-bg-7)); }
+.bg-balance-negative-bg-8 { background-color: hsl(var(--balance-negative-bg-8)); }
+.bg-balance-negative-bg-9 { background-color: hsl(var(--balance-negative-bg-9)); }
+.bg-balance-negative-bg-10 { background-color: hsl(var(--balance-negative-bg-10)); }
+
+.border-balance-negative-1 { border-color: hsl(var(--balance-negative-1)); }
+.border-balance-negative-2 { border-color: hsl(var(--balance-negative-2)); }
+.border-balance-negative-3 { border-color: hsl(var(--balance-negative-3)); }
+.border-balance-negative-4 { border-color: hsl(var(--balance-negative-4)); }
+.border-balance-negative-5 { border-color: hsl(var(--balance-negative-5)); }
+.border-balance-negative-6 { border-color: hsl(var(--balance-negative-6)); }
+.border-balance-negative-7 { border-color: hsl(var(--balance-negative-7)); }
+.border-balance-negative-8 { border-color: hsl(var(--balance-negative-8)); }
+.border-balance-negative-9 { border-color: hsl(var(--balance-negative-9)); }
+.border-balance-negative-10 { border-color: hsl(var(--balance-negative-10)); }
+
+.text-balance-liability-1 { color: hsl(var(--balance-liability-1)); }
+.text-balance-liability-2 { color: hsl(var(--balance-liability-2)); }
+.text-balance-liability-3 { color: hsl(var(--balance-liability-3)); }
+.text-balance-liability-4 { color: hsl(var(--balance-liability-4)); }
+.text-balance-liability-5 { color: hsl(var(--balance-liability-5)); }
+.text-balance-liability-6 { color: hsl(var(--balance-liability-6)); }
+.text-balance-liability-7 { color: hsl(var(--balance-liability-7)); }
+.text-balance-liability-8 { color: hsl(var(--balance-liability-8)); }
+.text-balance-liability-9 { color: hsl(var(--balance-liability-9)); }
+.text-balance-liability-10 { color: hsl(var(--balance-liability-10)); }
+
+.bg-balance-liability-bg-1 { background-color: hsl(var(--balance-liability-bg-1)); }
+.bg-balance-liability-bg-2 { background-color: hsl(var(--balance-liability-bg-2)); }
+.bg-balance-liability-bg-3 { background-color: hsl(var(--balance-liability-bg-3)); }
+.bg-balance-liability-bg-4 { background-color: hsl(var(--balance-liability-bg-4)); }
+.bg-balance-liability-bg-5 { background-color: hsl(var(--balance-liability-bg-5)); }
+.bg-balance-liability-bg-6 { background-color: hsl(var(--balance-liability-bg-6)); }
+.bg-balance-liability-bg-7 { background-color: hsl(var(--balance-liability-bg-7)); }
+.bg-balance-liability-bg-8 { background-color: hsl(var(--balance-liability-bg-8)); }
+.bg-balance-liability-bg-9 { background-color: hsl(var(--balance-liability-bg-9)); }
+.bg-balance-liability-bg-10 { background-color: hsl(var(--balance-liability-bg-10)); }
+
+.border-balance-liability-1 { border-color: hsl(var(--balance-liability-1)); }
+.border-balance-liability-2 { border-color: hsl(var(--balance-liability-2)); }
+.border-balance-liability-3 { border-color: hsl(var(--balance-liability-3)); }
+.border-balance-liability-4 { border-color: hsl(var(--balance-liability-4)); }
+.border-balance-liability-5 { border-color: hsl(var(--balance-liability-5)); }
+.border-balance-liability-6 { border-color: hsl(var(--balance-liability-6)); }
+.border-balance-liability-7 { border-color: hsl(var(--balance-liability-7)); }
+.border-balance-liability-8 { border-color: hsl(var(--balance-liability-8)); }
+.border-balance-liability-9 { border-color: hsl(var(--balance-liability-9)); }
+.border-balance-liability-10 { border-color: hsl(var(--balance-liability-10)); }
 
 /* Mint.com inspired utility classes */
 @layer utilities {

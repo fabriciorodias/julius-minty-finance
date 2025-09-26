@@ -24,15 +24,15 @@ export default function LancamentosRecorrentes() {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Contas Recorrentes</h1>
-              <p className="text-muted-foreground mt-1">Gerencie suas contas fixas mensais</p>
+              <h1 className="text-3xl font-bold text-foreground">Lançamentos Recorrentes</h1>
+              <p className="text-muted-foreground mt-1">Gerencie seus lançamentos fixos mensais</p>
             </div>
           </div>
           
           <Card>
             <CardContent className="p-6">
               <div className="text-center">
-                <p className="text-destructive">Erro ao carregar contas recorrentes</p>
+                <p className="text-destructive">Erro ao carregar lançamentos recorrentes</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Tente recarregar a página
                 </p>
@@ -64,9 +64,9 @@ export default function LancamentosRecorrentes() {
               Lançamentos
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Contas Recorrentes</h1>
+              <h1 className="text-3xl font-bold text-foreground">Lançamentos Recorrentes</h1>
               <p className="text-muted-foreground mt-1">
-                Gerencie suas contas fixas mensais de forma inteligente
+                Gerencie seus lançamentos fixos mensais de forma inteligente
               </p>
             </div>
           </div>
@@ -76,7 +76,7 @@ export default function LancamentosRecorrentes() {
             className="flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
-            Nova Conta Recorrente
+            Novo Lançamento Recorrente
           </Button>
         </div>
 
@@ -85,7 +85,7 @@ export default function LancamentosRecorrentes() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Contas Ativas
+                Lançamentos Ativos
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -176,14 +176,14 @@ export default function LancamentosRecorrentes() {
                   <div className="text-center">
                     <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-foreground mb-2">
-                      Nenhuma conta recorrente
+                      Nenhum lançamento recorrente
                     </h3>
                     <p className="text-muted-foreground mb-4">
-                      Comece criando sua primeira conta recorrente para organizar melhor suas finanças
+                      Comece criando seu primeiro lançamento recorrente para organizar melhor suas finanças
                     </p>
                     <Button onClick={() => setShowCreateModal(true)}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Criar primeira conta
+                      Criar primeiro lançamento
                     </Button>
                   </div>
                 </CardContent>

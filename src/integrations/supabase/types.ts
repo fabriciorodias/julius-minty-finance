@@ -836,6 +836,10 @@ export type Database = {
         }
         Returns: string
       }
+      cleanup_ocr_temp_files: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_account_balances: {
         Args: { p_as_of_date?: string }
         Returns: {

@@ -67,7 +67,7 @@ serve(async (req) => {
     // Generate unique file name
     const timestamp = new Date().getTime()
     const fileExtension = file.name.split('.').pop() || 'png'
-    const fileName = `ocr-temp/${user.id}/${timestamp}.${fileExtension}`
+    const fileName = `${user.id}/ocr-temp/${timestamp}.${fileExtension}`
 
     console.log('Uploading file to storage:', fileName)
 
@@ -174,26 +174,6 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('OCR extraction error:', error)
-    
-    // Try to clean up any uploaded file in case of error
-    try {
-      const formData = await req.formData()
-      const file = formData.get('file') as File
-      if (file) {
-        const timestamp = new Date().getTime()
-        const fileExtension = file.name.split('.').pop() || 'png'
-        const fileName = `ocr-temp/${Deno.env.get('user_id')}/${timestamp}.${fileExtension}`
-        
-        const supabaseClient = createClient(
-          Deno.env.get('SUPABASE_URL') ?? '',
-          Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-        )
-        
-        await supabaseClient.storage.from('imports').remove([fileName])
-      }
-    } catch (cleanupError) {
-      console.warn('Error during cleanup:', cleanupError)
-    }
 
     return new Response(
       JSON.stringify({ 

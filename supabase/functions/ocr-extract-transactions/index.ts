@@ -146,19 +146,55 @@ serve(async (req) => {
       console.warn('Could not clean up temporary file:', cleanupError)
     }
 
-    // Validate N8N response structure
-    if (!n8nData.success || !n8nData.transactions) {
-      console.error('Invalid N8N response:', n8nData)
+    // Process N8N response - handle different response formats
+    let transactionsData: any[] = []
+    
+    try {
+      // Check if response is an array with content property (N8N format)
+      if (Array.isArray(n8nData) && n8nData.length > 0 && n8nData[0].content) {
+        const content = n8nData[0].content
+        // Extract JSON from markdown code block
+        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/)
+        if (jsonMatch) {
+          transactionsData = JSON.parse(jsonMatch[1])
+        } else {
+          // Try to parse content directly
+          transactionsData = JSON.parse(content)
+        }
+      }
+      // Check if response has transactions property (legacy format)
+      else if (n8nData.transactions) {
+        transactionsData = n8nData.transactions
+      }
+      // Check if response is direct array
+      else if (Array.isArray(n8nData)) {
+        transactionsData = n8nData
+      }
+      else {
+        throw new Error('Formato de resposta não reconhecido')
+      }
+    } catch (parseError) {
+      console.error('Error parsing N8N response:', parseError, 'Raw response:', n8nData)
       return new Response(
         JSON.stringify({ 
-          error: n8nData.error || 'Não foi possível extrair transações da imagem. Verifique se a imagem está legível.' 
+          error: 'Erro ao processar resposta do OCR. Formato inválido.' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!Array.isArray(transactionsData) || transactionsData.length === 0) {
+      console.error('No transactions found in response:', n8nData)
+      return new Response(
+        JSON.stringify({ 
+          error: 'Nenhuma transação foi encontrada na imagem. Verifique se a imagem está legível.' 
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     // Format transactions for frontend
-    const transactions = n8nData.transactions.map((transaction: any, index: number) => ({
+    const transactions = transactionsData.map((transaction: any, index: number) => ({
       index,
       description: transaction.description || 'Transação extraída via OCR',
       amount: parseFloat(transaction.amount) || 0,

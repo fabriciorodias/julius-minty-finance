@@ -15,6 +15,7 @@ export interface CategorizedTransaction extends PreviewTransaction {
 
 export interface ImportState {
   step: 'file-selection' | 'transaction-selection' | 'ai-categorization' | 'confirmation';
+  importType: 'file' | 'image';
   file: File | null;
   sourceAccount: string;
   allTransactions: PreviewTransaction[];
@@ -22,11 +23,13 @@ export interface ImportState {
   categorizedTransactions: CategorizedTransaction[];
   isProcessing: boolean;
   errors: string[];
+  extractedText?: string;
 }
 
 export function useImportWizard() {
   const [state, setState] = useState<ImportState>({
     step: 'file-selection',
+    importType: 'file',
     file: null,
     sourceAccount: '',
     allTransactions: [],
@@ -68,9 +71,18 @@ export function useImportWizard() {
     setState(prev => ({ ...prev, errors }));
   };
 
+  const setImportType = (importType: 'file' | 'image') => {
+    setState(prev => ({ ...prev, importType }));
+  };
+
+  const setExtractedText = (extractedText?: string) => {
+    setState(prev => ({ ...prev, extractedText }));
+  };
+
   const reset = () => {
     setState({
       step: 'file-selection',
+      importType: 'file',
       file: null,
       sourceAccount: '',
       allTransactions: [],
@@ -91,6 +103,8 @@ export function useImportWizard() {
     setCategorizedTransactions,
     setIsProcessing,
     setErrors,
+    setImportType,
+    setExtractedText,
     reset,
   };
 }

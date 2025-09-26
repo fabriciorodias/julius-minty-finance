@@ -28,6 +28,7 @@ export default function ImportarTransacoes() {
     setCategorizedTransactions,
     setIsProcessing,
     setErrors,
+    setImportType,
     reset
   } = useImportWizard();
 
@@ -222,8 +223,10 @@ export default function ImportarTransacoes() {
                 <ImportFileSelector
                   file={state.file}
                   sourceAccount={state.sourceAccount}
+                  importType={state.importType}
                   onFileChange={setFile}
                   onSourceAccountChange={setSourceAccount}
+                  onImportTypeChange={setImportType}
                   onTransactionsLoaded={(transactions) => {
                     setAllTransactions(transactions);
                     setSelectedTransactionIds(transactions.map(t => t.index.toString()));

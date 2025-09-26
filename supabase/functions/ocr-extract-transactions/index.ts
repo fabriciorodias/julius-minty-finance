@@ -128,13 +128,26 @@ serve(async (req) => {
       }),
     })
 
+    console.log('N8N response status:', n8nResponse.status)
+    console.log('N8N response headers:', Object.fromEntries(n8nResponse.headers.entries()))
+
     if (!n8nResponse.ok) {
       console.error('N8N webhook error:', n8nResponse.status, n8nResponse.statusText)
+      
+      // Try to get response body for debugging
+      let errorBody = ''
+      try {
+        errorBody = await n8nResponse.text()
+        console.error('N8N error response body:', errorBody)
+      } catch (e) {
+        console.error('Could not read N8N error response body')
+      }
+      
       throw new Error(`Erro no processamento OCR: ${n8nResponse.status}`)
     }
 
     const n8nData = await n8nResponse.json()
-    console.log('N8N response:', n8nData)
+    console.log('N8N response data:', JSON.stringify(n8nData, null, 2))
 
     // Clean up temporary file
     try {
@@ -149,30 +162,42 @@ serve(async (req) => {
     // Process N8N response - handle different response formats
     let transactionsData: any[] = []
     
+    console.log('Processing N8N response, type:', typeof n8nData, 'is array:', Array.isArray(n8nData))
+    
     try {
       // Check if response is an array with content property (N8N format)
       if (Array.isArray(n8nData) && n8nData.length > 0 && n8nData[0].content) {
+        console.log('Processing N8N array format with content property')
         const content = n8nData[0].content
+        console.log('Content from N8N:', content)
+        
         // Extract JSON from markdown code block
         const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/)
         if (jsonMatch) {
+          console.log('Found JSON in markdown, parsing:', jsonMatch[1])
           transactionsData = JSON.parse(jsonMatch[1])
         } else {
-          // Try to parse content directly
+          console.log('No markdown JSON found, trying to parse content directly')
           transactionsData = JSON.parse(content)
         }
       }
       // Check if response has transactions property (legacy format)
       else if (n8nData.transactions) {
+        console.log('Processing legacy format with transactions property')
         transactionsData = n8nData.transactions
       }
       // Check if response is direct array
       else if (Array.isArray(n8nData)) {
+        console.log('Processing direct array format')
         transactionsData = n8nData
       }
       else {
+        console.error('Unrecognized response format:', n8nData)
         throw new Error('Formato de resposta não reconhecido')
       }
+      
+      console.log('Parsed transactions data:', transactionsData)
+      
     } catch (parseError) {
       console.error('Error parsing N8N response:', parseError, 'Raw response:', n8nData)
       return new Response(

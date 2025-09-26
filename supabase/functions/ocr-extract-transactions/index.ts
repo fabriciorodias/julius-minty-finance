@@ -87,13 +87,21 @@ serve(async (req) => {
       )
     }
 
-    // Get public URL for the uploaded file
-    const { data: urlData } = supabaseClient.storage
+    // Create signed URL for the uploaded file (valid for 10 minutes)
+    const { data: signedUrlData, error: signedUrlError } = await supabaseClient.storage
       .from('imports')
-      .getPublicUrl(fileName)
+      .createSignedUrl(fileName, 600) // 10 minutes expiration
 
-    const imageUrl = urlData.publicUrl
-    console.log('Image uploaded to:', imageUrl)
+    if (signedUrlError) {
+      console.error('Signed URL error:', signedUrlError)
+      return new Response(
+        JSON.stringify({ error: 'Erro ao gerar URL de acesso à imagem' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const imageUrl = signedUrlData.signedUrl
+    console.log('Signed URL created for N8N access:', imageUrl)
 
     // Send to N8N webhook for OCR processing
     const n8nWebhookUrl = Deno.env.get('N8N_OCR_WEBHOOK_URL')

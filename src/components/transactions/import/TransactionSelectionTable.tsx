@@ -7,7 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PreviewTransaction } from '@/hooks/useImportWizard';
 import { safeFormatDate } from '@/lib/date-utils';
-import { Brain, Download, Search, DollarSign } from 'lucide-react';
+import { validateDateForImport, formatDateForInput, getSuggestedDate } from '@/lib/date-validation';
+import { useDeleteTransactions } from '@/hooks/useDeleteTransactions';
+import { Brain, Download, Search, DollarSign, AlertTriangle, Trash2 } from 'lucide-react';
 
 interface TransactionSelectionTableProps {
   transactions: PreviewTransaction[];
@@ -16,6 +18,8 @@ interface TransactionSelectionTableProps {
   onProcessWithAI: () => void;
   onImportSelected: () => void;
   isProcessingAI: boolean;
+  editedDates: { [transactionIndex: string]: string };
+  onDateChange: (transactionIndex: string, newDate: string) => void;
 }
 
 export function TransactionSelectionTable({
@@ -24,14 +28,33 @@ export function TransactionSelectionTable({
   onSelectionChange,
   onProcessWithAI,
   onImportSelected,
-  isProcessingAI
+  isProcessingAI,
+  editedDates,
+  onDateChange
 }: TransactionSelectionTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [amountFilter, setAmountFilter] = useState<'all' | 'positive' | 'negative'>('all');
+  const { deleteTransactions } = useDeleteTransactions();
+
+  // Função para deletar transações problemáticas existentes
+  const handleDeleteProblematicTransactions = async () => {
+    const problematicIds = ['7dcb0473-af7b-40a0-858a-e501536da492', 'a60a095a-709e-4d88-9ef2-71b25c7c39ba'];
+    await deleteTransactions(problematicIds);
+  };
 
   // Filter transactions based on search and amount filter
   const filteredTransactions = useMemo(() => {
-    return transactions.filter(transaction => {
+    return transactions.map(transaction => {
+      const currentDate = editedDates[transaction.index.toString()] || transaction.date;
+      const dateValidation = validateDateForImport(currentDate);
+      
+      return {
+        ...transaction,
+        hasDateIssue: dateValidation.isSuspicious,
+        currentDate,
+        dateValidation
+      };
+    }).filter(transaction => {
       const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesAmount = 
@@ -41,7 +64,7 @@ export function TransactionSelectionTable({
 
       return matchesSearch && matchesAmount;
     });
-  }, [transactions, searchTerm, amountFilter]);
+  }, [transactions, searchTerm, amountFilter, editedDates]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -63,6 +86,21 @@ export function TransactionSelectionTable({
   const totalAmount = transactions
     .filter(t => selectedTransactionIds.includes(t.index.toString()))
     .reduce((sum, t) => sum + t.amount, 0);
+
+  const suspiciousDateCount = filteredTransactions.filter(t => t.hasDateIssue).length;
+  
+  const handleDateChange = (transactionIndex: string, newDate: string) => {
+    onDateChange(transactionIndex, newDate);
+  };
+
+  const handleFixAllDates = () => {
+    filteredTransactions.forEach(transaction => {
+      if (transaction.hasDateIssue) {
+        const suggestedDate = getSuggestedDate(transaction.currentDate);
+        handleDateChange(transaction.index.toString(), suggestedDate);
+      }
+    });
+  };
 
   const allFilteredSelected = filteredTransactions.every(t => 
     selectedTransactionIds.includes(t.index.toString())
@@ -120,6 +158,13 @@ export function TransactionSelectionTable({
             {selectedCount} de {transactions.length} selecionadas
           </Badge>
           
+          {suspiciousDateCount > 0 && (
+            <Badge variant="destructive" className="text-sm px-2 py-1">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              {suspiciousDateCount} data{suspiciousDateCount > 1 ? 's' : ''} suspeita{suspiciousDateCount > 1 ? 's' : ''}
+            </Badge>
+          )}
+          
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <DollarSign className="h-4 w-4" />
             <span className={totalAmount >= 0 ? 'text-green-600' : 'text-red-600'}>
@@ -132,6 +177,26 @@ export function TransactionSelectionTable({
         </div>
 
         <div className="flex gap-3">
+          {suspiciousDateCount > 0 && (
+            <Button
+              onClick={handleFixAllDates}
+              variant="outline"
+              className="bg-amber-50 border-amber-200 hover:bg-amber-100"
+            >
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              Corrigir Todas as Datas
+            </Button>
+          )}
+          
+          <Button
+            onClick={handleDeleteProblematicTransactions}
+            variant="outline"
+            className="bg-red-50 border-red-200 hover:bg-red-100 text-red-700"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Limpar Problemáticas
+          </Button>
+          
           <Button
             onClick={onProcessWithAI}
             disabled={isProcessingAI || selectedCount === 0}
@@ -144,7 +209,7 @@ export function TransactionSelectionTable({
           
           <Button
             onClick={onImportSelected}
-            disabled={selectedCount === 0}
+            disabled={selectedCount === 0 || suspiciousDateCount > 0}
           >
             <Download className="h-4 w-4 mr-2" />
             Importar Selecionadas
@@ -167,7 +232,7 @@ export function TransactionSelectionTable({
                 </TableHead>
                 <TableHead className="w-32">Valor</TableHead>
                 <TableHead>Descrição</TableHead>
-                <TableHead className="w-24">Data</TableHead>
+                <TableHead className="w-40">Data</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -177,7 +242,7 @@ export function TransactionSelectionTable({
                 return (
                   <TableRow 
                     key={transaction.index}
-                    className={isSelected ? 'bg-secondary/50' : ''}
+                    className={`${isSelected ? 'bg-secondary/50' : ''} ${transaction.hasDateIssue ? 'border-l-4 border-amber-500' : ''}`}
                   >
                     <TableCell>
                       <Checkbox
@@ -204,8 +269,20 @@ export function TransactionSelectionTable({
                       <span className="font-medium">{transaction.description}</span>
                     </TableCell>
                     
-                    <TableCell className="text-muted-foreground">
-                      {safeFormatDate(transaction.date, 'dd/MM/yy')}
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="date"
+                          value={formatDateForInput(transaction.currentDate)}
+                          onChange={(e) => handleDateChange(transaction.index.toString(), e.target.value)}
+                          className={`w-32 ${transaction.hasDateIssue ? 'border-amber-500 bg-amber-50' : ''}`}
+                        />
+                        {transaction.hasDateIssue && (
+                          <div title={transaction.dateValidation.message}>
+                            <AlertTriangle className="h-4 w-4 text-amber-600" />
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

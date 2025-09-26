@@ -5,6 +5,8 @@ export interface PreviewTransaction {
   description: string;
   amount: number;
   date: string;
+  editedDate?: string; // Para armazenar data editada pelo usuário
+  hasDateIssue?: boolean; // Para marcar transações com datas suspeitas
 }
 
 export interface CategorizedTransaction extends PreviewTransaction {
@@ -24,6 +26,7 @@ export interface ImportState {
   isProcessing: boolean;
   errors: string[];
   extractedText?: string;
+  editedDates: { [transactionIndex: string]: string }; // Para armazenar datas editadas
 }
 
 export function useImportWizard() {
@@ -37,6 +40,7 @@ export function useImportWizard() {
     categorizedTransactions: [],
     isProcessing: false,
     errors: [],
+    editedDates: {},
   });
 
   const setStep = (step: ImportState['step']) => {
@@ -79,6 +83,20 @@ export function useImportWizard() {
     setState(prev => ({ ...prev, extractedText }));
   };
 
+  const setEditedDates = (editedDates: { [transactionIndex: string]: string }) => {
+    setState(prev => ({ ...prev, editedDates }));
+  };
+
+  const updateTransactionDate = (transactionIndex: string, newDate: string) => {
+    setState(prev => ({
+      ...prev,
+      editedDates: {
+        ...prev.editedDates,
+        [transactionIndex]: newDate
+      }
+    }));
+  };
+
   const reset = () => {
     setState({
       step: 'file-selection',
@@ -90,6 +108,7 @@ export function useImportWizard() {
       categorizedTransactions: [],
       isProcessing: false,
       errors: [],
+      editedDates: {},
     });
   };
 
@@ -105,6 +124,8 @@ export function useImportWizard() {
     setErrors,
     setImportType,
     setExtractedText,
+    setEditedDates,
+    updateTransactionDate,
     reset,
   };
 }

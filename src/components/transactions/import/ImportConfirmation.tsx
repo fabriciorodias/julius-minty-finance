@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CategorizedTransaction, PreviewTransaction } from '@/hooks/useImportWizard';
 import { safeFormatDate } from '@/lib/date-utils';
 import { CheckCircle, AlertTriangle } from 'lucide-react';
+import { validateDateForImport } from '@/lib/date-validation';
 
 interface ImportConfirmationProps {
   transactions: (CategorizedTransaction | PreviewTransaction)[];
@@ -17,6 +18,7 @@ interface ImportConfirmationProps {
   isProcessing: boolean;
   onProcessingChange: (isProcessing: boolean) => void;
   onError: (error: string) => void;
+  editedDates?: { [transactionIndex: string]: string };
 }
 
 export function ImportConfirmation({
@@ -25,7 +27,8 @@ export function ImportConfirmation({
   onImportComplete,
   isProcessing,
   onProcessingChange,
-  onError
+  onError,
+  editedDates = {}
 }: ImportConfirmationProps) {
   const { accounts } = useAccounts();
   const { institutions } = useInstitutions();
@@ -40,6 +43,14 @@ export function ImportConfirmation({
   const uncategorizedCount = transactions.length - categorizedCount;
 
   const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
+
+  // Validar datas suspeitas antes da importação
+  const suspiciousDateTransactions = transactions.filter(t => {
+    const currentDate = editedDates[t.index.toString()] || t.date;
+    return validateDateForImport(currentDate).isSuspicious;
+  });
+
+  const hasSuspiciousDates = suspiciousDateTransactions.length > 0;
 
   const handleImport = async () => {
     onProcessingChange(true);
@@ -56,7 +67,7 @@ export function ImportConfirmation({
             index: t.index,
             description: t.description,
             amount: t.amount,
-            date: t.date,
+            date: editedDates[t.index.toString()] || t.date,
             category_id: 'category_id' in t ? t.category_id : null
           })),
           sourceAccountId: sourceAccount
@@ -80,7 +91,7 @@ export function ImportConfirmation({
         
         // Create a minimal CSV for the selected transactions
         const csvContent = transactions.map(t => 
-          `"${t.description}","${t.amount}","${t.date}"`
+          `"${t.description}","${t.amount}","${editedDates[t.index.toString()] || t.date}"`
         ).join('\n');
         const csvBlob = new Blob([csvContent], { type: 'text/csv' });
         formData.append('file', csvBlob, 'import.csv');
@@ -152,7 +163,23 @@ export function ImportConfirmation({
       </div>
 
       {/* Warnings */}
-      {uncategorizedCount > 0 && (
+      {hasSuspiciousDates && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+            <div>
+              <p className="font-medium text-red-800">Erro: Datas suspeitas detectadas</p>
+              <p className="text-red-700 text-sm">
+                {suspiciousDateTransactions.length} transação{suspiciousDateTransactions.length > 1 ? 'ões possuem' : ' possui'} 
+                {suspiciousDateTransactions.length > 1 ? ' datas' : ' data'} suspeita{suspiciousDateTransactions.length > 1 ? 's' : ''}. 
+                Volte para a seleção de transações e corrija as datas antes de importar.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {uncategorizedCount > 0 && !hasSuspiciousDates && (
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
@@ -216,7 +243,7 @@ export function ImportConfirmation({
                   </TableCell>
                   
                   <TableCell className="text-muted-foreground">
-                    {safeFormatDate(transaction.date, 'dd/MM/yy')}
+                    {safeFormatDate(editedDates[transaction.index.toString()] || transaction.date, 'dd/MM/yy')}
                   </TableCell>
                 </TableRow>
               ))}
@@ -226,27 +253,29 @@ export function ImportConfirmation({
       </div>
 
       {/* Final Confirmation */}
-      <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
-        <div className="flex items-start gap-3">
-          <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
-          <div className="flex-1">
-            <p className="font-medium text-green-800">Pronto para importar</p>
-            <p className="text-green-700 text-sm">
-              Clique no botão abaixo para confirmar a importação. Esta ação não pode ser desfeita.
-            </p>
+      {!hasSuspiciousDates && (
+        <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-start gap-3">
+            <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-medium text-green-800">Pronto para importar</p>
+              <p className="text-green-700 text-sm">
+                Clique no botão abaixo para confirmar a importação. Esta ação não pode ser desfeita.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Action Button */}
       <div className="flex justify-end pt-4">
         <Button
           onClick={handleImport}
-          disabled={isProcessing}
+          disabled={isProcessing || hasSuspiciousDates}
           size="lg"
           className="px-8"
         >
-          {isProcessing ? 'Importando...' : 'Confirmar Importação'}
+          {isProcessing ? 'Importando...' : hasSuspiciousDates ? 'Corrija as datas antes de importar' : 'Confirmar Importação'}
         </Button>
       </div>
     </div>

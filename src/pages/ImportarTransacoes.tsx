@@ -29,6 +29,7 @@ export default function ImportarTransacoes() {
     setIsProcessing,
     setErrors,
     setImportType,
+    updateTransactionDate,
     reset
   } = useImportWizard();
 
@@ -246,6 +247,8 @@ export default function ImportarTransacoes() {
                   onProcessWithAI={handleAICategorization}
                   onImportSelected={() => setStep('confirmation')}
                   isProcessingAI={isCategorizingAI || state.isProcessing}
+                  editedDates={state.editedDates}
+                  onDateChange={updateTransactionDate}
                 />
               )}
 
@@ -269,6 +272,7 @@ export default function ImportarTransacoes() {
                   isProcessing={state.isProcessing}
                   onProcessingChange={setIsProcessing}
                   onError={(error) => setErrors([error])}
+                  editedDates={state.editedDates}
                 />
               )}
             </CardContent>

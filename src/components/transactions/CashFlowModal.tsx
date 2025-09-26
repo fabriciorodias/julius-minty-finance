@@ -31,9 +31,11 @@ export function CashFlowModal({
   institutions,
   dateFilters 
 }: CashFlowModalProps) {
+  const [includeRecurring, setIncludeRecurring] = useState(false);
   const { dataPoints, accounts: accountsInfo, isLoading } = useCashFlowProjection({
     selectedAccountIds,
-    dateFilters
+    dateFilters,
+    includeRecurring
   });
 
   const [visibleAccounts, setVisibleAccounts] = useState<Set<string>>(
@@ -84,59 +86,83 @@ export function CashFlowModal({
 
         <div className="flex-1 overflow-hidden flex flex-col gap-4">
           {/* Legend and Controls */}
-          <div className="flex flex-wrap gap-3 p-4 bg-muted/30 rounded-lg">
-            {/* Total Line Toggle */}
-            <div className="flex items-center gap-2">
+          <div className="space-y-3">
+            {/* Recurring Transactions Toggle */}
+            <div className="flex items-center gap-2 p-3 bg-muted/20 rounded-lg border">
               <Checkbox
-                checked={showTotal}
-                onCheckedChange={(checked) => setShowTotal(checked === true)}
-                id="total-line"
+                checked={includeRecurring}
+                onCheckedChange={(checked) => setIncludeRecurring(checked === true)}
+                id="include-recurring"
               />
               <Badge 
                 variant="outline" 
                 className="flex items-center gap-1"
-                style={{ borderColor: 'hsl(var(--primary))' }}
+                style={{ borderColor: 'hsl(var(--orange))' }}
               >
                 <div 
                   className="w-3 h-0.5 rounded" 
-                  style={{ backgroundColor: 'hsl(var(--primary))' }}
+                  style={{ backgroundColor: 'hsl(var(--orange))' }}
                 />
-                Total Geral
-                {showTotal ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                Incluir Lançamentos Recorrentes
+                {includeRecurring ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
               </Badge>
             </div>
-
-            {/* Account Lines Toggles */}
-            {accountsInfo.map((account) => (
-              <div key={account.id} className="flex items-center gap-2">
+            
+            {/* Line Toggles */}
+            <div className="flex flex-wrap gap-3 p-4 bg-muted/30 rounded-lg">
+              {/* Total Line Toggle */}
+              <div className="flex items-center gap-2">
                 <Checkbox
-                  checked={visibleAccounts.has(account.id)}
-                  onCheckedChange={(checked) => {
-                    if (checked === true) {
-                      toggleAccountVisibility(account.id);
-                    } else if (checked === false) {
-                      toggleAccountVisibility(account.id);
-                    }
-                  }}
-                  id={`account-${account.id}`}
+                  checked={showTotal}
+                  onCheckedChange={(checked) => setShowTotal(checked === true)}
+                  id="total-line"
                 />
                 <Badge 
                   variant="outline" 
-                  className="flex items-center gap-1 text-xs"
-                  style={{ borderColor: account.color }}
+                  className="flex items-center gap-1"
+                  style={{ borderColor: 'hsl(var(--primary))' }}
                 >
                   <div 
                     className="w-3 h-0.5 rounded" 
-                    style={{ backgroundColor: account.color }}
+                    style={{ backgroundColor: 'hsl(var(--primary))' }}
                   />
-                  {account.name}
-                  {visibleAccounts.has(account.id) ? 
-                    <Eye className="h-3 w-3" /> : 
-                    <EyeOff className="h-3 w-3" />
-                  }
+                  Total Geral
+                  {showTotal ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
                 </Badge>
               </div>
-            ))}
+
+              {/* Account Lines Toggles */}
+              {accountsInfo.map((account) => (
+                <div key={account.id} className="flex items-center gap-2">
+                  <Checkbox
+                    checked={visibleAccounts.has(account.id)}
+                    onCheckedChange={(checked) => {
+                      if (checked === true) {
+                        toggleAccountVisibility(account.id);
+                      } else if (checked === false) {
+                        toggleAccountVisibility(account.id);
+                      }
+                    }}
+                    id={`account-${account.id}`}
+                  />
+                  <Badge 
+                    variant="outline" 
+                    className="flex items-center gap-1 text-xs"
+                    style={{ borderColor: account.color }}
+                  >
+                    <div 
+                      className="w-3 h-0.5 rounded" 
+                      style={{ backgroundColor: account.color }}
+                    />
+                    {account.name}
+                    {visibleAccounts.has(account.id) ? 
+                      <Eye className="h-3 w-3" /> : 
+                      <EyeOff className="h-3 w-3" />
+                    }
+                  </Badge>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Chart */}

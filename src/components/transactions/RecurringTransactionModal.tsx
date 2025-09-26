@@ -171,7 +171,7 @@ export function RecurringTransactionModal({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? 'Editar Conta Recorrente' : 'Nova Conta Recorrente'}
+            {isEditing ? 'Editar Lançamento Recorrente' : 'Novo Lançamento Recorrente'}
           </DialogTitle>
         </DialogHeader>
 

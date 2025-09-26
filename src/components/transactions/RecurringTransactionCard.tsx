@@ -108,7 +108,7 @@ export function RecurringTransactionCard({
   };
 
   const handleDelete = () => {
-    if (confirm('Tem certeza que deseja excluir esta conta recorrente?')) {
+    if (confirm('Tem certeza que deseja excluir este lançamento recorrente?')) {
       deleteRecurringTransaction(transaction.id);
     }
   };

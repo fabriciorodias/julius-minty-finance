@@ -27,6 +27,7 @@
     --input: 0 0% 90%;
     --ring: 174 100% 33%; /* #00A693 - Verde principal */
     --radius: 0.5rem;
+    --orange: 25 95% 53%; /* #F97316 - Laranja para lançamentos recorrentes */
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -64,6 +65,7 @@
     --border: 0 0% 15%;
     --input: 0 0% 15%;
     --ring: 174 100% 33%;
+    --orange: 25 95% 53%; /* Mesma cor laranja no modo escuro */
 
     /* Sidebar Dark */
     --sidebar-background: 174 100% 27%;

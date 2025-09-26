@@ -41,7 +41,7 @@ const mainMenuItems = [
     icon: "swap_horiz"
   },
   {
-    title: "Contas Recorrentes",
+    title: "Lançamentos Recorrentes",
     url: "/lancamentos/recorrentes",
     icon: "repeat"
   },

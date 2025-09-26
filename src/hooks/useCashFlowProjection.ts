@@ -24,12 +24,14 @@ interface UseCashFlowProjectionParams {
     endDate?: string;
   };
   sampleSize?: number; // For performance optimization on long periods
+  includeRecurring?: boolean;
 }
 
 export function useCashFlowProjection({ 
   selectedAccountIds, 
   dateFilters,
-  sampleSize 
+  sampleSize,
+  includeRecurring = false
 }: UseCashFlowProjectionParams) {
   const { user } = useAuth();
 
@@ -37,7 +39,7 @@ export function useCashFlowProjection({
     data = { dataPoints: [], accounts: [] },
     isLoading,
   } = useQuery({
-    queryKey: ['cash-flow-projection', user?.id, selectedAccountIds, dateFilters, sampleSize],
+    queryKey: ['cash-flow-projection', user?.id, selectedAccountIds, dateFilters, sampleSize, includeRecurring],
     queryFn: async (): Promise<{ dataPoints: CashFlowDataPoint[]; accounts: AccountInfo[] }> => {
       if (!user?.id || selectedAccountIds.length === 0) {
         return { dataPoints: [], accounts: [] };
@@ -173,15 +175,53 @@ export function useCashFlowProjection({
       console.log('Pending transactions in range:', pendingTransactions.length);
       console.log('Pending transactions:', pendingTransactions);
 
-      // Sort pending transactions by date
-      pendingTransactions.sort((a, b) => {
+      // Get recurring transactions if requested
+      let recurringTransactions: any[] = [];
+      if (includeRecurring) {
+        const { data: recurringData, error: recurringError } = await supabase
+          .from('recurring_transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'active');
+
+        if (recurringError) {
+          console.error('Error fetching recurring transactions:', recurringError);
+        } else {
+          // Filter by selected accounts (including those with null account_id)
+          recurringTransactions = (recurringData || []).filter(rt => 
+            !rt.account_id || selectedAccountIds.includes(rt.account_id)
+          );
+          
+          console.log('Recurring transactions:', recurringTransactions.length);
+        }
+      }
+
+      // Generate recurring transaction occurrences
+      const generatedRecurringTransactions: any[] = [];
+      if (includeRecurring && recurringTransactions.length > 0) {
+        recurringTransactions.forEach(rt => {
+          const occurrences = generateRecurringOccurrences(rt, startDate, endDate);
+          generatedRecurringTransactions.push(...occurrences);
+        });
+        
+        console.log('Generated recurring occurrences:', generatedRecurringTransactions.length);
+      }
+
+      // Combine pending and recurring transactions
+      const allFutureTransactions = [
+        ...pendingTransactions,
+        ...generatedRecurringTransactions
+      ];
+
+      // Sort all future transactions by date
+      allFutureTransactions.sort((a, b) => {
         const dateA = a.effective_date || a.event_date;
         const dateB = b.effective_date || b.event_date;
         return dateA.localeCompare(dateB);
       });
 
-      // Apply pending transactions day by day
-      pendingTransactions.forEach(transaction => {
+      // Apply all future transactions day by day
+      allFutureTransactions.forEach(transaction => {
         const transactionDate = transaction.effective_date || transaction.event_date;
         
         console.log(`Processing transaction on ${transactionDate}:`, {
@@ -268,4 +308,71 @@ export function useCashFlowProjection({
     accounts: data.accounts,
     isLoading,
   };
+}
+
+// Helper function to generate recurring transaction occurrences
+function generateRecurringOccurrences(
+  recurringTransaction: any,
+  startDate: string,
+  endDate: string
+): any[] {
+  const occurrences: any[] = [];
+  const { recurrence_pattern, next_due_date, day_of_month, expected_amount, type, account_id, template_name } = recurringTransaction;
+  
+  let currentDate = new Date(Math.max(new Date(next_due_date).getTime(), new Date(startDate).getTime()));
+  const finalDate = new Date(endDate);
+  
+  // Limit to 24 occurrences to prevent infinite loops
+  let count = 0;
+  const maxOccurrences = 24;
+  
+  while (currentDate <= finalDate && count < maxOccurrences) {
+    const dateStr = format(currentDate, 'yyyy-MM-dd');
+    
+    occurrences.push({
+      id: `recurring_${recurringTransaction.id}_${dateStr}`,
+      account_id: account_id,
+      amount: expected_amount,
+      type: type,
+      status: 'pendente',
+      event_date: dateStr,
+      effective_date: dateStr,
+      description: `[Recorrente] ${template_name}`,
+      isRecurring: true
+    });
+    
+    // Calculate next occurrence
+    switch (recurrence_pattern) {
+      case 'weekly':
+        currentDate = addDays(currentDate, 7);
+        break;
+      case 'monthly':
+        const nextMonth = new Date(currentDate);
+        nextMonth.setMonth(nextMonth.getMonth() + 1);
+        nextMonth.setDate(day_of_month || 1);
+        currentDate = nextMonth;
+        break;
+      case 'quarterly':
+        const nextQuarter = new Date(currentDate);
+        nextQuarter.setMonth(nextQuarter.getMonth() + 3);
+        nextQuarter.setDate(day_of_month || 1);
+        currentDate = nextQuarter;
+        break;
+      case 'yearly':
+        const nextYear = new Date(currentDate);
+        nextYear.setFullYear(nextYear.getFullYear() + 1);
+        nextYear.setDate(day_of_month || 1);
+        currentDate = nextYear;
+        break;
+      default:
+        // Default to monthly if pattern is unknown
+        const nextMonthDefault = new Date(currentDate);
+        nextMonthDefault.setMonth(nextMonthDefault.getMonth() + 1);
+        currentDate = nextMonthDefault;
+    }
+    
+    count++;
+  }
+  
+  return occurrences;
 }

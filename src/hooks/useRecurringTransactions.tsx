@@ -135,14 +135,14 @@ export function useRecurringTransactionMutations() {
       queryClient.invalidateQueries({ queryKey: ['recurring-transactions-basic'] });
       toast({
         title: "Sucesso",
-        description: "Conta recorrente criada com sucesso!"
+        description: "Lançamento recorrente criado com sucesso!"
       });
     },
     onError: (error) => {
       console.error('Error creating recurring transaction:', error);
       toast({
         title: "Erro",
-        description: "Falha ao criar conta recorrente. Tente novamente.",
+        description: "Falha ao criar lançamento recorrente. Tente novamente.",
         variant: "destructive"
       });
     }
@@ -171,14 +171,14 @@ export function useRecurringTransactionMutations() {
       queryClient.invalidateQueries({ queryKey: ['recurring-transactions-basic'] });
       toast({
         title: "Sucesso",
-        description: "Conta recorrente atualizada com sucesso!"
+        description: "Lançamento recorrente atualizado com sucesso!"
       });
     },
     onError: (error) => {
       console.error('Error updating recurring transaction:', error);
       toast({
         title: "Erro",
-        description: "Falha ao atualizar conta recorrente. Tente novamente.",
+        description: "Falha ao atualizar lançamento recorrente. Tente novamente.",
         variant: "destructive"
       });
     }
@@ -203,14 +203,14 @@ export function useRecurringTransactionMutations() {
       queryClient.invalidateQueries({ queryKey: ['recurring-transactions-basic'] });
       toast({
         title: "Sucesso",
-        description: "Conta recorrente excluída com sucesso!"
+        description: "Lançamento recorrente excluído com sucesso!"
       });
     },
     onError: (error) => {
       console.error('Error deleting recurring transaction:', error);
       toast({
         title: "Erro",
-        description: "Falha ao excluir conta recorrente. Tente novamente.",
+        description: "Falha ao excluir lançamento recorrente. Tente novamente.",
         variant: "destructive"
       });
     }

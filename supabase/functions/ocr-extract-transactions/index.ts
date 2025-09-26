@@ -87,10 +87,10 @@ serve(async (req) => {
       )
     }
 
-    // Create signed URL for the uploaded file (valid for 10 minutes)
+    // Create signed URL for the uploaded file (valid for 30 minutes)
     const { data: signedUrlData, error: signedUrlError } = await supabaseClient.storage
       .from('imports')
-      .createSignedUrl(fileName, 600) // 10 minutes expiration
+      .createSignedUrl(fileName, 1800) // 30 minutes expiration
 
     if (signedUrlError) {
       console.error('Signed URL error:', signedUrlError)
@@ -102,6 +102,15 @@ serve(async (req) => {
 
     const imageUrl = signedUrlData.signedUrl
     console.log('Signed URL created for N8N access:', imageUrl)
+    
+    // Validate signed URL format
+    if (!imageUrl || !imageUrl.includes('token=')) {
+      console.error('Invalid signed URL generated:', imageUrl)
+      return new Response(
+        JSON.stringify({ error: 'Erro ao gerar URL de acesso válida à imagem' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     // Send to N8N webhook for OCR processing
     const n8nWebhookUrl = Deno.env.get('N8N_OCR_WEBHOOK_URL')
@@ -143,7 +152,25 @@ serve(async (req) => {
         console.error('Could not read N8N error response body')
       }
       
-      throw new Error(`Erro no processamento OCR: ${n8nResponse.status}`)
+      // Provide more specific error messages based on status code
+      let userMessage = 'Erro no processamento OCR.'
+      
+      if (n8nResponse.status === 500) {
+        userMessage = 'O serviço de OCR está temporariamente indisponível. Tente novamente em alguns minutos.'
+      } else if (n8nResponse.status === 404) {
+        userMessage = 'Serviço de OCR não encontrado. Verifique a configuração.'
+      } else if (n8nResponse.status === 400) {
+        userMessage = 'Formato de imagem não suportado pelo OCR. Tente com uma imagem PNG ou JPEG.'
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          error: userMessage,
+          details: `Status: ${n8nResponse.status} - ${n8nResponse.statusText}`,
+          suggestion: 'Verifique se a imagem está legível e tente novamente.'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     const n8nData = await n8nResponse.json()

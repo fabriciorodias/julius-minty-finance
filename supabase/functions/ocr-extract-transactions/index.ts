@@ -135,9 +135,9 @@ serve(async (req) => {
     }
 
     // Send to N8N webhook for OCR processing
-    const n8nWebhookUrl = Deno.env.get('N8N_OCR_WEBHOOK_URL')
+    const n8nWebhookUrl = Deno.env.get('N8N_OCR_WEBHOOK_URL_PROD')
     if (!n8nWebhookUrl) {
-      console.error('N8N_OCR_WEBHOOK_URL not configured')
+      console.error('N8N_OCR_WEBHOOK_URL_PROD not configured')
       return new Response(
         JSON.stringify({ error: 'Serviço de OCR não configurado' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

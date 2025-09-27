@@ -57,6 +57,7 @@ export type Database = {
             | Database["public"]["Enums"]["reconciliation_method"]
             | null
           name: string
+          next_due_date: string | null
           subtype: Database["public"]["Enums"]["account_subtype"]
           type: Database["public"]["Enums"]["account_type"]
           user_id: string
@@ -73,6 +74,7 @@ export type Database = {
             | Database["public"]["Enums"]["reconciliation_method"]
             | null
           name: string
+          next_due_date?: string | null
           subtype: Database["public"]["Enums"]["account_subtype"]
           type?: Database["public"]["Enums"]["account_type"]
           user_id: string
@@ -89,6 +91,7 @@ export type Database = {
             | Database["public"]["Enums"]["reconciliation_method"]
             | null
           name?: string
+          next_due_date?: string | null
           subtype?: Database["public"]["Enums"]["account_subtype"]
           type?: Database["public"]["Enums"]["account_type"]
           user_id?: string

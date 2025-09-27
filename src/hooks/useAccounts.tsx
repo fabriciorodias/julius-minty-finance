@@ -15,6 +15,7 @@ export interface Account {
   is_active: boolean;
   last_reconciled_at?: string;
   last_reconciliation_method?: 'manual' | 'automacao' | 'open_finance';
+  next_due_date?: string;
   created_at: string;
 }
 
@@ -88,7 +89,7 @@ export function useAccounts(institutionId?: string) {
       console.log('Creating account with data:', accountData);
 
       // Separate account data from initial balance data
-      const { initial_balance, balance_date, ...cleanAccountData } = accountData;
+      const { initial_balance, balance_date, next_due_date, ...cleanAccountData } = accountData;
 
       // Garantir compatibilidade: se não vier kind/subtype, derivar do type
       if (!cleanAccountData.kind || !cleanAccountData.subtype) {
@@ -115,6 +116,7 @@ export function useAccounts(institutionId?: string) {
         .insert({
           ...cleanAccountData,
           user_id: user.id,
+          next_due_date: next_due_date || null,
         })
         .select()
         .single();
@@ -179,8 +181,8 @@ export function useAccounts(institutionId?: string) {
   });
 
   const updateAccountMutation = useMutation({
-    mutationFn: async ({ id, initial_balance, balance_date, ...updates }: Partial<Account> & { id: string; initial_balance?: number; balance_date?: Date }) => {
-      console.log('Updating account with data:', { id, initial_balance, balance_date, updates });
+    mutationFn: async ({ id, initial_balance, balance_date, next_due_date, ...updates }: Partial<Account> & { id: string; initial_balance?: number; balance_date?: Date; next_due_date?: Date }) => {
+      console.log('Updating account with data:', { id, initial_balance, balance_date, next_due_date, updates });
 
       // Garantir compatibilidade: se não vier kind/subtype, derivar do type
       if (updates.type && (!updates.kind || !updates.subtype)) {
@@ -201,7 +203,10 @@ export function useAccounts(institutionId?: string) {
       // Update account data
       const { data, error } = await supabase
         .from('accounts')
-        .update(updates)
+        .update({
+          ...updates,
+          next_due_date: next_due_date ? next_due_date.toISOString().split('T')[0] : null,
+        })
         .eq('id', id)
         .select()
         .single();

@@ -49,6 +49,7 @@ export function AccountModal({
     initial_balance: '',
     initial_balance_numeric: 0,
     balance_date: new Date(),
+    next_due_date: null as Date | null,
   });
 
   const { data: initialBalance } = useAccountInitialBalance(account?.id);
@@ -65,6 +66,7 @@ export function AccountModal({
         initial_balance: initialBalance?.amount ? Math.abs(initialBalance.amount).toString() : '',
         initial_balance_numeric: initialBalance?.amount ? Math.abs(initialBalance.amount) : 0,
         balance_date: initialBalance?.balance_date ? new Date(initialBalance.balance_date) : new Date(),
+        next_due_date: account.next_due_date ? new Date(account.next_due_date) : null,
       });
     } else {
       setFormData({
@@ -77,6 +79,7 @@ export function AccountModal({
         initial_balance: '',
         initial_balance_numeric: 0,
         balance_date: new Date(),
+        next_due_date: null,
       });
     }
   }, [account, initialBalance]);
@@ -111,6 +114,11 @@ export function AccountModal({
       }
       
       accountData.balance_date = formData.balance_date;
+    }
+
+    // Adicionar data do próximo vencimento se fornecida
+    if (formData.next_due_date) {
+      accountData.next_due_date = formData.next_due_date;
     }
 
     if (account) {
@@ -230,6 +238,39 @@ export function AccountModal({
               />
             </div>
           )}
+
+          {/* Campo de Data do Próximo Vencimento - especialmente útil para cartões de crédito */}
+          <div className="space-y-2">
+            <Label htmlFor="next_due_date">Data do Próximo Vencimento</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.next_due_date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.next_due_date ? (
+                    format(formData.next_due_date, "dd/MM/yyyy", { locale: ptBR })
+                  ) : (
+                    <span>Selecione uma data</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={formData.next_due_date}
+                  onSelect={(date) => setFormData(prev => ({ ...prev, next_due_date: date }))}
+                  initialFocus
+                  locale={ptBR}
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

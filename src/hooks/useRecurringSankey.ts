@@ -111,7 +111,7 @@ export const useRecurringSankey = () => {
           id: `income-${category}`,
           name: category,
           category: 'income',
-          color: 'hsl(var(--chart-1))'
+          color: 'hsl(142, 76%, 36%)' // Verde para receitas
         });
       });
 
@@ -129,7 +129,7 @@ export const useRecurringSankey = () => {
           id: `expense-${expenseName}`,
           name: expenseName,
           category: 'expense',
-          color: 'hsl(var(--chart-2))'
+          color: 'hsl(0, 84%, 60%)' // Vermelho para despesas
         });
       });
 

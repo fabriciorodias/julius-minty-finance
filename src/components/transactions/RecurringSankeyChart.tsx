@@ -232,7 +232,7 @@ export const RecurringSankeyChart: React.FC<RecurringSankeyChartProps> = ({
         {/* Legenda */}
         <div className="flex justify-center gap-6 mt-4 text-sm">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--chart-1))' }}></div>
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(142, 76%, 36%)' }}></div>
             <span>Receitas</span>
           </div>
           <div className="flex items-center gap-2">
@@ -240,7 +240,7 @@ export const RecurringSankeyChart: React.FC<RecurringSankeyChartProps> = ({
             <span>Saldo</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(var(--chart-2))' }}></div>
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: 'hsl(0, 84%, 60%)' }}></div>
             <span>Despesas</span>
           </div>
         </div>

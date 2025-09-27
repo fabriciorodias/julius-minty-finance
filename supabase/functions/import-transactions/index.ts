@@ -145,7 +145,7 @@ serve(async (req) => {
       description: transaction.description,
       amount: transaction.amount,
       event_date: transaction.date,
-      input_source: 'imported' as const,
+      input_source: 'import' as const,
       type: transaction.amount >= 0 ? 'receita' : 'despesa',
     }))
 

@@ -138,7 +138,7 @@ serve(async (req) => {
         amount: finalAmount,
         type: transactionType,
         event_date: validDate,
-        input_source: 'imported' as const,
+        input_source: 'import' as const,
         category_id: transaction.category_id || null,
         is_reviewed: transaction.category_id ? true : false, // Mark as reviewed if categorized
       };

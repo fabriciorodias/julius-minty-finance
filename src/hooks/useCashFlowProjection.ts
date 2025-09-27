@@ -245,7 +245,7 @@ export function useCashFlowProjection({
                   id: `plan_${plan.id}_lump`,
                   account_id: selectedAccountIds[0], // Use first account as default
                   amount: plan.total_amount,
-                  type: plan.type === 'poupanca' || plan.type === 'despesa_planejada' ? 'despesa' : 'receita', // Savings/Planned expenses = expense, Debt = income (payment reduces debt)
+                  type: plan.type === 'despesa_planejada' ? 'despesa' : 'receita', // Planned expenses = expense, Savings = income
                   event_date: paymentDate,
                   description: `[Plano] ${plan.name}`,
                   isPlan: true
@@ -261,7 +261,7 @@ export function useCashFlowProjection({
                     id: `plan_${plan.id}_installment_${installment.id}`,
                     account_id: selectedAccountIds[0], // Use first account as default
                     amount: installment.planned_amount,
-        type: plan.type === 'poupanca' || plan.type === 'despesa_planejada' ? 'despesa' : 'receita',
+        type: plan.type === 'despesa_planejada' ? 'despesa' : 'receita',
                     event_date: installment.due_date,
                     description: `[Plano] ${plan.name} - Parcela`,
                     isPlan: true

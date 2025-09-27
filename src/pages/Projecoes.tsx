@@ -18,18 +18,25 @@ export default function Projecoes() {
   const { institutions = [] } = useInstitutions();
   
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
-
-  // Update selected accounts when accounts data loads
-  useEffect(() => {
-    if (accounts.length > 0 && selectedAccountIds.length === 0) {
-      setSelectedAccountIds(accounts.filter(acc => acc.type === 'on_budget').map(acc => acc.id));
-    }
-  }, [accounts, selectedAccountIds.length]);
   const [dateFilters, setDateFilters] = useState({
     startDate: format(new Date(), 'yyyy-MM-dd'),
     endDate: format(addDays(new Date(), 90), 'yyyy-MM-dd')
   });
   const [includeRecurring, setIncludeRecurring] = useState(true);
+  const [includeCreditCards, setIncludeCreditCards] = useState(false);
+  const [includeLoans, setIncludeLoans] = useState(false);
+
+  // Update selected accounts when accounts data loads or liability toggles change
+  useEffect(() => {
+    if (accounts.length > 0) {
+      const budgetAccounts = accounts.filter(acc => acc.type === 'on_budget');
+      const creditCardAccounts = includeCreditCards ? accounts.filter(acc => acc.subtype === 'credit_card') : [];
+      const loanAccounts = includeLoans ? accounts.filter(acc => acc.subtype === 'loan') : [];
+      
+      const allSelectedAccounts = [...budgetAccounts, ...creditCardAccounts, ...loanAccounts];
+      setSelectedAccountIds(allSelectedAccounts.map(acc => acc.id));
+    }
+  }, [accounts, includeCreditCards, includeLoans]);
   const [visibleAccounts, setVisibleAccounts] = useState<Set<string>>(new Set());
   const [showTotal, setShowTotal] = useState(true);
 
@@ -232,7 +239,7 @@ export default function Projecoes() {
               </p>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="include-recurring"
@@ -245,6 +252,38 @@ export default function Projecoes() {
                 >
                   Incluir recorrentes
                 </label>
+              </div>
+              
+              <div className="flex items-center gap-4 pl-4 border-l">
+                <span className="text-sm font-medium text-muted-foreground">Incluir Passivos:</span>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="include-credit-cards"
+                    checked={includeCreditCards}
+                    onCheckedChange={(checked) => setIncludeCreditCards(checked === true)}
+                  />
+                  <label
+                    htmlFor="include-credit-cards"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Cartões de Crédito ({accounts.filter(acc => acc.subtype === 'credit_card').length})
+                  </label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="include-loans"
+                    checked={includeLoans}
+                    onCheckedChange={(checked) => setIncludeLoans(checked === true)}
+                  />
+                  <label
+                    htmlFor="include-loans"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Empréstimos ({accounts.filter(acc => acc.subtype === 'loan').length})
+                  </label>
+                </div>
               </div>
             </div>
           </div>

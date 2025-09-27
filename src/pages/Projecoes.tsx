@@ -52,6 +52,7 @@ export default function Projecoes() {
     includeRecurring,
     includePlans,
     selectedPlanIds,
+    includeCreditCards,
     sampleSize: 200
   });
 

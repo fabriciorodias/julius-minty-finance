@@ -27,6 +27,7 @@ interface UseCashFlowProjectionParams {
   includeRecurring?: boolean;
   includePlans?: boolean;
   selectedPlanIds?: string[];
+  includeCreditCards?: boolean;
 }
 
 export function useCashFlowProjection({ 
@@ -35,7 +36,8 @@ export function useCashFlowProjection({
   sampleSize,
   includeRecurring = false,
   includePlans = false,
-  selectedPlanIds = []
+  selectedPlanIds = [],
+  includeCreditCards = false
 }: UseCashFlowProjectionParams) {
   const { user } = useAuth();
 
@@ -43,7 +45,7 @@ export function useCashFlowProjection({
     data = { dataPoints: [], accounts: [] },
     isLoading,
   } = useQuery({
-    queryKey: ['cash-flow-projection', user?.id, selectedAccountIds, dateFilters, sampleSize, includeRecurring, includePlans, selectedPlanIds],
+    queryKey: ['cash-flow-projection', user?.id, selectedAccountIds, dateFilters, sampleSize, includeRecurring, includePlans, selectedPlanIds, includeCreditCards],
     queryFn: async (): Promise<{ dataPoints: CashFlowDataPoint[]; accounts: AccountInfo[] }> => {
       if (!user?.id || selectedAccountIds.length === 0) {
         return { dataPoints: [], accounts: [] };
@@ -261,11 +263,62 @@ export function useCashFlowProjection({
         console.log('Generated plan transactions:', generatedPlanTransactions.length);
       }
 
-      // Combine future, recurring, and plan transactions
+      // Generate credit card payment simulations
+      const generatedCreditCardTransactions: any[] = [];
+      if (includeCreditCards) {
+        const { data: creditCardsData, error: creditCardsError } = await supabase
+          .from('accounts')
+          .select('id, name, next_due_date')
+          .eq('user_id', user.id)
+          .eq('subtype', 'credit_card')
+          .not('next_due_date', 'is', null);
+
+        if (creditCardsError) {
+          console.error('Error fetching credit cards:', creditCardsError);
+        } else {
+          for (const creditCard of creditCardsData || []) {
+            if (creditCard.next_due_date && 
+                creditCard.next_due_date >= startDate && 
+                creditCard.next_due_date <= endDate) {
+              
+              // Calculate current balance for this credit card
+              const cardBalance = currentAccountBalances[creditCard.id] || 0;
+              
+              // Only simulate payment if there's a negative balance (debt)
+              if (cardBalance < 0) {
+                const paymentAmount = Math.abs(cardBalance);
+                
+                // Find the main account to debit from (first on_budget account)
+                const mainAccountId = selectedAccountIds.find(id => {
+                  const account = accountsData?.find(a => a.id === id);
+                  return account; // Use first selected account as default
+                }) || selectedAccountIds[0];
+
+                generatedCreditCardTransactions.push({
+                  id: `credit_card_payment_${creditCard.id}`,
+                  account_id: mainAccountId,
+                  amount: paymentAmount,
+                  type: 'despesa',
+                  event_date: creditCard.next_due_date,
+                  description: `[Pagamento Fatura] ${creditCard.name}`,
+                  isCreditCardPayment: true
+                });
+
+                console.log(`Generated credit card payment: ${creditCard.name} - R$ ${paymentAmount} on ${creditCard.next_due_date}`);
+              }
+            }
+          }
+        }
+        
+        console.log('Generated credit card payments:', generatedCreditCardTransactions.length);
+      }
+
+      // Combine future, recurring, plan, and credit card transactions
       const allFutureTransactions = [
         ...futureTransactions,
         ...generatedRecurringTransactions,
-        ...generatedPlanTransactions
+        ...generatedPlanTransactions,
+        ...generatedCreditCardTransactions
       ];
 
       // Sort all future transactions by date

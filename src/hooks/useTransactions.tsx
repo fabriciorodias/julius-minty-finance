@@ -13,12 +13,11 @@ export interface Transaction {
   description: string;
   amount: number;
   event_date: string;
-  effective_date: string | null;
-  status: 'pendente' | 'concluido';
   type: 'receita' | 'despesa';
   installment_id: string | null;
   installment_number: number | null;
   total_installments: number | null;
+  input_source: 'manual' | 'import' | 'ai_agent' | 'recurring' | 'installment';
   created_at: string;
 }
 
@@ -31,14 +30,12 @@ export interface TransactionWithRelations extends Transaction {
 }
 
 export interface TransactionFilters {
-  dateBase?: 'event' | 'effective';
   startDate?: string;
   endDate?: string;
   categoryId?: string;
   accountId?: string;
   accountIds?: string[]; // New field for multiple account filtering
   creditCardId?: string;
-  status?: 'pendente' | 'concluido';
   q?: string;
   withoutCategory?: boolean;
   tagIds?: string[]; // New field for tag filtering
@@ -52,9 +49,8 @@ export interface CreateTransactionData {
   description: string;
   amount: number;
   event_date: string;
-  effective_date?: string;
-  status: 'pendente' | 'concluido';
   type: 'receita' | 'despesa';
+  input_source?: 'manual' | 'import' | 'ai_agent' | 'recurring' | 'installment';
   tags?: string[]; // Tag names to associate
 }
 
@@ -62,13 +58,11 @@ export interface InstallmentData {
   description: string;
   amount: number;
   eventDate: string;
-  firstEffectiveDate: string;
   creditCardId?: string;
   accountId?: string;
   categoryId?: string;
   totalInstallments: number;
   type: 'receita' | 'despesa';
-  status: 'pendente' | 'concluido';
 }
 
 export function useTransactions(filters: TransactionFilters = {}) {
@@ -105,16 +99,12 @@ export function useTransactions(filters: TransactionFilters = {}) {
         .eq('user_id', user.id);
 
       // Apply filters
-      if (filters.startDate || filters.endDate) {
-        const dateColumn = filters.dateBase === 'effective' ? 'effective_date' : 'event_date';
-        
-        if (filters.startDate) {
-          query = query.gte(dateColumn, filters.startDate);
-        }
-        
-        if (filters.endDate) {
-          query = query.lte(dateColumn, filters.endDate);
-        }
+      if (filters.startDate) {
+        query = query.gte('event_date', filters.startDate);
+      }
+      
+      if (filters.endDate) {
+        query = query.lte('event_date', filters.endDate);
       }
 
       if (filters.categoryId) {
@@ -133,9 +123,6 @@ export function useTransactions(filters: TransactionFilters = {}) {
         query = query.eq('credit_card_id', filters.creditCardId);
       }
 
-      if (filters.status) {
-        query = query.eq('status', filters.status);
-      }
 
       if (filters.q) {
         query = query.ilike('description', `%${filters.q}%`);
@@ -156,7 +143,6 @@ export function useTransactions(filters: TransactionFilters = {}) {
         accounts: item.accounts && !('error' in item.accounts) ? item.accounts : null,
         credit_cards: item.credit_cards && !('error' in item.credit_cards) ? item.credit_cards : null,
         counterparties: item.counterparties && !('error' in item.counterparties) ? item.counterparties : null,
-        status: item.status as 'pendente' | 'concluido',
         type: item.type as 'receita' | 'despesa',
       })) as TransactionWithRelations[];
 
@@ -222,6 +208,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
           ...transactionFields,
           user_id: user.id,
           type: transactionData.amount >= 0 ? 'receita' : 'despesa',
+          input_source: transactionData.input_source || 'manual',
         })
         .select()
         .single();
@@ -466,10 +453,8 @@ export function useTransactions(filters: TransactionFilters = {}) {
       const transactions = [];
 
       for (let i = 1; i <= installmentData.totalInstallments; i++) {
-        const effectiveDate = new Date(installmentData.firstEffectiveDate);
-        effectiveDate.setMonth(effectiveDate.getMonth() + (i - 1));
-        
-        const eventDate = i === 1 ? installmentData.eventDate : installmentData.firstEffectiveDate;
+        const eventDate = new Date(installmentData.eventDate);
+        eventDate.setMonth(eventDate.getMonth() + (i - 1));
 
         transactions.push({
           user_id: user.id,
@@ -478,13 +463,12 @@ export function useTransactions(filters: TransactionFilters = {}) {
           category_id: installmentData.categoryId || null,
           description: `${installmentData.description} (${i}/${installmentData.totalInstallments})`,
           amount: installmentData.amount,
-          event_date: eventDate,
-          effective_date: effectiveDate.toISOString().slice(0, 10),
-          status: installmentData.status,
+          event_date: eventDate.toISOString().slice(0, 10),
           type: installmentData.type,
           installment_id: installmentId,
           installment_number: i,
           total_installments: installmentData.totalInstallments,
+          input_source: 'installment',
         });
       }
 

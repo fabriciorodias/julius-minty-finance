@@ -84,7 +84,7 @@ export function useCashFlowProjection({
       // Get all transactions for selected accounts
       const { data: allTransactions, error: transactionsError } = await supabase
         .from('transactions')
-        .select('account_id, amount, type, status, event_date, effective_date, description')
+        .select('account_id, amount, type, event_date, description')
         .eq('user_id', user.id)
         .in('account_id', selectedAccountIds)
         .order('event_date', { ascending: true });
@@ -118,21 +118,19 @@ export function useCashFlowProjection({
         color: colors[index % colors.length]
       }));
 
-      // Calculate current balance for each account (initial + all completed transactions)
+      // Calculate current balance for each account (initial + all transactions)
       const currentAccountBalances: Record<string, number> = {};
       
       selectedAccountIds.forEach(accountId => {
         const initialBalance = initialBalanceMap[accountId];
         let accountBalance = initialBalance?.amount || 0;
 
-        // Add all completed transactions (this gives us the current "Saldo Total")
-        const completedTransactions = (allTransactions || []).filter(t => 
-          t.account_id === accountId &&
-          t.status === 'concluido' &&
-          t.effective_date
+        // Add all transactions (all transactions are effective now)
+        const accountTransactions = (allTransactions || []).filter(t => 
+          t.account_id === accountId
         );
 
-        completedTransactions.forEach(t => {
+        accountTransactions.forEach(t => {
           // Normalize transaction signs based on type
           if (t.type === 'receita') {
             accountBalance += Math.abs(t.amount);
@@ -164,16 +162,8 @@ export function useCashFlowProjection({
 
       dataPointsMap.set(initialDataPoint.date, { ...initialDataPoint });
 
-      // Now process only PENDING transactions within the date range
-      const pendingTransactions = (allTransactions || []).filter(t => {
-        if (t.status !== 'pendente') return false;
-        
-        const transactionDate = t.effective_date || t.event_date;
-        return transactionDate >= startDate && transactionDate <= endDate;
-      });
-
-      console.log('Pending transactions in range:', pendingTransactions.length);
-      console.log('Pending transactions:', pendingTransactions);
+      // Since all transactions are effective, we only need future projections from recurring
+      const futureTransactions: any[] = [];
 
       // Get recurring transactions if requested
       let recurringTransactions: any[] = [];
@@ -207,9 +197,9 @@ export function useCashFlowProjection({
         console.log('Generated recurring occurrences:', generatedRecurringTransactions.length);
       }
 
-      // Combine pending and recurring transactions
+      // Combine future and recurring transactions
       const allFutureTransactions = [
-        ...pendingTransactions,
+        ...futureTransactions,
         ...generatedRecurringTransactions
       ];
 
@@ -222,7 +212,7 @@ export function useCashFlowProjection({
 
       // Apply all future transactions day by day
       allFutureTransactions.forEach(transaction => {
-        const transactionDate = transaction.effective_date || transaction.event_date;
+        const transactionDate = transaction.event_date;
         
         console.log(`Processing transaction on ${transactionDate}:`, {
           description: transaction.description,

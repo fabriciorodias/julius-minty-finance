@@ -11,7 +11,6 @@ interface Transaction {
   description: string;
   amount: number;
   event_date: string;
-  status: 'pendente' | 'concluido';
   type: 'receita' | 'despesa';
   accounts: { name: string } | null;
   credit_cards: { name: string } | null;
@@ -48,7 +47,6 @@ export function RealizedTransactionsHover({
           description,
           amount,
           event_date,
-          status,
           type,
           accounts!left (
             name
@@ -137,12 +135,8 @@ export function RealizedTransactionsHover({
                           </p>
                         )}
                         <div className="flex items-center gap-2">
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            transaction.status === 'concluido' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {transaction.status === 'concluido' ? 'Concluído' : 'Pendente'}
+                          <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
+                            Efetivado
                           </span>
                         </div>
                       </div>

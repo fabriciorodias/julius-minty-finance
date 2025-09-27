@@ -44,7 +44,7 @@ export const useCashFlowSankey = ({
       const actualStartDate = startDate || startOfMonth(new Date());
       const actualEndDate = endDate || endOfMonth(new Date());
 
-      // Fetch transactions for the period - include both completed and pending
+      // Fetch transactions for the period (all transactions are effective)
       let query = supabase
         .from('transactions')
         .select(`
@@ -53,7 +53,6 @@ export const useCashFlowSankey = ({
           account:accounts(id, name)
         `)
         .eq('user_id', user.id)
-        .in('status', ['efetivado', 'pendente', 'concluido'])
         .gte('event_date', format(actualStartDate, 'yyyy-MM-dd'))
         .lte('event_date', format(actualEndDate, 'yyyy-MM-dd'));
 

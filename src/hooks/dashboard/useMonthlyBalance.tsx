@@ -35,7 +35,6 @@ export function useMonthlyBalance(selectedMonth: string) {
         .from('transactions')
         .select('type, amount')
         .eq('user_id', user.id)
-        .eq('status', 'concluido')  // Only include completed transactions
         .gte('event_date', startDate)
         .lt('event_date', endDate);
 
@@ -71,7 +70,6 @@ export function useAnnualData(year: number) {
         .from('transactions')
         .select('type, amount, event_date')
         .eq('user_id', user.id)
-        .eq('status', 'concluido')  // Only include completed transactions
         .gte('event_date', `${year}-01-01`)
         .lte('event_date', `${year}-12-31`);
 

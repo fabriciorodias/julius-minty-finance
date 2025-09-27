@@ -129,7 +129,6 @@ export function InstallmentRecurringModal({
       amount: data.type === 'receita' ? data.amount : -data.amount,
       category_id: data.category_id === "none" ? null : data.category_id || null,
       account_id: data.account_id,
-      status: data.status,
     };
 
     if (activeTab === 'installments') {

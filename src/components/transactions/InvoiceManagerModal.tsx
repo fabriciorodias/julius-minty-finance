@@ -43,8 +43,7 @@ export function InvoiceManagerModal({ isOpen, onClose }: InvoiceManagerModalProp
 
     transactions
       .filter(transaction => transaction.account_id && 
-        creditCardAccounts.some(account => account.id === transaction.account_id) &&
-        (!showPendingOnly || transaction.status === 'pendente'))
+        creditCardAccounts.some(account => account.id === transaction.account_id))
       .forEach(transaction => {
         const accountId = transaction.account_id!;
         const month = transaction.event_date.substring(0, 7); // YYYY-MM
@@ -118,7 +117,7 @@ export function InvoiceManagerModal({ isOpen, onClose }: InvoiceManagerModalProp
                         .sort(([a], [b]) => b.localeCompare(a)) // Sort by month descending
                         .map(([month, transactionsList]) => {
                           const total = calculateInvoiceTotal(transactionsList);
-                          const pendingCount = transactionsList.filter(t => t.status === 'pendente').length;
+                          const pendingCount = 0; // All transactions are effective now
                           
                           return (
                             <div key={month} className="border rounded-lg p-4">
@@ -149,8 +148,8 @@ export function InvoiceManagerModal({ isOpen, onClose }: InvoiceManagerModalProp
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-2">
-                                        <Badge variant={transaction.status === 'pendente' ? 'secondary' : 'default'}>
-                                          {transaction.status === 'pendente' ? 'Pendente' : 'Concluído'}
+                                        <Badge variant="default">
+                                          Efetivado
                                         </Badge>
                                         <span className="font-medium">
                                           {formatCurrency(Math.abs(transaction.amount))}

@@ -86,7 +86,7 @@ export function useProvisionedTotals({ selectedAccountIds, dateFilters }: UsePro
       // Get all transactions for selected accounts
       const { data: allTransactions, error: allError } = await supabase
         .from('transactions')
-        .select('type, amount, status, effective_date, event_date, description')
+        .select('type, amount, event_date, description')
         .eq('user_id', user.id)
         .in('account_id', selectedAccountIds);
 
@@ -94,59 +94,39 @@ export function useProvisionedTotals({ selectedAccountIds, dateFilters }: UsePro
 
       console.log('useProvisionedTotals: All transactions', allTransactions?.length || 0);
 
-      // Calculate completed transactions (status = 'concluido' AND has effective_date)
-      const completedTransactions = (allTransactions || []).filter(t => 
-        t.status === 'concluido' && t.effective_date
-      );
+      // All transactions are effective now, so we calculate the completed balance
+      console.log('useProvisionedTotals: All transactions', allTransactions?.length || 0);
       
-      console.log('useProvisionedTotals: Completed transactions', completedTransactions.length);
-      
-      const completedIncome = completedTransactions
+      const completedIncome = (allTransactions || [])
         .filter(t => t.type === 'receita')
         .reduce((sum, t) => sum + t.amount, 0);
 
-      const completedExpense = completedTransactions
+      const completedExpense = (allTransactions || [])
         .filter(t => t.type === 'despesa')
         .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
       const completedTransactionsBalance = completedIncome - completedExpense;
 
-      // Main balance (Saldo Total) = initial balances + completed transactions
+      // Main balance (Saldo Total) = initial balances + all transactions
       const completedBalance = totalInitialBalance + completedTransactionsBalance;
 
       console.log('useProvisionedTotals: Completed balance', completedBalance);
 
-      // Calculate pending transactions - use event_date for date filtering if effective_date is not available
-      // and apply date range filter to both event_date and effective_date
-      const pendingTransactions = (allTransactions || []).filter(t => {
-        if (t.status !== 'pendente') return false;
-        
-        const dateToCheck = t.effective_date || t.event_date;
-        return dateToCheck >= startDate && dateToCheck <= endDate;
-      });
-
-      console.log('useProvisionedTotals: Pending transactions', pendingTransactions.length);
-      console.log('useProvisionedTotals: Pending transactions details:', pendingTransactions);
-
-      const pendingIncome = pendingTransactions
-        .filter(t => t.type === 'receita')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-      const pendingExpense = pendingTransactions
-        .filter(t => t.type === 'despesa')
-        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-      const pendingNet = pendingIncome - pendingExpense;
+      // Since all transactions are effective, there are no pending transactions
+      // But we can still show projections based on recurring transactions if needed
+      const pendingIncome = 0;
+      const pendingExpense = 0;
+      const pendingNet = 0;
 
       console.log('useProvisionedTotals: Pending income', pendingIncome);
       console.log('useProvisionedTotals: Pending expense', pendingExpense);
       console.log('useProvisionedTotals: Pending net', pendingNet);
 
-      // Provisioned balance = main balance + pending transactions
-      const totalBalance = completedBalance + pendingNet;
+      // Total balance = completed balance (no pending transactions)
+      const totalBalance = completedBalance;
 
-      // Provisions = just the net pending transactions
-      const provisionsAmount = pendingNet;
+      // No provisions since all transactions are effective
+      const provisionsAmount = 0;
 
       console.log('useProvisionedTotals: Final results', {
         completedBalance,

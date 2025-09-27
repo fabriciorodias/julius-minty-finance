@@ -18,12 +18,10 @@ import { Institution } from '@/hooks/useInstitutions';
 
 interface TransactionFiltersProps {
   filters: {
-    dateBase?: 'event' | 'effective';
     startDate?: string;
     endDate?: string;
     categoryId?: string;
     accountId?: string;
-    status?: 'pendente' | 'concluido';
   };
   onFiltersChange: (filters: any) => void;
   searchTerm: string;
@@ -90,26 +88,7 @@ export function TransactionFilters({
         {/* Advanced Filters - Collapsible */}
         {showAdvancedFilters && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Date Base Filter */}
-              <div className="space-y-2">
-                <Label htmlFor="dateBase">Base da Data</Label>
-                <Select
-                  value={filters.dateBase || 'event'}
-                  onValueChange={(value: 'event' | 'effective') =>
-                    onFiltersChange({ ...filters, dateBase: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="event">Data do Evento</SelectItem>
-                    <SelectItem value="effective">Data de Efetivação</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Date Range */}
               <div className="space-y-2">
                 <Label htmlFor="startDate">Data Inicial</Label>
@@ -133,29 +112,6 @@ export function TransactionFilters({
                     onFiltersChange({ ...filters, endDate: e.target.value || undefined })
                   }
                 />
-              </div>
-
-              {/* Status Filter */}
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={filters.status || 'all'}
-                  onValueChange={(value) =>
-                    onFiltersChange({
-                      ...filters,
-                      status: value === 'all' ? undefined : (value as 'pendente' | 'concluido'),
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="pendente">Pendente</SelectItem>
-                    <SelectItem value="concluido">Concluído</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
 
               {/* Category Filter */}

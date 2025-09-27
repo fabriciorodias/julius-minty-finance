@@ -77,8 +77,6 @@ const transactionSchema = z.object({
   description: z.string().min(1, 'Descrição é obrigatória'),
   amount: z.string().min(1, 'Valor é obrigatório'),
   event_date: z.string().min(1, 'Data do evento é obrigatória'),
-  is_effective: z.boolean(),
-  effective_date: z.string().optional(),
   category_id: z.string().optional(),
   counterparty_id: z.string().optional(),
   source_type: z.enum(['account', 'credit_card']),
@@ -89,14 +87,6 @@ const transactionSchema = z.object({
 }, {
   message: 'Selecione uma conta ou cartão de crédito',
   path: ['account_id'],
-}).refine((data) => {
-  if (data.is_effective) {
-    return !!data.effective_date;
-  }
-  return true;
-}, {
-  message: 'Data de efetivação é obrigatória quando o lançamento está efetivado',
-  path: ['effective_date'],
 });
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
@@ -143,7 +133,6 @@ export function TransactionModal({
 
   // State for controlling date picker popovers and collapsible sections
   const [eventDateOpen, setEventDateOpen] = useState(false);
-  const [effectiveDateOpen, setEffectiveDateOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   // Create maps for institution lookup
@@ -159,8 +148,6 @@ export function TransactionModal({
       description: '',
       amount: '',
       event_date: new Date().toISOString().slice(0, 10),
-      is_effective: false,
-      effective_date: '',
       category_id: undefined,
       counterparty_id: undefined,
       source_type: 'account',
@@ -170,7 +157,6 @@ export function TransactionModal({
   });
 
   const transactionType = form.watch('type');
-  const isEffective = form.watch('is_effective');
   const sourceType = form.watch('source_type');
 
   // Filter categories based on transaction type
@@ -237,12 +223,6 @@ export function TransactionModal({
     }
   }, [availableAccounts, form, prefilledAccountId, getDefaultAccount]);
 
-  // Auto-fill effective date when marking as effective
-  useEffect(() => {
-    if (isEffective && !form.getValues('effective_date')) {
-      form.setValue('effective_date', form.getValues('event_date'));
-    }
-  }, [isEffective, form]);
 
   // Force refresh data when modal opens
   useEffect(() => {
@@ -278,8 +258,6 @@ export function TransactionModal({
             maximumFractionDigits: 2,
           }),
           event_date: transaction.event_date,
-          is_effective: transaction.status === 'concluido',
-          effective_date: transaction.effective_date || '',
           category_id: transaction.category_id || undefined,
           counterparty_id: transaction.counterparty_id || undefined,
           source_type: sourceType,
@@ -302,8 +280,6 @@ export function TransactionModal({
             maximumFractionDigits: 2,
           }),
           event_date: today,
-          is_effective: duplicateOf.status === 'concluido',
-          effective_date: duplicateOf.status === 'concluido' ? today : '',
           category_id: duplicateOf.category_id || undefined,
           counterparty_id: duplicateOf.counterparty_id || undefined,
           source_type: sourceType,
@@ -322,8 +298,6 @@ export function TransactionModal({
           description: '',
           amount: '',
           event_date: today,
-          is_effective: false,
-          effective_date: '',
           category_id: undefined,
           counterparty_id: undefined,
           source_type: defaultSourceType,
@@ -344,10 +318,8 @@ export function TransactionModal({
       description: data.description,
       amount: finalAmount,
       event_date: data.event_date,
-      effective_date: data.is_effective ? data.effective_date : undefined,
       category_id: data.category_id,
       counterparty_id: data.counterparty_id,
-      status: data.is_effective ? 'concluido' : 'pendente',
       account_id: data.account_id,
       credit_card_id: undefined,
       tags: data.tags || [],
@@ -362,8 +334,6 @@ export function TransactionModal({
         description: '',
         amount: '',
         event_date: new Date().toISOString().slice(0, 10),
-        is_effective: false,
-        effective_date: '',
         category_id: undefined,
         counterparty_id: undefined,
         source_type: data.source_type,
@@ -714,78 +684,6 @@ export function TransactionModal({
                         )}
                       />
 
-                      {/* Effective Status and Date */}
-                      <div className="space-y-3">
-                        <FormField
-                          control={form.control}
-                          name="is_effective"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none">
-                                <FormLabel className="text-sm font-medium">
-                                  Lançamento Efetivado
-                                </FormLabel>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <InfoIcon className="h-4 w-4 text-muted-foreground inline ml-1" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    Marque se o lançamento já foi efetivado/realizado
-                                  </TooltipContent>
-                                </Tooltip>
-                              </div>
-                            </FormItem>
-                          )}
-                        />
-
-                        {isEffective && (
-                          <FormField
-                            control={form.control}
-                            name="effective_date"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-col">
-                                <FormLabel className="text-sm font-medium">Data de Efetivação</FormLabel>
-                                <Popover open={effectiveDateOpen} onOpenChange={setEffectiveDateOpen}>
-                                  <PopoverTrigger asChild>
-                                    <FormControl>
-                                      <Button
-                                        variant="outline"
-                                        className={cn(
-                                          "h-10 w-full justify-start text-left font-normal",
-                                          !field.value && "text-muted-foreground"
-                                        )}
-                                      >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {field.value ? (
-                                          format(parseInputDate(field.value), "dd/MM/yyyy", { locale: ptBR })
-                                        ) : (
-                                          <span>Selecione a data</span>
-                                        )}
-                                      </Button>
-                                    </FormControl>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                      mode="single"
-                                      selected={field.value ? parseInputDate(field.value) : undefined}
-                                      onSelect={(date) => handleDateSelect(date, field.onChange, setEffectiveDateOpen)}
-                                      locale={ptBR}
-                                      className="p-3 pointer-events-auto"
-                                    />
-                                  </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        )}
-                      </div>
                     </CardContent>
                   </Card>
                 </CollapsibleContent>

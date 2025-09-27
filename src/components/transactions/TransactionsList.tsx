@@ -137,11 +137,6 @@ export function TransactionsList({
             <span className="text-sm font-medium">
               {format(parseISO(transaction.event_date), 'dd/MM/yyyy')}
             </span>
-            {transaction.effective_date && transaction.effective_date !== transaction.event_date && (
-              <span className="text-xs text-muted-foreground">
-                Efetiv.: {format(parseISO(transaction.effective_date), 'dd/MM/yyyy')}
-              </span>
-            )}
           </div>
         );
       },
@@ -229,7 +224,6 @@ export function TransactionsList({
       ),
       cell: ({ row }) => {
         const amount = row.original.amount;
-        const status = row.original.status;
         
         return (
           <div className="text-right">

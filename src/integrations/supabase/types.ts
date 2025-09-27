@@ -740,14 +740,13 @@ export type Database = {
           created_at: string
           credit_card_id: string | null
           description: string
-          effective_date: string | null
           event_date: string
           id: string
+          input_source: Database["public"]["Enums"]["input_source_type"]
           installment_id: string | null
           installment_number: number | null
           is_reviewed: boolean
           notes: string | null
-          status: string
           total_installments: number | null
           type: string
           user_id: string
@@ -760,14 +759,13 @@ export type Database = {
           created_at?: string
           credit_card_id?: string | null
           description: string
-          effective_date?: string | null
           event_date: string
           id?: string
+          input_source?: Database["public"]["Enums"]["input_source_type"]
           installment_id?: string | null
           installment_number?: number | null
           is_reviewed?: boolean
           notes?: string | null
-          status?: string
           total_installments?: number | null
           type: string
           user_id: string
@@ -780,14 +778,13 @@ export type Database = {
           created_at?: string
           credit_card_id?: string | null
           description?: string
-          effective_date?: string | null
           event_date?: string
           id?: string
+          input_source?: Database["public"]["Enums"]["input_source_type"]
           installment_id?: string | null
           installment_number?: number | null
           is_reviewed?: boolean
           notes?: string | null
-          status?: string
           total_installments?: number | null
           type?: string
           user_id?: string
@@ -888,6 +885,12 @@ export type Database = {
         | "loan"
         | "other_liabilities"
       account_type: "on_budget" | "credit"
+      input_source_type:
+        | "manual"
+        | "import"
+        | "ai_agent"
+        | "recurring"
+        | "installment"
       reconciliation_method: "manual" | "automacao" | "open_finance"
     }
     CompositeTypes: {
@@ -1028,6 +1031,13 @@ export const Constants = {
         "other_liabilities",
       ],
       account_type: ["on_budget", "credit"],
+      input_source_type: [
+        "manual",
+        "import",
+        "ai_agent",
+        "recurring",
+        "installment",
+      ],
       reconciliation_method: ["manual", "automacao", "open_finance"],
     },
   },

@@ -141,17 +141,10 @@ export function TransactionDetailsSheet({
               </p>
             </div>
             <div className="flex items-center gap-2 ml-4">
-              {transaction.status === 'pendente' ? (
-                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                  <Circle className="h-3 w-3 mr-1" />
-                  Pendente
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Concluído
-                </Badge>
-              )}
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Efetivado
+              </Badge>
             </div>
           </div>
 
@@ -254,9 +247,7 @@ export function TransactionDetailsSheet({
           <DetailItem 
             label="Data de Efetivação" 
             value={
-              transaction.effective_date ? 
-                format(parseISO(transaction.effective_date), 'dd/MM/yyyy', { locale: ptBR }) :
-                <span className="text-amber-600 italic">Pendente de liquidação</span>
+            format(parseISO(transaction.event_date), 'dd/MM/yyyy', { locale: ptBR })
             }
           />
         </DetailSection>

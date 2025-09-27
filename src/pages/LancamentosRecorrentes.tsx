@@ -7,10 +7,12 @@ import { RecurringTransactionsFilters } from "@/components/transactions/Recurrin
 import { RecurringTransactionModal } from "@/components/transactions/RecurringTransactionModal";
 import { RecurringTransactionsDashboard } from "@/components/transactions/RecurringTransactionsDashboard";
 import { RecurringTransactionsTimeline } from "@/components/transactions/RecurringTransactionsTimeline";
+import { RecurringSankeyChart } from "@/components/transactions/RecurringSankeyChart";
+import { useRecurringSankey } from "@/hooks/useRecurringSankey";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Calendar, BarChart3, Settings, ArrowLeft, TrendingUp, TrendingDown, Clock, AlertTriangle } from "lucide-react";
+import { Plus, Calendar, BarChart3, Settings, ArrowLeft, TrendingUp, TrendingDown, Clock, AlertTriangle, GitBranch } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function LancamentosRecorrentes() {
@@ -25,6 +27,7 @@ export default function LancamentosRecorrentes() {
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('compact');
   
   const { data: recurringTransactions = [], isLoading, error } = useRecurringTransactions();
+  const { data: sankeyData, isLoading: isSankeyLoading } = useRecurringSankey();
 
   // Filtered transactions
   const filteredTransactions = useMemo(() => {
@@ -242,7 +245,7 @@ export default function LancamentosRecorrentes() {
 
         {/* Main Content */}
         <Tabs defaultValue="cards" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="cards" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Gestão
@@ -254,6 +257,10 @@ export default function LancamentosRecorrentes() {
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="flow" className="flex items-center gap-2">
+              <GitBranch className="h-4 w-4" />
+              Fluxo de Recursos
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -442,6 +449,21 @@ export default function LancamentosRecorrentes() {
           {/* Dashboard View */}
           <TabsContent value="dashboard">
             <RecurringTransactionsDashboard transactions={recurringTransactions} />
+          </TabsContent>
+
+          {/* Flow View */}
+          <TabsContent value="flow">
+            {isSankeyLoading ? (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <p>Carregando fluxo de recursos...</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <RecurringSankeyChart data={sankeyData || { nodes: [], links: [] }} />
+            )}
           </TabsContent>
 
           {/* Analytics View */}

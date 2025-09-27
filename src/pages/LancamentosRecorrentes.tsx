@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useRecurringTransactions } from "@/hooks/useRecurringTransactions";
 import { RecurringTransactionCard } from "@/components/transactions/RecurringTransactionCard";
+import { RecurringTransactionCardCompact } from "@/components/transactions/RecurringTransactionCardCompact";
+import { RecurringTransactionsFilters } from "@/components/transactions/RecurringTransactionsFilters";
 import { RecurringTransactionModal } from "@/components/transactions/RecurringTransactionModal";
 import { RecurringTransactionsDashboard } from "@/components/transactions/RecurringTransactionsDashboard";
 import { RecurringTransactionsTimeline } from "@/components/transactions/RecurringTransactionsTimeline";
@@ -15,7 +17,80 @@ export default function LancamentosRecorrentes() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<string | null>(null);
   
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dueDateFilter, setDueDateFilter] = useState('all');
+  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('compact');
+  
   const { data: recurringTransactions = [], isLoading, error } = useRecurringTransactions();
+
+  // Filtered transactions
+  const filteredTransactions = useMemo(() => {
+    return recurringTransactions.filter(transaction => {
+      // Search filter
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        const matchesSearch = 
+          transaction.template_name.toLowerCase().includes(searchLower) ||
+          transaction.description?.toLowerCase().includes(searchLower) ||
+          transaction.category_name?.toLowerCase().includes(searchLower) ||
+          transaction.account_name?.toLowerCase().includes(searchLower) ||
+          transaction.counterparty_name?.toLowerCase().includes(searchLower);
+        
+        if (!matchesSearch) return false;
+      }
+
+      // Type filter
+      if (typeFilter !== 'all' && transaction.type !== typeFilter) {
+        return false;
+      }
+
+      // Status filter
+      if (statusFilter !== 'all' && transaction.status !== statusFilter) {
+        return false;
+      }
+
+      // Due date filter
+      if (dueDateFilter !== 'all') {
+        const days = transaction.days_until_due;
+        switch (dueDateFilter) {
+          case 'overdue':
+            if (days >= 0) return false;
+            break;
+          case 'next-7':
+            if (days < 0 || days > 7) return false;
+            break;
+          case 'next-30':
+            if (days < 0 || days > 30) return false;
+            break;
+        }
+      }
+
+      return true;
+    });
+  }, [recurringTransactions, searchTerm, typeFilter, statusFilter, dueDateFilter]);
+
+  // Statistics for filters and display
+  const stats = useMemo(() => {
+    const active = recurringTransactions.filter(t => t.status === 'active');
+    const upcoming = active.filter(t => t.days_until_due <= 7);
+    const overdue = active.filter(t => t.days_until_due < 0);
+    
+    const filteredRevenue = filteredTransactions.filter(t => t.type === 'receita');
+    const filteredExpense = filteredTransactions.filter(t => t.type === 'despesa');
+    const filteredOverdue = filteredTransactions.filter(t => t.days_until_due < 0);
+    
+    return {
+      active,
+      upcoming,
+      overdue,
+      filteredRevenue,
+      filteredExpense,
+      filteredOverdue
+    };
+  }, [recurringTransactions, filteredTransactions]);
 
   if (error) {
     console.error('Error loading recurring transactions:', error);
@@ -43,10 +118,6 @@ export default function LancamentosRecorrentes() {
       </AppLayout>
     );
   }
-
-  const activeTransactions = recurringTransactions.filter(t => t.status === 'active');
-  const upcomingTransactions = activeTransactions.filter(t => t.days_until_due <= 7);
-  const overdueTransactions = activeTransactions.filter(t => t.days_until_due < 0);
 
   return (
     <AppLayout>
@@ -142,7 +213,7 @@ export default function LancamentosRecorrentes() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-status-upcoming">
-                {isLoading ? <Skeleton className="h-8 w-12" /> : upcomingTransactions.length}
+                {isLoading ? <Skeleton className="h-8 w-12" /> : stats.upcoming.length}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Requer atenção
@@ -160,10 +231,10 @@ export default function LancamentosRecorrentes() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-status-overdue">
-                {isLoading ? <Skeleton className="h-8 w-12" /> : overdueTransactions.length}
+                {isLoading ? <Skeleton className="h-8 w-12" /> : stats.overdue.length}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {overdueTransactions.length > 0 ? 'Ação necessária' : 'Tudo em dia'}
+                {stats.overdue.length > 0 ? 'Ação necessária' : 'Tudo em dia'}
               </p>
             </CardContent>
           </Card>
@@ -192,35 +263,85 @@ export default function LancamentosRecorrentes() {
 
           {/* Cards View - Main Management */}
           <TabsContent value="cards" className="space-y-6">
+            {/* Filters */}
+            <RecurringTransactionsFilters
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              typeFilter={typeFilter}
+              onTypeFilterChange={setTypeFilter}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              dueDateFilter={dueDateFilter}
+              onDueDateFilterChange={setDueDateFilter}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              totalCount={recurringTransactions.length}
+              filteredCount={filteredTransactions.length}
+              revenueCount={stats.filteredRevenue.length}
+              expenseCount={stats.filteredExpense.length}
+              overdueCount={stats.filteredOverdue.length}
+            />
+
             {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className={`grid gap-4 ${
+                viewMode === 'compact' 
+                  ? 'grid-cols-1 lg:grid-cols-2' 
+                  : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+              }`}>
                 {[...Array(6)].map((_, i) => (
-                  <Skeleton key={i} className="h-48" />
+                  <Skeleton key={i} className={viewMode === 'compact' ? "h-24" : "h-48"} />
                 ))}
               </div>
-            ) : recurringTransactions.length === 0 ? (
-              <Card>
-                <CardContent className="p-12">
-                  <div className="text-center">
-                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-foreground mb-2">
-                      Nenhum lançamento recorrente
-                    </h3>
-                    <p className="text-muted-foreground mb-4">
-                      Comece criando seu primeiro lançamento recorrente para organizar melhor suas finanças
-                    </p>
-                    <Button onClick={() => setShowCreateModal(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Criar primeiro lançamento
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+            ) : filteredTransactions.length === 0 ? (
+              searchTerm || typeFilter !== 'all' || statusFilter !== 'all' || dueDateFilter !== 'all' ? (
+                <Card>
+                  <CardContent className="p-12">
+                    <div className="text-center">
+                      <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                        Nenhum lançamento encontrado
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        Tente ajustar os filtros de busca
+                      </p>
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setSearchTerm('');
+                          setTypeFilter('all');
+                          setStatusFilter('all');
+                          setDueDateFilter('all');
+                        }}
+                      >
+                        Limpar filtros
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent className="p-12">
+                    <div className="text-center">
+                      <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                        Nenhum lançamento recorrente
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        Comece criando seu primeiro lançamento recorrente para organizar melhor suas finanças
+                      </p>
+                      <Button onClick={() => setShowCreateModal(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Criar primeiro lançamento
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
             ) : (
               <div className="space-y-8">
                 {/* Receitas Section */}
                 {(() => {
-                  const receitas = recurringTransactions.filter(t => t.type === 'receita');
+                  const receitas = filteredTransactions.filter(t => t.type === 'receita');
                   return receitas.length > 0 ? (
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
@@ -235,17 +356,28 @@ export default function LancamentosRecorrentes() {
                           </p>
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className={`grid gap-4 ${
+                        viewMode === 'compact' 
+                          ? 'grid-cols-1 lg:grid-cols-2' 
+                          : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                      }`}>
                         {receitas.map((transaction, index) => (
                           <div 
                             key={transaction.id}
                             className="animate-fade-in"
-                            style={{ animationDelay: `${index * 100}ms` }}
+                            style={{ animationDelay: `${index * 50}ms` }}
                           >
-                            <RecurringTransactionCard
-                              transaction={transaction}
-                              onEdit={() => setEditingTransaction(transaction.id)}
-                            />
+                            {viewMode === 'compact' ? (
+                              <RecurringTransactionCardCompact
+                                transaction={transaction}
+                                onEdit={() => setEditingTransaction(transaction.id)}
+                              />
+                            ) : (
+                              <RecurringTransactionCard
+                                transaction={transaction}
+                                onEdit={() => setEditingTransaction(transaction.id)}
+                              />
+                            )}
                           </div>
                         ))}
                       </div>
@@ -255,7 +387,7 @@ export default function LancamentosRecorrentes() {
 
                 {/* Despesas Section */}
                 {(() => {
-                  const despesas = recurringTransactions.filter(t => t.type === 'despesa');
+                  const despesas = filteredTransactions.filter(t => t.type === 'despesa');
                   return despesas.length > 0 ? (
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
@@ -270,17 +402,28 @@ export default function LancamentosRecorrentes() {
                           </p>
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className={`grid gap-4 ${
+                        viewMode === 'compact' 
+                          ? 'grid-cols-1 lg:grid-cols-2' 
+                          : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                      }`}>
                         {despesas.map((transaction, index) => (
                           <div 
                             key={transaction.id}
                             className="animate-fade-in"
-                            style={{ animationDelay: `${index * 100}ms` }}
+                            style={{ animationDelay: `${index * 50}ms` }}
                           >
-                            <RecurringTransactionCard
-                              transaction={transaction}
-                              onEdit={() => setEditingTransaction(transaction.id)}
-                            />
+                            {viewMode === 'compact' ? (
+                              <RecurringTransactionCardCompact
+                                transaction={transaction}
+                                onEdit={() => setEditingTransaction(transaction.id)}
+                              />
+                            ) : (
+                              <RecurringTransactionCard
+                                transaction={transaction}
+                                onEdit={() => setEditingTransaction(transaction.id)}
+                              />
+                            )}
                           </div>
                         ))}
                       </div>

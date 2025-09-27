@@ -108,7 +108,7 @@ export const useCashFlowSankey = ({
         });
       });
 
-      // Central balance node
+      // Central balance node - always create it
       nodes.push({
         id: 'balance',
         name: 'Saldo',
@@ -126,26 +126,36 @@ export const useCashFlowSankey = ({
         });
       });
 
-      // Create links
+      // Create links only if we have data
       const links: SankeyLink[] = [];
 
-      // Income to balance
-      incomeByCategory.forEach((value, category) => {
-        links.push({
-          source: `income-${category}`,
-          target: 'balance',
-          value
+      // Income to balance - only if we have income
+      if (incomeByCategory.size > 0) {
+        incomeByCategory.forEach((value, category) => {
+          links.push({
+            source: `income-${category}`,
+            target: 'balance',
+            value
+          });
         });
-      });
+      }
 
-      // Balance to expenses
-      expenseByCategory.forEach((value, category) => {
-        links.push({
-          source: 'balance',
-          target: `expense-${category}`,
-          value
+      // Balance to expenses - only if we have expenses
+      if (expenseByCategory.size > 0) {
+        expenseByCategory.forEach((value, category) => {
+          links.push({
+            source: 'balance',
+            target: `expense-${category}`,
+            value
+          });
         });
-      });
+      }
+
+      // If we have no transactions, return empty data
+      if (incomeByCategory.size === 0 && expenseByCategory.size === 0) {
+        console.log('No transactions found for Sankey chart');
+        return { nodes: [], links: [] };
+      }
 
       return { nodes, links };
     },

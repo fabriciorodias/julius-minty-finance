@@ -37,7 +37,12 @@ export const FinancialSankeyChart: React.FC<FinancialSankeyChartProps> = ({
   };
 
   useEffect(() => {
-    if (!svgRef.current || !data.nodes.length || !data.links.length) return;
+    if (!svgRef.current || !data.nodes.length || !data.links.length) {
+      console.log('Sankey chart: No data or missing SVG ref');
+      return;
+    }
+
+    console.log('Sankey data:', data);
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
@@ -53,14 +58,35 @@ export const FinancialSankeyChart: React.FC<FinancialSankeyChartProps> = ({
       .nodePadding(20)
       .extent([[1, 1], [innerWidth - 1, innerHeight - 1]]);
 
-    // Prepare data for d3-sankey
+    // Prepare data for d3-sankey - ensure all referenced nodes exist
+    const nodeMap = new Map(data.nodes.map(node => [node.id, node]));
+    const validLinks = data.links.filter(link => {
+      const sourceExists = nodeMap.has(link.source);
+      const targetExists = nodeMap.has(link.target);
+      if (!sourceExists) console.warn('Missing source node:', link.source);
+      if (!targetExists) console.warn('Missing target node:', link.target);
+      return sourceExists && targetExists;
+    });
+
+    if (validLinks.length === 0) {
+      console.log('No valid links for Sankey chart');
+      return;
+    }
+
     const graph = {
       nodes: data.nodes.map(d => ({ ...d })) as ExtendedSankeyNode[],
-      links: data.links.map(d => ({ ...d })) as ExtendedSankeyLink[]
+      links: validLinks.map(d => ({ ...d })) as ExtendedSankeyLink[]
     };
 
+    console.log('Processed graph:', graph);
+
     // Apply sankey layout
-    sankeyLayout(graph as any);
+    try {
+      sankeyLayout(graph as any);
+    } catch (error) {
+      console.error('Sankey layout error:', error);
+      return;
+    }
 
     const g = svg
       .attr("width", width)

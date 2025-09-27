@@ -61,6 +61,7 @@ export function useCashFlowProjection({
         .select(`
           id,
           name,
+          subtype,
           institutions!inner(name)
         `)
         .eq('user_id', user.id)
@@ -128,6 +129,17 @@ export function useCashFlowProjection({
       const currentAccountBalances: Record<string, number> = {};
       
       selectedAccountIds.forEach(accountId => {
+        const account = accountsData?.find(a => a.id === accountId);
+        const isCreditCard = account?.subtype === 'credit_card';
+        
+        // If including credit cards and this is a credit card, set balance to 0
+        // (the payment will be simulated as a future expense)
+        if (includeCreditCards && isCreditCard) {
+          currentAccountBalances[accountId] = 0;
+          console.log(`Account ${accountId} (credit card) balance set to 0 for simulation`);
+          return;
+        }
+
         const initialBalance = initialBalanceMap[accountId];
         let accountBalance = initialBalance?.amount || 0;
 

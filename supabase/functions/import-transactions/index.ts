@@ -132,9 +132,16 @@ serve(async (req) => {
       }
     }
 
-    // Select transactions from index 0 to startIndex (inclusive) - this imports selected transaction and all newer ones
-    const transactionsToImport = transactions.slice(0, startIndex + 1)
-    console.log(`Importing ${transactionsToImport.length} transactions from index 0 to ${startIndex} (inclusive)`)
+    // Import only the specific transaction at startIndex
+    const transactionsToImport = transactions.slice(startIndex, startIndex + 1)
+    console.log(`Importing transaction at index ${startIndex}:`, {
+      count: transactionsToImport.length,
+      transaction: transactionsToImport[0] ? {
+        description: transactionsToImport[0].description,
+        amount: transactionsToImport[0].amount,
+        date: transactionsToImport[0].date
+      } : 'none'
+    })
 
     // Insert transactions into database with correct account/credit card assignment
     const transactionsToInsert = transactionsToImport.map(transaction => ({
@@ -151,6 +158,34 @@ serve(async (req) => {
 
     console.log('Inserting transactions:', transactionsToInsert.length)
     console.log('Sample transaction to insert:', transactionsToInsert[0])
+
+    // Check for potential duplicates before insertion
+    if (transactionsToInsert.length > 0) {
+      const sampleTx = transactionsToInsert[0]
+      const { data: existingTransactions } = await supabaseClient
+        .from('transactions')
+        .select('id, description, amount, event_date')
+        .eq('user_id', user.id)
+        .eq('description', sampleTx.description)
+        .eq('amount', sampleTx.amount)
+        .eq('event_date', sampleTx.event_date)
+        .limit(1)
+
+      if (existingTransactions && existingTransactions.length > 0) {
+        console.log('Duplicate transaction detected:', existingTransactions[0])
+        return new Response(
+          JSON.stringify({ 
+            error: 'Transação duplicada detectada',
+            duplicate: {
+              description: sampleTx.description,
+              amount: sampleTx.amount,
+              date: sampleTx.event_date
+            }
+          }),
+          { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
 
     const { data, error: insertError } = await supabaseClient
       .from('transactions')

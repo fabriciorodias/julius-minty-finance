@@ -250,6 +250,13 @@ function parseCSV(content: string): ParsedTransaction[] {
   
   let headerColumns: string[] = []
   let dataStartIndex = 0
+  let columnPatterns: Array<{
+    index: number
+    isDate: boolean
+    isAmount: boolean
+    hasNumbers: boolean
+    sample: string
+  }> = []
   
   if (hasHeader) {
     headerColumns = firstLineColumns.map(col => col.toLowerCase())
@@ -259,10 +266,44 @@ function parseCSV(content: string): ParsedTransaction[] {
     // No header detected, use positional mapping
     headerColumns = []
     dataStartIndex = 0
-    console.log('No header detected, using positional mapping')
+    console.log('No header detected, using smart column detection')
+    
+    // Smart detection of column structure by analyzing data patterns
+    const sampleSize = Math.min(3, lines.length - dataStartIndex)
+    
+    for (let colIndex = 0; colIndex < firstLineColumns.length; colIndex++) {
+      const columnValues = []
+      for (let lineIndex = dataStartIndex; lineIndex < dataStartIndex + sampleSize; lineIndex++) {
+        if (lineIndex < lines.length) {
+          const cols = lines[lineIndex].split(delimiter).map(col => col.replace(/"/g, '').trim())
+          if (cols[colIndex]) {
+            columnValues.push(cols[colIndex])
+          }
+        }
+      }
+      
+      const isDateColumn = columnValues.some(val => isValidDateFormat(val))
+      const isAmountColumn = columnValues.every(val => val === '' || isValidAmount(val))
+      const hasNumbers = columnValues.some(val => /^[+-]?[\d,.]+$/.test(val.replace(/[R$\s]/g, '')))
+      
+      columnPatterns.push({
+        index: colIndex,
+        isDate: isDateColumn,
+        isAmount: isAmountColumn,
+        hasNumbers: hasNumbers,
+        sample: columnValues[0] || ''
+      })
+      
+      console.log(`Column ${colIndex} analysis:`, {
+        sample: columnValues[0] || '',
+        isDate: isDateColumn,
+        isAmount: isAmountColumn,
+        hasNumbers: hasNumbers
+      })
+    }
   }
   
-  // Column mapping - either from header or positional
+  // Column mapping - either from header or smart detection
   const dateColumns = ['date', 'data', 'dt_posted', 'data de lançamento', 'data lancamento']
   const descColumns = ['description', 'descricao', 'descrição', 'memo', 'histórico', 'historico', 'name', 'estabelecimento']
   const amountColumns = ['amount', 'valor', 'valor_total', 'valor da operação', 'trnamt']
@@ -280,12 +321,64 @@ function parseCSV(content: string): ParsedTransaction[] {
       if (creditColumns.some(cc => col.includes(cc))) creditIndex = index
       if (debitColumns.some(dc => col.includes(dc))) debitIndex = index
     })
+  } else {
+    // Smart detection based on column patterns
+    if (columnPatterns.length > 0) {
+      // Find date column
+      dateIndex = columnPatterns.find(p => p.isDate)?.index ?? -1
+      
+      // Find amount column (prefer columns with negative numbers)
+      const amountCandidates = columnPatterns.filter(p => p.isAmount || p.hasNumbers)
+      if (amountCandidates.length > 0) {
+        // Prefer columns that look like amounts (with decimals, negative signs, etc.)
+        amountIndex = amountCandidates.find(p => p.isAmount)?.index ?? amountCandidates[0].index
+      }
+      
+      // Description is typically the remaining column(s), prefer first non-date, non-amount column
+      for (const pattern of columnPatterns) {
+        if (pattern.index !== dateIndex && pattern.index !== amountIndex && !pattern.isDate && !pattern.isAmount) {
+          descIndex = pattern.index
+          break
+        }
+      }
+    }
   }
 
-  // Fallback to positional mapping if no header or no matches found
-  if (dateIndex === -1) dateIndex = 0
-  if (descIndex === -1) descIndex = 1  
-  if (amountIndex === -1 && creditIndex === -1 && debitIndex === -1) amountIndex = 2
+  // Fallback to positional mapping if smart detection failed
+  if (dateIndex === -1) {
+    // Try to find date in any position by testing actual values
+    for (let i = 0; i < firstLineColumns.length; i++) {
+      if (isValidDateFormat(firstLineColumns[i])) {
+        dateIndex = i
+        break
+      }
+    }
+    // If still no date found, assume last column (common in some formats)
+    if (dateIndex === -1 && firstLineColumns.length >= 3) {
+      dateIndex = firstLineColumns.length - 1
+    } else if (dateIndex === -1) {
+      dateIndex = 0 // fallback
+    }
+  }
+  
+  if (descIndex === -1) {
+    // Description is typically first column if not date
+    descIndex = dateIndex === 0 ? 1 : 0
+  }
+  
+  if (amountIndex === -1 && creditIndex === -1 && debitIndex === -1) {
+    // Find amount column by looking for numbers
+    for (let i = 0; i < firstLineColumns.length; i++) {
+      if (i !== dateIndex && i !== descIndex && isValidAmount(firstLineColumns[i])) {
+        amountIndex = i
+        break
+      }
+    }
+    // If still not found, use middle column or second column
+    if (amountIndex === -1) {
+      amountIndex = firstLineColumns.length >= 3 ? 1 : (dateIndex === 0 ? 1 : 0)
+    }
+  }
 
   console.log('Final column mapping:', { dateIndex, descIndex, amountIndex, creditIndex, debitIndex })
 

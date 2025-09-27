@@ -23,8 +23,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Edit, 
   Trash2, 
-  CheckCircle, 
-  Circle,
   Building,
   CreditCard,
   Calendar,
@@ -33,7 +31,12 @@ import {
   User,
   Hash,
   Clock,
-  Copy
+  Copy,
+  Hand,
+  Import,
+  Bot,
+  Repeat,
+  Database
 } from 'lucide-react';
 import { TransactionWithRelations } from '@/hooks/useTransactions';
 import { TransactionTags } from './TransactionTags';
@@ -96,6 +99,25 @@ export function TransactionDetailsSheet({
   const institution = institutions.find(inst => inst.id === account?.institution_id);
   const isPositive = transaction.amount > 0;
 
+  const getInputSourceInfo = (inputSource: string) => {
+    switch (inputSource) {
+      case 'manual':
+        return { icon: Hand, text: 'Manual', variant: 'outline' as const, className: 'bg-blue-50 text-blue-700 border-blue-200' };
+      case 'import':
+        return { icon: Import, text: 'Importação', variant: 'outline' as const, className: 'bg-green-50 text-green-700 border-green-200' };
+      case 'ai_agent':
+        return { icon: Bot, text: 'IA', variant: 'outline' as const, className: 'bg-purple-50 text-purple-700 border-purple-200' };
+      case 'recurring':
+        return { icon: Repeat, text: 'Recorrente', variant: 'outline' as const, className: 'bg-orange-50 text-orange-700 border-orange-200' };
+      case 'installment':
+        return { icon: CreditCard, text: 'Parcelamento', variant: 'outline' as const, className: 'bg-gray-50 text-gray-700 border-gray-200' };
+      default:
+        return { icon: Database, text: 'Desconhecido', variant: 'outline' as const, className: 'bg-gray-50 text-gray-700 border-gray-200' };
+    }
+  };
+
+  const inputSourceInfo = getInputSourceInfo(transaction.input_source || 'manual');
+
   const DetailSection = ({ icon: Icon, title, children }: { 
     icon: React.ElementType; 
     title: string; 
@@ -141,9 +163,9 @@ export function TransactionDetailsSheet({
               </p>
             </div>
             <div className="flex items-center gap-2 ml-4">
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Efetivado
+              <Badge variant={inputSourceInfo.variant} className={inputSourceInfo.className}>
+                <inputSourceInfo.icon className="h-3 w-3 mr-1" />
+                {inputSourceInfo.text}
               </Badge>
             </div>
           </div>
@@ -225,6 +247,23 @@ export function TransactionDetailsSheet({
 
         <Separator />
 
+        {/* Input Source */}
+        <DetailSection icon={inputSourceInfo.icon} title="Origem do Input">
+          <DetailItem 
+            label="Fonte" 
+            value={
+              <div className="flex items-center gap-2">
+                <Badge variant={inputSourceInfo.variant} className={inputSourceInfo.className}>
+                  <inputSourceInfo.icon className="h-3 w-3 mr-1" />
+                  {inputSourceInfo.text}
+                </Badge>
+              </div>
+            }
+          />
+        </DetailSection>
+
+        <Separator />
+
         {/* Counterparty */}
         {transaction.counterparties && (
           <>
@@ -243,12 +282,6 @@ export function TransactionDetailsSheet({
           <DetailItem 
             label="Data do Evento" 
             value={format(parseISO(transaction.event_date), 'dd/MM/yyyy', { locale: ptBR })}
-          />
-          <DetailItem 
-            label="Data de Efetivação" 
-            value={
-            format(parseISO(transaction.event_date), 'dd/MM/yyyy', { locale: ptBR })
-            }
           />
         </DetailSection>
 

@@ -4,8 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CashFlowChartBase } from "@/components/dashboards/CashFlowChartBase";
+import { FinancialSankeyChart } from "@/components/dashboards/FinancialSankeyChart";
 import { useCashFlowProjection } from "@/hooks/useCashFlowProjection";
 import { useCashFlowMetrics } from "@/hooks/useCashFlowMetrics";
+import { useCashFlowSankey } from "@/hooks/useCashFlowSankey";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useInstitutions } from "@/hooks/useInstitutions";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,6 +52,13 @@ export default function Projecoes() {
   // Use all data for metrics
   const metricsData = dataPoints;
   const metrics = useCashFlowMetrics(metricsData);
+
+  // Sankey chart data
+  const { data: sankeyData = { nodes: [], links: [] }, isLoading: sankeyLoading } = useCashFlowSankey({
+    selectedAccounts: selectedAccountIds,
+    startDate: new Date(dateFilters.startDate),
+    endDate: new Date(dateFilters.endDate)
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -384,6 +393,20 @@ export default function Projecoes() {
           )}
         </CardContent>
       </Card>
+
+      {/* Sankey Chart */}
+      {sankeyLoading ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Fluxo de Recursos por Categoria</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-96 w-full" />
+          </CardContent>
+        </Card>
+      ) : (
+        <FinancialSankeyChart data={sankeyData} height={400} />
+      )}
 
       {/* Insights Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

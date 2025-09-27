@@ -78,6 +78,13 @@ export function useRecurringTransactions() {
       }
 
       console.log('Recurring transactions fetched:', data?.length || 0);
+      if (data && data.length > 0) {
+        console.log('First transaction type:', data[0]);
+        const comissaoTransaction = data.find(t => t.template_name === 'Comissão');
+        if (comissaoTransaction) {
+          console.log('Comissão transaction from RPC:', comissaoTransaction);
+        }
+      }
       return data as RecurringTransactionWithAnalytics[];
     }
   });

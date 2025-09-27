@@ -247,7 +247,7 @@ export function useCashFlowProjection({
                     id: `plan_${plan.id}_installment_${installment.id}`,
                     account_id: selectedAccountIds[0], // Use first account as default
                     amount: installment.planned_amount,
-                    type: plan.type === 'poupanca' ? 'despesa' : 'receita',
+        type: plan.type === 'poupanca' || plan.type === 'despesa_planejada' ? 'despesa' : 'receita',
                     event_date: installment.due_date,
                     description: `[Plano] ${plan.name} - Parcela`,
                     isPlan: true

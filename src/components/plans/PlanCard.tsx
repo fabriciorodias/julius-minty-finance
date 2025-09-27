@@ -24,8 +24,20 @@ export function PlanCard({ plan, onViewTimeline, onSettleInstallment, onWithdraw
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-  const typeLabel = plan.type === 'poupanca' ? 'Poupança' : 'Dívida';
-  const typeIcon = plan.type === 'poupanca' ? 'savings' : 'account_balance';
+  const getTypeInfo = (type: string) => {
+    switch (type) {
+      case 'poupanca':
+        return { label: 'Poupança', icon: 'savings', variant: 'default' as const };
+      case 'divida':
+        return { label: 'Dívida', icon: 'account_balance', variant: 'secondary' as const };
+      case 'despesa_planejada':
+        return { label: 'Despesa Planejada', icon: 'shopping_cart', variant: 'destructive' as const };
+      default:
+        return { label: type, icon: 'description', variant: 'outline' as const };
+    }
+  };
+
+  const typeInfo = getTypeInfo(plan.type);
 
   return (
     <Card className="mint-card">
@@ -41,14 +53,14 @@ export function PlanCard({ plan, onViewTimeline, onSettleInstallment, onWithdraw
                 />
               ) : (
                 <span className="material-icons text-mint-primary text-xl">
-                  {typeIcon}
+                  {typeInfo.icon}
                 </span>
               )}
             </div>
             <div>
               <CardTitle className="text-lg font-bold text-mint-text-primary">{plan.name}</CardTitle>
-              <Badge variant={plan.type === 'poupanca' ? 'default' : 'secondary'} className="mt-1">
-                {typeLabel}
+              <Badge variant={typeInfo.variant} className="mt-1">
+                {typeInfo.label}
               </Badge>
             </div>
           </div>
@@ -75,7 +87,7 @@ export function PlanCard({ plan, onViewTimeline, onSettleInstallment, onWithdraw
           </div>
           <div>
             <p className="text-mint-text-secondary">
-              {plan.type === 'poupanca' ? 'Guardado' : 'Pago'}
+              {plan.type === 'poupanca' ? 'Guardado' : plan.type === 'despesa_planejada' ? 'Valor' : 'Pago'}
             </p>
             <p className="font-bold text-mint-primary">{formatCurrency(totalSettled)}</p>
           </div>
@@ -104,9 +116,10 @@ export function PlanCard({ plan, onViewTimeline, onSettleInstallment, onWithdraw
             size="sm" 
             onClick={() => onSettleInstallment(plan)}
             className="flex-1"
+            disabled={plan.type === 'despesa_planejada'}
           >
             <span className="material-icons text-sm mr-1">payment</span>
-            Quitar
+            {plan.type === 'despesa_planejada' ? 'Já Realizada' : 'Quitar'}
           </Button>
           
           {plan.type === 'poupanca' && onWithdraw && currentBalance > 0 && (

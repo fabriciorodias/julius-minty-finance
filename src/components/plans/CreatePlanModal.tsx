@@ -37,7 +37,7 @@ import { CreatePlanData } from '@/hooks/usePlans';
 
 const createPlanFormSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
-  type: z.enum(['poupanca', 'divida'], {
+  type: z.enum(['poupanca', 'divida', 'despesa_planejada'], {
     required_error: 'Tipo é obrigatório',
   }),
   payment_type: z.enum(['installments', 'lump_sum'], {
@@ -86,7 +86,7 @@ export function CreatePlanModal({ isOpen, onClose, onSave, isLoading }: CreatePl
     onSave({
       name: data.name,
       type: data.type,
-      payment_type: data.payment_type,
+      payment_type: data.type === 'despesa_planejada' ? 'lump_sum' : data.payment_type,
       total_amount: Number(data.total_amount),
       start_date: data.start_date.toISOString().split('T')[0],
       end_date: data.end_date.toISOString().split('T')[0],
@@ -137,8 +137,9 @@ export function CreatePlanModal({ isOpen, onClose, onSave, isLoading }: CreatePl
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="poupanca">Poupança</SelectItem>
-                        <SelectItem value="divida">Dívida</SelectItem>
+              <SelectItem value="poupanca">Poupança</SelectItem>
+              <SelectItem value="divida">Dívida</SelectItem>
+              <SelectItem value="despesa_planejada">Despesa Planejada</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -146,27 +147,29 @@ export function CreatePlanModal({ isOpen, onClose, onSave, isLoading }: CreatePl
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="payment_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Pagamento</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="installments">Parcelado</SelectItem>
-                        <SelectItem value="lump_sum">Pagamento Único</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {form.watch('type') !== 'despesa_planejada' && (
+                <FormField
+                  control={form.control}
+                  name="payment_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Pagamento</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="installments">Parcelado</SelectItem>
+                          <SelectItem value="lump_sum">Pagamento Único</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
 
             <FormField
@@ -237,7 +240,7 @@ export function CreatePlanModal({ isOpen, onClose, onSave, isLoading }: CreatePl
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>
-                      {watchPaymentType === 'lump_sum' ? 'Data do Pagamento' : 'Data de Fim'}
+                      {form.watch('type') === 'despesa_planejada' ? 'Data da Despesa' : watchPaymentType === 'lump_sum' ? 'Data do Pagamento' : 'Data de Fim'}
                     </FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>

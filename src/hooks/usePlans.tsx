@@ -8,7 +8,7 @@ export interface Plan {
   id: string;
   user_id: string;
   name: string;
-  type: 'poupanca' | 'divida';
+  type: 'poupanca' | 'divida' | 'despesa_planejada';
   payment_type: 'installments' | 'lump_sum';
   total_amount: number;
   start_date: string;
@@ -49,7 +49,7 @@ export interface PlanWithdrawal {
 
 export interface CreatePlanData {
   name: string;
-  type: 'poupanca' | 'divida';
+  type: 'poupanca' | 'divida' | 'despesa_planejada';
   payment_type: 'installments' | 'lump_sum';
   total_amount: number;
   start_date: string;

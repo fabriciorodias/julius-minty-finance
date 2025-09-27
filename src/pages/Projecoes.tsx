@@ -47,7 +47,16 @@ export default function Projecoes() {
     sampleSize: 200
   });
 
-  const metrics = useCashFlowMetrics(dataPoints);
+  const [filteredDataPoints, setFilteredDataPoints] = useState<typeof dataPoints>([]);
+  
+  // Use filtered data for metrics when brush is active, otherwise use all data
+  const metricsData = filteredDataPoints.length > 0 ? filteredDataPoints : dataPoints;
+  const metrics = useCashFlowMetrics(metricsData);
+
+  // Handle brush filter changes
+  const handleBrushChange = (filteredData: typeof dataPoints) => {
+    setFilteredDataPoints(filteredData);
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -343,6 +352,7 @@ export default function Projecoes() {
                 height={400}
                 chartConfig={chartConfig}
                 showBrush={true}
+                onBrushChange={handleBrushChange}
               />
               
               {/* Summary Statistics */}
@@ -350,25 +360,25 @@ export default function Projecoes() {
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">Saldo Inicial</p>
                   <p className="text-lg font-semibold">
-                    {formatCurrency(dataPoints[0]?.total || 0)}
+                    {formatCurrency(metricsData[0]?.total || 0)}
                   </p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">Saldo Final</p>
                   <p className="text-lg font-semibold">
-                    {formatCurrency(dataPoints[dataPoints.length - 1]?.total || 0)}
+                    {formatCurrency(metricsData[metricsData.length - 1]?.total || 0)}
                   </p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">Variação</p>
                   <p className={`text-lg font-semibold ${
-                    (dataPoints[dataPoints.length - 1]?.total || 0) - (dataPoints[0]?.total || 0) >= 0 
+                    (metricsData[metricsData.length - 1]?.total || 0) - (metricsData[0]?.total || 0) >= 0 
                       ? 'text-financial-success' 
                       : 'text-financial-expense'
                   }`}>
-                    {((dataPoints[dataPoints.length - 1]?.total || 0) - (dataPoints[0]?.total || 0)) >= 0 ? '+' : ''}
+                    {((metricsData[metricsData.length - 1]?.total || 0) - (metricsData[0]?.total || 0)) >= 0 ? '+' : ''}
                     {formatCurrency(
-                      (dataPoints[dataPoints.length - 1]?.total || 0) - (dataPoints[0]?.total || 0)
+                      (metricsData[metricsData.length - 1]?.total || 0) - (metricsData[0]?.total || 0)
                     )}
                   </p>
                 </div>

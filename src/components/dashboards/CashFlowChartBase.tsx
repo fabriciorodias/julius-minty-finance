@@ -20,6 +20,7 @@ import {
   ultraSafeTickFormatter,
   safeCurrencyFormatter 
 } from '@/lib/date-utils';
+import { useState } from 'react';
 
 interface CashFlowChartBaseProps {
   data: CashFlowDataPoint[];
@@ -28,6 +29,7 @@ interface CashFlowChartBaseProps {
   height?: number;
   showBrush?: boolean;
   chartConfig: Record<string, any>;
+  onBrushChange?: (filteredData: CashFlowDataPoint[]) => void;
 }
 
 export function CashFlowChartBase({ 
@@ -36,8 +38,11 @@ export function CashFlowChartBase({
   showScenario = false,
   height = 400,
   showBrush = false,
-  chartConfig 
+  chartConfig,
+  onBrushChange 
 }: CashFlowChartBaseProps) {
+  const [brushStartIndex, setBrushStartIndex] = useState<number>(0);
+  const [brushEndIndex, setBrushEndIndex] = useState<number | null>(null);
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -62,6 +67,12 @@ export function CashFlowChartBase({
     return isValid;
   }) : [];
 
+  // Apply brush filtering if active
+  const actualEndIndex = brushEndIndex !== null ? brushEndIndex : Math.min(safeData.length - 1, 30);
+  const displayData = showBrush && (brushStartIndex > 0 || actualEndIndex < safeData.length - 1) 
+    ? safeData.slice(brushStartIndex, actualEndIndex + 1)
+    : safeData;
+
   const safeScenarioData = Array.isArray(scenarioData) ? scenarioData.filter(item => {
     const isValid = isValidDataPoint(item);
     if (!isValid) {
@@ -85,9 +96,9 @@ export function CashFlowChartBase({
     );
   }
 
-  // Calculate chart bounds safely
+  // Calculate chart bounds safely using display data
   const allValues = [
-    ...safeData.map(d => d.total),
+    ...displayData.map(d => d.total),
     ...(safeScenarioData.map(d => d.total) || [])
   ];
   const minValue = Math.min(...allValues);
@@ -95,23 +106,37 @@ export function CashFlowChartBase({
   const padding = Math.abs(maxValue - minValue) * 0.1 || 100; // Fallback padding
 
   // Create positive and negative data sets
-  const positiveData = safeData.map(d => ({
+  const positiveData = displayData.map(d => ({
     ...d,
     total: d.total >= 0 ? d.total : 0,
     originalTotal: d.total
   }));
 
-  const negativeData = safeData.map(d => ({
+  const negativeData = displayData.map(d => ({
     ...d,
     total: d.total < 0 ? d.total : 0,
     originalTotal: d.total
   }));
 
+  // Handle brush change
+  const handleBrushChange = (brushData: any) => {
+    if (brushData) {
+      const { startIndex, endIndex } = brushData;
+      setBrushStartIndex(startIndex || 0);
+      setBrushEndIndex(endIndex);
+      
+      if (onBrushChange) {
+        const filteredData = safeData.slice(startIndex || 0, (endIndex || safeData.length - 1) + 1);
+        onBrushChange(filteredData);
+      }
+    }
+  };
+
   return (
     <ChartContainer config={chartConfig} className="h-full">
       <ResponsiveContainer width="100%" height={height}>
         <AreaChart 
-          data={safeData} 
+          data={displayData} 
           margin={{ top: 20, right: 30, left: 20, bottom: showBrush ? 80 : 40 }}
         >
           <defs>
@@ -206,8 +231,10 @@ export function CashFlowChartBase({
               height={30}
               stroke="hsl(var(--primary))"
               tickFormatter={ultraSafeTickFormatter}
-              startIndex={0}
-              endIndex={Math.min(safeData.length - 1, 30)}
+              startIndex={brushStartIndex}
+              endIndex={actualEndIndex}
+              onChange={handleBrushChange}
+              data={safeData}
             />
           )}
 

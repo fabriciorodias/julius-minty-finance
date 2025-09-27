@@ -20,7 +20,9 @@ import { FiltersMobileDrawer } from '@/components/transactions/FiltersMobileDraw
 import { AnxiousBalancePanel } from '@/components/transactions/AnxiousBalancePanel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Upload, CreditCard, AlertTriangle, TrendingUp, Plus, MoreHorizontal, Filter, Repeat } from 'lucide-react';
+import { Upload, CreditCard, AlertTriangle, TrendingUp, Plus, MoreHorizontal, Filter, Repeat, ArrowRightLeft } from 'lucide-react';
+import { TransferModal } from '@/components/transactions/TransferModal';
+import { useTransfers, CreateTransferData } from '@/hooks/useTransfers';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { CashFlowModal } from '@/components/transactions/CashFlowModal';
@@ -43,6 +45,7 @@ export default function Lancamentos() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [isCashFlowModalOpen, setIsCashFlowModalOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionWithRelations | null>(null);
   const [duplicateOf, setDuplicateOf] = useState<TransactionWithRelations | null>(null);
@@ -83,6 +86,8 @@ export default function Lancamentos() {
     isDeleting,
     isCreatingInstallments,
   } = useTransactions(filters);
+
+  const { createTransfer, isCreating: isCreatingTransfer } = useTransfers();
 
   // Initialize selected accounts with all active accounts if none selected
   useEffect(() => {
@@ -136,6 +141,14 @@ export default function Lancamentos() {
     queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
     queryClient.invalidateQueries({ queryKey: ['account-balances', user?.id] });
     queryClient.invalidateQueries({ queryKey: ['uncategorized-count', user?.id] });
+  };
+
+  const handleSaveTransfer = (data: CreateTransferData) => {
+    createTransfer.mutate(data, {
+      onSuccess: () => {
+        setIsTransferModalOpen(false);
+      }
+    });
   };
 
   const handleDateRangeSelect = (startDate: string, endDate: string) => {
@@ -259,6 +272,10 @@ export default function Lancamentos() {
                   <DropdownMenuItem onClick={() => setIsInvoiceModalOpen(true)}>
                     <CreditCard className="h-4 w-4 mr-2" />
                     Gerenciar Faturas
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsTransferModalOpen(true)}>
+                    <ArrowRightLeft className="h-4 w-4 mr-2" />
+                    Nova Transferência
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setIsInstallmentModalOpen(true)}>
                     <TrendingUp className="h-4 w-4 mr-2" />
@@ -426,6 +443,15 @@ export default function Lancamentos() {
         accounts={accounts}
         institutions={institutions}
         dateFilters={dateFilters}
+      />
+
+      <TransferModal
+        isOpen={isTransferModalOpen}
+        onClose={() => setIsTransferModalOpen(false)}
+        onSave={handleSaveTransfer}
+        isLoading={isCreatingTransfer}
+        accounts={accounts}
+        accountBalances={balanceMap}
       />
 
       {/* Transaction Details Sheet */}

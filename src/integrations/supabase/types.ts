@@ -747,7 +747,10 @@ export type Database = {
           installment_number: number | null
           is_reviewed: boolean
           notes: string | null
+          related_account_id: string | null
           total_installments: number | null
+          transfer_id: string | null
+          transfer_type: string | null
           type: string
           user_id: string
         }
@@ -766,7 +769,10 @@ export type Database = {
           installment_number?: number | null
           is_reviewed?: boolean
           notes?: string | null
+          related_account_id?: string | null
           total_installments?: number | null
+          transfer_id?: string | null
+          transfer_type?: string | null
           type: string
           user_id: string
         }
@@ -785,7 +791,10 @@ export type Database = {
           installment_number?: number | null
           is_reviewed?: boolean
           notes?: string | null
+          related_account_id?: string | null
           total_installments?: number | null
+          transfer_id?: string | null
+          transfer_type?: string | null
           type?: string
           user_id?: string
         }
@@ -837,6 +846,26 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      create_transfer: {
+        Args: {
+          p_amount: number
+          p_description: string
+          p_event_date: string
+          p_from_account_id: string
+          p_notes?: string
+          p_to_account_id: string
+          p_user_id: string
+        }
+        Returns: {
+          destination_transaction_id: string
+          origin_transaction_id: string
+          transfer_id: string
+        }[]
+      }
+      delete_transfer: {
+        Args: { p_transfer_id: string; p_user_id: string }
+        Returns: boolean
+      }
       get_account_balances: {
         Args: { p_as_of_date?: string }
         Returns: {
@@ -878,6 +907,19 @@ export type Database = {
           type: string
           variance_percentage: number
         }[]
+      }
+      update_transfer: {
+        Args: {
+          p_amount: number
+          p_description: string
+          p_event_date: string
+          p_from_account_id: string
+          p_notes?: string
+          p_to_account_id: string
+          p_transfer_id: string
+          p_user_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {

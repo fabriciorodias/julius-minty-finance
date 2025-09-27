@@ -53,7 +53,7 @@ export const useCashFlowSankey = ({
           account:accounts(id, name)
         `)
         .eq('user_id', user.id)
-        .in('status', ['efetivado', 'pendente'])
+        .in('status', ['efetivado', 'pendente', 'concluido'])
         .gte('event_date', format(actualStartDate, 'yyyy-MM-dd'))
         .lte('event_date', format(actualEndDate, 'yyyy-MM-dd'));
 

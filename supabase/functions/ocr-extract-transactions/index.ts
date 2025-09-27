@@ -299,13 +299,42 @@ serve(async (req) => {
       )
     }
 
-    // Format transactions for frontend
-    const transactions = transactionsData.map((transaction: any, index: number) => ({
-      index,
-      description: transaction.description || 'Transação extraída via OCR',
-      amount: parseFloat(transaction.amount) || 0,
-      date: transaction.date || new Date().toISOString().slice(0, 10)
-    }))
+    // Format transactions for frontend with date validation
+    const transactions = transactionsData.map((transaction: any, index: number) => {
+      let validDate = transaction.date;
+      
+      // Check for invalid placeholder dates and replace with current date
+      if (!validDate || 
+          validDate === 'DD/MM/YYYY' || 
+          validDate === 'dd/mm/yyyy' || 
+          validDate === 'DD/MM/AAAA' ||
+          validDate.includes('DD') || 
+          validDate.includes('MM') || 
+          validDate.includes('YYYY') ||
+          validDate.includes('AAAA')) {
+        console.warn('Invalid date detected, using current date:', validDate);
+        validDate = new Date().toISOString().slice(0, 10);
+      }
+      
+      // Validate if the date is actually valid
+      try {
+        const testDate = new Date(validDate);
+        if (isNaN(testDate.getTime())) {
+          console.warn('Invalid date format, using current date:', validDate);
+          validDate = new Date().toISOString().slice(0, 10);
+        }
+      } catch (e) {
+        console.warn('Date parsing error, using current date:', validDate);
+        validDate = new Date().toISOString().slice(0, 10);
+      }
+      
+      return {
+        index,
+        description: transaction.description || 'Transação extraída via OCR',
+        amount: parseFloat(transaction.amount) || 0,
+        date: validDate
+      };
+    })
 
     // Sort transactions by date descending (most recent first)
     transactions.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())

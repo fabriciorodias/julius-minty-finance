@@ -155,6 +155,26 @@ serve(async (req) => {
   } catch (error: any) {
     console.error('Error in categorize-transactions function:', error);
     
+    // If N8N fails, return success with empty categories (allow import without categorization)
+    if (error.message.includes('N8N webhook failed')) {
+      console.warn('N8N service unavailable, allowing import without categorization');
+      
+      const { transactions } = await req.json().catch(() => ({ transactions: [] }));
+      const fallbackResponse: CategorizationResponse = {
+        success: true,
+        categorized_transactions: transactions?.map((t: Transaction) => ({
+          id: t.id,
+          category_id: undefined,
+          category_name: undefined,
+          confidence: undefined,
+        })) || [],
+      };
+
+      return new Response(JSON.stringify(fallbackResponse), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
     const errorResponse: CategorizationResponse = {
       success: false,
       error: error.message || 'Erro interno do servidor',

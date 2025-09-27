@@ -85,6 +85,23 @@ serve(async (req) => {
 
     // Prepare transactions for insertion
     const transactionsToInsert = transactions.map(transaction => {
+      // Validate and fix date format before insertion
+      let validDate = transaction.date;
+      try {
+        const testDate = new Date(validDate);
+        if (isNaN(testDate.getTime()) || 
+            validDate === 'DD/MM/YYYY' || 
+            validDate.includes('DD') || 
+            validDate.includes('MM') || 
+            validDate.includes('YYYY')) {
+          console.warn('Invalid date detected during import, using current date:', validDate);
+          validDate = new Date().toISOString().split('T')[0];
+        }
+      } catch (e) {
+        console.warn('Date parsing error during import, using current date:', validDate);
+        validDate = new Date().toISOString().split('T')[0];
+      }
+
       // Determine transaction type based on amount and account type
       let transactionType: 'receita' | 'despesa';
       let finalAmount = transaction.amount;
@@ -105,8 +122,8 @@ serve(async (req) => {
         description: transaction.description,
         amount: finalAmount,
         type: transactionType,
-        event_date: transaction.date,
-        status: 'concluido',
+        event_date: validDate,
+        input_source: 'imported' as const,
         category_id: transaction.category_id || null,
         is_reviewed: transaction.category_id ? true : false, // Mark as reviewed if categorized
       };

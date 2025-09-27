@@ -404,6 +404,8 @@ function parseCSV(content: string): ParsedTransaction[] {
     try {
       // Validate and parse date
       const dateValue = columns[dateIndex] || ''
+      console.log(`Line ${i + 1} - Date value from column ${dateIndex}: "${dateValue}"`)
+      
       if (!isValidDateFormat(dateValue)) {
         console.warn(`Line ${i + 1} has invalid date format "${dateValue}", skipping`)
         continue
@@ -411,6 +413,7 @@ function parseCSV(content: string): ParsedTransaction[] {
       
       const date = parseDate(dateValue)
       const description = columns[descIndex] || 'Transação importada'
+      console.log(`Line ${i + 1} - Description from column ${descIndex}: "${description}"`)
       
       let amount = 0
       
@@ -419,15 +422,28 @@ function parseCSV(content: string): ParsedTransaction[] {
         const creditValue = parseAmount(columns[creditIndex] || '0')
         const debitValue = parseAmount(columns[debitIndex] || '0')
         amount = creditValue - debitValue
+        console.log(`Line ${i + 1} - Credit/Debit: ${creditValue} - ${debitValue} = ${amount}`)
       } else if (creditIndex >= 0) {
         amount = parseAmount(columns[creditIndex] || '0')
+        console.log(`Line ${i + 1} - Credit amount: ${amount}`)
       } else if (debitIndex >= 0) {
         amount = -parseAmount(columns[debitIndex] || '0')
+        console.log(`Line ${i + 1} - Debit amount: ${amount}`)
       } else if (amountIndex >= 0) {
         amount = parseAmount(columns[amountIndex] || '0')
+        console.log(`Line ${i + 1} - Amount from column ${amountIndex}: "${columns[amountIndex]}" -> ${amount}`)
       }
 
       // Final validation before adding transaction
+      console.log(`Line ${i + 1} - Final validation:`, { 
+        date, 
+        description: description.trim(), 
+        amount, 
+        isValidDate: !!date,
+        isValidDesc: !!description.trim(),
+        isValidAmount: !isNaN(amount) && amount !== 0
+      })
+      
       if (!date || !description.trim() || isNaN(amount) || amount === 0) {
         console.warn(`Line ${i + 1} failed validation:`, { 
           date, 

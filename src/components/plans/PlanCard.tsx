@@ -120,6 +120,29 @@ export function PlanCard({ plan, onViewTimeline, onSettleInstallment, onWithdraw
             </Button>
           )}
         </div>
+
+        {/* Edit and Delete Actions */}
+        <div className="flex gap-2 pt-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => onEdit(plan)}
+            className="flex-1"
+          >
+            <span className="material-icons text-sm mr-1">edit</span>
+            Editar
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => onDelete(plan)}
+            className="flex-1 text-destructive hover:text-destructive"
+          >
+            <span className="material-icons text-sm mr-1">delete</span>
+            Excluir
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

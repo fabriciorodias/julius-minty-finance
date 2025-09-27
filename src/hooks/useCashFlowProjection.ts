@@ -25,13 +25,17 @@ interface UseCashFlowProjectionParams {
   };
   sampleSize?: number; // For performance optimization on long periods
   includeRecurring?: boolean;
+  includePlans?: boolean;
+  selectedPlanIds?: string[];
 }
 
 export function useCashFlowProjection({ 
   selectedAccountIds, 
   dateFilters,
   sampleSize,
-  includeRecurring = false
+  includeRecurring = false,
+  includePlans = false,
+  selectedPlanIds = []
 }: UseCashFlowProjectionParams) {
   const { user } = useAuth();
 
@@ -39,7 +43,7 @@ export function useCashFlowProjection({
     data = { dataPoints: [], accounts: [] },
     isLoading,
   } = useQuery({
-    queryKey: ['cash-flow-projection', user?.id, selectedAccountIds, dateFilters, sampleSize, includeRecurring],
+    queryKey: ['cash-flow-projection', user?.id, selectedAccountIds, dateFilters, sampleSize, includeRecurring, includePlans, selectedPlanIds],
     queryFn: async (): Promise<{ dataPoints: CashFlowDataPoint[]; accounts: AccountInfo[] }> => {
       if (!user?.id || selectedAccountIds.length === 0) {
         return { dataPoints: [], accounts: [] };
@@ -197,10 +201,71 @@ export function useCashFlowProjection({
         console.log('Generated recurring occurrences:', generatedRecurringTransactions.length);
       }
 
-      // Combine future and recurring transactions
+      // Generate plan installment occurrences
+      const generatedPlanTransactions: any[] = [];
+      if (includePlans && selectedPlanIds.length > 0) {
+        const { data: plansData, error: plansError } = await supabase
+          .from('plans')
+          .select(`
+            id,
+            name,
+            type,
+            payment_type,
+            total_amount,
+            start_date,
+            end_date,
+            plan_installments(*)
+          `)
+          .eq('user_id', user.id)
+          .in('id', selectedPlanIds);
+
+        if (plansError) {
+          console.error('Error fetching plans:', plansError);
+        } else {
+          plansData?.forEach(plan => {
+            if (plan.payment_type === 'lump_sum') {
+              // Single payment on start_date
+              const paymentDate = plan.start_date;
+              if (paymentDate >= startDate && paymentDate <= endDate) {
+                generatedPlanTransactions.push({
+                  id: `plan_${plan.id}_lump`,
+                  account_id: selectedAccountIds[0], // Use first account as default
+                  amount: plan.total_amount,
+                  type: plan.type === 'poupanca' ? 'despesa' : 'receita', // Savings = expense, Debt = income (payment reduces debt)
+                  event_date: paymentDate,
+                  description: `[Plano] ${plan.name}`,
+                  isPlan: true
+                });
+              }
+            } else {
+              // Installments
+              plan.plan_installments?.forEach((installment: any) => {
+                if (installment.status === 'pendente' && 
+                    installment.due_date >= startDate && 
+                    installment.due_date <= endDate) {
+                  generatedPlanTransactions.push({
+                    id: `plan_${plan.id}_installment_${installment.id}`,
+                    account_id: selectedAccountIds[0], // Use first account as default
+                    amount: installment.planned_amount,
+                    type: plan.type === 'poupanca' ? 'despesa' : 'receita',
+                    event_date: installment.due_date,
+                    description: `[Plano] ${plan.name} - Parcela`,
+                    isPlan: true
+                  });
+                }
+              });
+            }
+          });
+        }
+        
+        console.log('Generated plan transactions:', generatedPlanTransactions.length);
+      }
+
+      // Combine future, recurring, and plan transactions
       const allFutureTransactions = [
         ...futureTransactions,
-        ...generatedRecurringTransactions
+        ...generatedRecurringTransactions,
+        ...generatedPlanTransactions
       ];
 
       // Sort all future transactions by date

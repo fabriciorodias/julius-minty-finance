@@ -10,6 +10,7 @@ import { useCashFlowMetrics } from "@/hooks/useCashFlowMetrics";
 import { useCashFlowSankey } from "@/hooks/useCashFlowSankey";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useInstitutions } from "@/hooks/useInstitutions";
+import { usePlans } from "@/hooks/usePlans";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, AlertTriangle, Shield, Eye, Calendar } from "lucide-react";
 import { format, parseISO, addDays } from "date-fns";
@@ -18,6 +19,7 @@ import { ptBR } from "date-fns/locale";
 export default function Projecoes() {
   const { accounts = [] } = useAccounts();
   const { institutions = [] } = useInstitutions();
+  const { plans = [] } = usePlans();
   
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
   const [dateFilters, setDateFilters] = useState({
@@ -27,6 +29,8 @@ export default function Projecoes() {
   const [includeRecurring, setIncludeRecurring] = useState(true);
   const [includeCreditCards, setIncludeCreditCards] = useState(false);
   const [includeLoans, setIncludeLoans] = useState(false);
+  const [includePlans, setIncludePlans] = useState(false);
+  const [selectedPlanIds, setSelectedPlanIds] = useState<string[]>([]);
 
   // Update selected accounts when accounts data loads or liability toggles change
   useEffect(() => {
@@ -46,6 +50,8 @@ export default function Projecoes() {
     selectedAccountIds,
     dateFilters,
     includeRecurring,
+    includePlans,
+    selectedPlanIds,
     sampleSize: 200
   });
 
@@ -92,6 +98,21 @@ export default function Projecoes() {
       startDate: format(new Date(), 'yyyy-MM-dd'),
       endDate: format(addDays(new Date(), days), 'yyyy-MM-dd')
     });
+  };
+
+  const togglePlan = (planId: string) => {
+    setSelectedPlanIds(prev => {
+      if (prev.includes(planId)) {
+        return prev.filter(id => id !== planId);
+      } else {
+        return [...prev, planId];
+      }
+    });
+  };
+
+  const clearAllPlans = () => {
+    setSelectedPlanIds([]);
+    setIncludePlans(false);
   };
 
   const getRiskColor = (score: string) => {
@@ -265,6 +286,20 @@ export default function Projecoes() {
                 </label>
               </div>
               
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="include-plans"
+                  checked={includePlans}
+                  onCheckedChange={(checked) => setIncludePlans(checked === true)}
+                />
+                <label
+                  htmlFor="include-plans"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Incluir planos ({plans.length})
+                </label>
+              </div>
+              
               <div className="flex items-center gap-4 pl-4 border-l">
                 <span className="text-sm font-medium text-muted-foreground">Incluir Passivos:</span>
                 
@@ -333,6 +368,50 @@ export default function Projecoes() {
               </div>
             ))}
           </div>
+
+          {/* Plans Selection - Only show when includePlans is enabled */}
+          {includePlans && (
+            <div className="mt-4 p-4 border rounded-lg bg-muted/20">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-medium text-muted-foreground">Simular Impacto dos Planos:</h4>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={clearAllPlans}
+                  className="text-xs"
+                >
+                  Limpar Todos
+                </Button>
+              </div>
+              
+              <div className="flex flex-wrap gap-2">
+                {plans.map((plan) => (
+                  <div key={plan.id} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`plan-${plan.id}`}
+                      checked={selectedPlanIds.includes(plan.id)}
+                      onCheckedChange={() => togglePlan(plan.id)}
+                    />
+                    <Badge 
+                      variant="outline"
+                      className={`font-medium ${plan.type === 'poupanca' ? 'border-financial-success' : 'border-financial-expense'}`}
+                    >
+                      <span className={`mr-2 ${plan.type === 'poupanca' ? 'text-financial-success' : 'text-financial-expense'}`}>
+                        {plan.type === 'poupanca' ? '💰' : '📋'}
+                      </span>
+                      {plan.name} ({formatCurrency(plan.total_amount)})
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+              
+              {plans.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Nenhum plano encontrado. Crie planos na aba "Planos" para simular seu impacto.
+                </p>
+              )}
+            </div>
+          )}
         </CardHeader>
 
         <CardContent>

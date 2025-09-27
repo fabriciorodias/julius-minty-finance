@@ -85,8 +85,23 @@ serve(async (req) => {
 
     // Prepare transactions for insertion
     const transactionsToInsert = transactions.map(transaction => {
-      // Validate and fix date format before insertion
+      // Enhanced date validation for optimized N8N format
       let validDate = transaction.date;
+      
+      // Handle N8N optimized response formats
+      if (validDate === 'INVALID_DATE') {
+        console.warn('N8N returned INVALID_DATE, using current date');
+        validDate = new Date().toISOString().split('T')[0];
+      }
+      
+      // Convert DD/MM/YYYY to ISO format if needed (backward compatibility)
+      if (validDate && validDate.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+        const [day, month, year] = validDate.split('/');
+        validDate = `${year}-${month}-${day}`;
+        console.log(`Converted date format during import: ${transaction.date} → ${validDate}`);
+      }
+      
+      // Validate final date
       try {
         const testDate = new Date(validDate);
         if (isNaN(testDate.getTime()) || 

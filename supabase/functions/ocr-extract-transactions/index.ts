@@ -299,11 +299,17 @@ serve(async (req) => {
       )
     }
 
-    // Format transactions for frontend with date validation
+    // Format transactions for frontend with enhanced validation for optimized N8N prompt
     const transactions = transactionsData.map((transaction: any, index: number) => {
       let validDate = transaction.date;
       
-      // Check for invalid placeholder dates and replace with current date
+      // Handle ISO dates from optimized N8N prompt
+      if (validDate === 'INVALID_DATE') {
+        console.warn('N8N returned INVALID_DATE, using current date');
+        validDate = new Date().toISOString().slice(0, 10);
+      }
+      
+      // Check for legacy placeholder dates and replace with current date
       if (!validDate || 
           validDate === 'DD/MM/YYYY' || 
           validDate === 'dd/mm/yyyy' || 
@@ -312,8 +318,15 @@ serve(async (req) => {
           validDate.includes('MM') || 
           validDate.includes('YYYY') ||
           validDate.includes('AAAA')) {
-        console.warn('Invalid date detected, using current date:', validDate);
+        console.warn('Invalid placeholder date detected, using current date:', validDate);
         validDate = new Date().toISOString().slice(0, 10);
+      }
+      
+      // Convert DD/MM/YYYY format to ISO if needed (backward compatibility)
+      if (validDate && validDate.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+        const [day, month, year] = validDate.split('/');
+        validDate = `${year}-${month}-${day}`;
+        console.log(`Converted DD/MM/YYYY to ISO: ${transaction.date} → ${validDate}`);
       }
       
       // Validate if the date is actually valid
@@ -328,10 +341,29 @@ serve(async (req) => {
         validDate = new Date().toISOString().slice(0, 10);
       }
       
+      // Enhanced amount processing for optimized N8N prompt
+      let processedAmount = 0;
+      if (transaction.amount !== undefined && transaction.amount !== null) {
+        processedAmount = parseFloat(transaction.amount);
+        if (isNaN(processedAmount)) {
+          console.warn('Invalid amount detected, using 0:', transaction.amount);
+          processedAmount = 0;
+        }
+      }
+      
+      // Enhanced description processing
+      let processedDescription = transaction.description;
+      if (!processedDescription || processedDescription.trim() === '') {
+        processedDescription = 'Transação extraída via OCR';
+      } else if (processedDescription === 'Transação sem descrição') {
+        // Keep the N8N placeholder for missing descriptions
+        processedDescription = 'Transação sem descrição';
+      }
+      
       return {
         index,
-        description: transaction.description || 'Transação extraída via OCR',
-        amount: parseFloat(transaction.amount) || 0,
+        description: processedDescription,
+        amount: processedAmount,
         date: validDate
       };
     })

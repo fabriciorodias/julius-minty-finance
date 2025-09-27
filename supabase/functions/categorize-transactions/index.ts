@@ -104,13 +104,17 @@ serve(async (req) => {
     let categorizedTransactions: CategorizedTransaction[] = [];
     let rawCategorizedTransactions: any[] = [];
 
-    // Handle different possible response formats from N8N
-    if (Array.isArray(n8nResult) && n8nResult.length > 0) {
-      // Format: [{ response: { output: { categorized_transactions: [...] } } }]
-      console.log('Detected array format response from N8N');
-      if (n8nResult[0]?.response?.output?.categorized_transactions) {
+    // Handle different possible response formats from N8N (optimized for cleaner responses)
+    if (Array.isArray(n8nResult)) {
+      // Direct array format from optimized N8N prompt
+      if (n8nResult.length > 0 && n8nResult[0].hasOwnProperty('id')) {
+        console.log('Detected direct categorized transactions array from optimized N8N');
+        rawCategorizedTransactions = n8nResult;
+      }
+      // Legacy nested format
+      else if (n8nResult.length > 0 && n8nResult[0]?.response?.output?.categorized_transactions) {
+        console.log('Detected legacy array format response from N8N');
         rawCategorizedTransactions = n8nResult[0].response.output.categorized_transactions;
-        console.log('Extracted categorized_transactions from nested structure');
       }
     } else if (n8nResult.output?.categorized_transactions) {
       // Format: { output: { categorized_transactions: [...] } }

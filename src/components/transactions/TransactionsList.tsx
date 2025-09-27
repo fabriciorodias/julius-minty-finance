@@ -235,9 +235,9 @@ export function TransactionsList({
           <div className="text-right">
             <div className={cn(
               "font-medium text-sm",
-              amount > 0 ? "text-green-600" : "text-red-600"
+              row.original.type === 'receita' ? "text-green-600" : "text-red-600"
             )}>
-              {amount > 0 ? '+' : ''}{formatCurrency(Math.abs(amount))}
+              {row.original.type === 'receita' ? '+' : '-'}{formatCurrency(Math.abs(amount))}
             </div>
             {status === 'pendente' && (
               <div className="text-xs text-amber-600 font-medium">

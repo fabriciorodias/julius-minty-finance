@@ -258,7 +258,7 @@ export function useRecurringTransactionMutations() {
 
       const transactionData = {
         description: recurringTransaction.description,
-        amount: amount,
+        amount: recurringTransaction.type === 'despesa' ? -Math.abs(amount) : Math.abs(amount),
         type: recurringTransaction.type,
         event_date: event_date,
         status: 'concluido' as const,

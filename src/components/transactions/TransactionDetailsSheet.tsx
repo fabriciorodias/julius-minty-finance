@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   Sheet, 
@@ -249,13 +249,13 @@ export function TransactionDetailsSheet({
         <DetailSection icon={Calendar} title="Datas">
           <DetailItem 
             label="Data do Evento" 
-            value={format(new Date(transaction.event_date), 'dd/MM/yyyy', { locale: ptBR })}
+            value={format(parseISO(transaction.event_date), 'dd/MM/yyyy', { locale: ptBR })}
           />
           <DetailItem 
             label="Data de Efetivação" 
             value={
               transaction.effective_date ? 
-                format(new Date(transaction.effective_date), 'dd/MM/yyyy', { locale: ptBR }) :
+                format(parseISO(transaction.effective_date), 'dd/MM/yyyy', { locale: ptBR }) :
                 <span className="text-amber-600 italic">Pendente de liquidação</span>
             }
           />
@@ -306,7 +306,7 @@ export function TransactionDetailsSheet({
         <DetailSection icon={Clock} title="Metadados">
           <DetailItem 
             label="Criado em" 
-            value={format(new Date(transaction.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+            value={format(parseISO(transaction.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
           />
           <DetailItem 
             label="ID" 

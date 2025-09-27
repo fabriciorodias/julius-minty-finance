@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
   ColumnDef,
@@ -135,11 +135,11 @@ export function TransactionsList({
         return (
           <div className="flex flex-col">
             <span className="text-sm font-medium">
-              {format(new Date(transaction.event_date), 'dd/MM/yyyy')}
+              {format(parseISO(transaction.event_date), 'dd/MM/yyyy')}
             </span>
             {transaction.effective_date && transaction.effective_date !== transaction.event_date && (
               <span className="text-xs text-muted-foreground">
-                Efetiv.: {format(new Date(transaction.effective_date), 'dd/MM/yyyy')}
+                Efetiv.: {format(parseISO(transaction.effective_date), 'dd/MM/yyyy')}
               </span>
             )}
           </div>

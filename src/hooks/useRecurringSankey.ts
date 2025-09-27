@@ -72,33 +72,33 @@ export const useRecurringSankey = () => {
 
       // Processar dados para criar estrutura sankey
       const incomeByCategory = new Map<string, number>();
-      const expenseByCategory = new Map<string, number>();
+      const expensesByName = new Map<string, number>();
       let totalIncome = 0;
       let totalExpense = 0;
 
       recurringTransactions?.forEach(transaction => {
         const amount = Math.abs(Number(transaction.expected_amount));
-        // Usar nome da categoria se disponível, senão usar nome do template ou 'Sem Categoria'
-        let categoryName = 'Sem Categoria';
-        
-        if (transaction.category_id && categoriesMap.has(transaction.category_id)) {
-          categoryName = categoriesMap.get(transaction.category_id)!;
-        } else {
-          // Usar o nome do template como fallback
-          categoryName = transaction.template_name || 'Sem Categoria';
-        }
         
         if (transaction.type === 'receita') {
+          // Agrupar receitas por categoria
+          let categoryName = 'Sem Categoria';
+          
+          if (transaction.category_id && categoriesMap.has(transaction.category_id)) {
+            categoryName = categoriesMap.get(transaction.category_id)!;
+          }
+          
           incomeByCategory.set(categoryName, (incomeByCategory.get(categoryName) || 0) + amount);
           totalIncome += amount;
         } else if (transaction.type === 'despesa') {
-          expenseByCategory.set(categoryName, (expenseByCategory.get(categoryName) || 0) + amount);
+          // Criar nós individuais para cada despesa usando template_name
+          const expenseName = transaction.template_name || 'Despesa Sem Nome';
+          expensesByName.set(expenseName, amount);
           totalExpense += amount;
         }
       });
 
       console.log('Income by category:', Object.fromEntries(incomeByCategory));
-      console.log('Expense by category:', Object.fromEntries(expenseByCategory));
+      console.log('Expenses by name:', Object.fromEntries(expensesByName));
       console.log('Total income:', totalIncome);
       console.log('Total expense:', totalExpense);
 
@@ -123,11 +123,11 @@ export const useRecurringSankey = () => {
         color: 'hsl(var(--muted))'
       });
 
-      // Categorias de despesa (lado direito)
-      expenseByCategory.forEach((value, category) => {
+      // Despesas individuais (lado direito)
+      expensesByName.forEach((value, expenseName) => {
         nodes.push({
-          id: `expense-${category}`,
-          name: category,
+          id: `expense-${expenseName}`,
+          name: expenseName,
           category: 'expense',
           color: 'hsl(var(--chart-2))'
         });
@@ -148,18 +148,18 @@ export const useRecurringSankey = () => {
       }
 
       // Saldo para despesas - apenas se tiver despesas
-      if (expenseByCategory.size > 0) {
-        expenseByCategory.forEach((value, category) => {
+      if (expensesByName.size > 0) {
+        expensesByName.forEach((value, expenseName) => {
           links.push({
             source: 'balance',
-            target: `expense-${category}`,
+            target: `expense-${expenseName}`,
             value
           });
         });
       }
 
       // Se não temos transações, retornar dados vazios
-      if (incomeByCategory.size === 0 && expenseByCategory.size === 0) {
+      if (incomeByCategory.size === 0 && expensesByName.size === 0) {
         console.log('No recurring transactions found for Sankey chart');
         return { nodes: [], links: [] };
       }

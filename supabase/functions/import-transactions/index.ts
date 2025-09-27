@@ -145,8 +145,7 @@ serve(async (req) => {
       description: transaction.description,
       amount: transaction.amount,
       event_date: transaction.date,
-      effective_date: null,
-      status: 'pendente',
+      input_source: 'imported' as const,
       type: transaction.amount >= 0 ? 'receita' : 'despesa',
     }))
 

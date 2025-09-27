@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -33,9 +33,9 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { CreatePlanData } from '@/hooks/usePlans';
+import { PlanWithInstallments, CreatePlanData } from '@/hooks/usePlans';
 
-const createPlanFormSchema = z.object({
+const editPlanFormSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   type: z.enum(['poupanca', 'divida'], {
     required_error: 'Tipo é obrigatório',
@@ -59,31 +59,41 @@ const createPlanFormSchema = z.object({
   }
 );
 
-type CreatePlanFormData = z.infer<typeof createPlanFormSchema>;
+type EditPlanFormData = z.infer<typeof editPlanFormSchema>;
 
-interface CreatePlanModalProps {
+interface EditPlanModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: CreatePlanData) => void;
+  onSave: (id: string, data: Partial<CreatePlanData>) => void;
+  plan: PlanWithInstallments | null;
   isLoading: boolean;
 }
 
-export function CreatePlanModal({ isOpen, onClose, onSave, isLoading }: CreatePlanModalProps) {
-  const form = useForm<CreatePlanFormData>({
-    resolver: zodResolver(createPlanFormSchema),
-    defaultValues: {
-      name: '',
-      type: 'poupanca',
-      payment_type: 'installments',
-      total_amount: 0,
-      notes: '',
-    },
+export function EditPlanModal({ isOpen, onClose, onSave, plan, isLoading }: EditPlanModalProps) {
+  const form = useForm<EditPlanFormData>({
+    resolver: zodResolver(editPlanFormSchema),
   });
 
   const watchPaymentType = form.watch('payment_type');
 
-  const onSubmit = (data: CreatePlanFormData) => {
-    onSave({
+  useEffect(() => {
+    if (plan && isOpen) {
+      form.reset({
+        name: plan.name,
+        type: plan.type as 'poupanca' | 'divida',
+        payment_type: (plan.payment_type as 'installments' | 'lump_sum') || 'installments',
+        total_amount: Number(plan.total_amount),
+        start_date: new Date(plan.start_date + 'T12:00:00'),
+        end_date: new Date(plan.end_date + 'T12:00:00'),
+        notes: plan.notes || '',
+      });
+    }
+  }, [plan, isOpen, form]);
+
+  const onSubmit = (data: EditPlanFormData) => {
+    if (!plan) return;
+    
+    onSave(plan.id, {
       name: data.name,
       type: data.type,
       payment_type: data.payment_type,
@@ -92,7 +102,6 @@ export function CreatePlanModal({ isOpen, onClose, onSave, isLoading }: CreatePl
       end_date: data.end_date.toISOString().split('T')[0],
       notes: data.notes || '',
     });
-    form.reset();
   };
 
   const handleClose = () => {
@@ -100,11 +109,13 @@ export function CreatePlanModal({ isOpen, onClose, onSave, isLoading }: CreatePl
     onClose();
   };
 
+  if (!plan) return null;
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-foreground">Criar Novo Plano</DialogTitle>
+          <DialogTitle className="text-foreground">Editar Plano</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -301,7 +312,7 @@ export function CreatePlanModal({ isOpen, onClose, onSave, isLoading }: CreatePl
                 Cancelar
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Criando...' : 'Criar Plano'}
+                {isLoading ? 'Salvando...' : 'Salvar Alterações'}
               </Button>
             </DialogFooter>
           </form>

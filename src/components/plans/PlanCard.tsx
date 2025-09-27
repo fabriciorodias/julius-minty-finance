@@ -11,9 +11,11 @@ interface PlanCardProps {
   onViewTimeline: (plan: PlanWithInstallments) => void;
   onSettleInstallment: (plan: PlanWithInstallments) => void;
   onWithdraw?: (plan: PlanWithInstallments) => void;
+  onEdit: (plan: PlanWithInstallments) => void;
+  onDelete: (plan: PlanWithInstallments) => void;
 }
 
-export function PlanCard({ plan, onViewTimeline, onSettleInstallment, onWithdraw }: PlanCardProps) {
+export function PlanCard({ plan, onViewTimeline, onSettleInstallment, onWithdraw, onEdit, onDelete }: PlanCardProps) {
   const totalSettled = plan.installments.reduce((sum, inst) => sum + inst.settled_amount, 0);
   const totalWithdrawn = plan.withdrawals.reduce((sum, w) => sum + w.amount, 0);
   const currentBalance = totalSettled - totalWithdrawn;

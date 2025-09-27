@@ -8,6 +8,8 @@ import { CreatePlanModal } from '@/components/plans/CreatePlanModal';
 import { SettleInstallmentModal } from '@/components/plans/SettleInstallmentModal';
 import { WithdrawModal } from '@/components/plans/WithdrawModal';
 import { TimelineModal } from '@/components/plans/TimelineModal';
+import { EditPlanModal } from '@/components/plans/EditPlanModal';
+import { DeleteConfirmationDialog } from '@/components/transactions/DeleteConfirmationDialog';
 import { Plus } from 'lucide-react';
 
 const Planos = () => {
@@ -15,20 +17,44 @@ const Planos = () => {
     plans,
     isLoading,
     createPlan,
+    updatePlan,
+    deletePlan,
     settleInstallment,
     createWithdrawal,
     updateInstallments,
     isCreating,
+    isUpdating,
+    isDeleting,
     isSettling,
     isCreatingWithdrawal,
     isUpdatingInstallments,
   } = usePlans();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PlanWithInstallments | null>(null);
+
+  const handleEdit = (plan: PlanWithInstallments) => {
+    setSelectedPlan(plan);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDelete = (plan: PlanWithInstallments) => {
+    setSelectedPlan(plan);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (selectedPlan) {
+      deletePlan(selectedPlan.id);
+      setIsDeleteModalOpen(false);
+      setSelectedPlan(null);
+    }
+  };
 
   const handleViewTimeline = (plan: PlanWithInstallments) => {
     setSelectedPlan(plan);
@@ -167,6 +193,8 @@ const Planos = () => {
               onViewTimeline={handleViewTimeline}
               onSettleInstallment={handleSettleInstallment}
               onWithdraw={plan.type === 'poupanca' ? handleWithdraw : undefined}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
             />
           ))}
         </div>
@@ -178,6 +206,39 @@ const Planos = () => {
         onClose={() => setIsCreateModalOpen(false)}
         onSave={createPlan}
         isLoading={isCreating}
+      />
+
+      <EditPlanModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedPlan(null);
+        }}
+        onSave={(id, data) => {
+          const updates: any = { id };
+          if (data.name) updates.name = data.name;
+          if (data.type) updates.type = data.type;
+          if (data.payment_type) updates.payment_type = data.payment_type;
+          if (data.total_amount) updates.total_amount = data.total_amount;
+          if (data.start_date) updates.start_date = data.start_date;
+          if (data.end_date) updates.end_date = data.end_date;
+          if (data.notes !== undefined) updates.notes = data.notes;
+          updatePlan(updates);
+        }}
+        plan={selectedPlan}
+        isLoading={isUpdating}
+      />
+
+      <DeleteConfirmationDialog
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedPlan(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Excluir Plano"
+        description={`Tem certeza que deseja excluir o plano "${selectedPlan?.name}"? Todas as parcelas e retiradas relacionadas também serão removidas. Esta ação não pode ser desfeita.`}
+        isLoading={isDeleting}
       />
 
       <SettleInstallmentModal

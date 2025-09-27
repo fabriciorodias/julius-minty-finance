@@ -9,6 +9,7 @@ export interface Plan {
   user_id: string;
   name: string;
   type: 'poupanca' | 'divida';
+  payment_type: 'installments' | 'lump_sum';
   total_amount: number;
   start_date: string;
   end_date: string;
@@ -49,6 +50,7 @@ export interface PlanWithdrawal {
 export interface CreatePlanData {
   name: string;
   type: 'poupanca' | 'divida';
+  payment_type: 'installments' | 'lump_sum';
   total_amount: number;
   start_date: string;
   end_date: string;
@@ -105,19 +107,6 @@ export function usePlans() {
     mutationFn: async (planData: CreatePlanData) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Calculate months between start and end date
-      const startDate = new Date(planData.start_date);
-      const endDate = new Date(planData.end_date);
-      const months = [];
-      
-      const current = new Date(startDate);
-      while (current <= endDate) {
-        months.push(new Date(current));
-        current.setMonth(current.getMonth() + 1);
-      }
-
-      const monthlyAmount = planData.total_amount / months.length;
-
       // Create plan
       const { data: plan, error: planError } = await supabase
         .from('plans')
@@ -130,19 +119,46 @@ export function usePlans() {
 
       if (planError) throw planError;
 
-      // Create installments
-      const installments = months.map((month) => ({
-        plan_id: plan.id,
-        user_id: user.id,
-        due_date: month.toISOString().slice(0, 10),
-        planned_amount: monthlyAmount,
-      }));
+      // Create installments based on payment type
+      if (planData.payment_type === 'lump_sum') {
+        // Single installment on end_date
+        const { error: installmentsError } = await supabase
+          .from('plan_installments')
+          .insert({
+            plan_id: plan.id,
+            user_id: user.id,
+            due_date: planData.end_date,
+            planned_amount: planData.total_amount,
+          });
 
-      const { error: installmentsError } = await supabase
-        .from('plan_installments')
-        .insert(installments);
+        if (installmentsError) throw installmentsError;
+      } else {
+        // Multiple installments (existing logic)
+        const startDate = new Date(planData.start_date);
+        const endDate = new Date(planData.end_date);
+        const months = [];
+        
+        const current = new Date(startDate);
+        while (current <= endDate) {
+          months.push(new Date(current));
+          current.setMonth(current.getMonth() + 1);
+        }
 
-      if (installmentsError) throw installmentsError;
+        const monthlyAmount = planData.total_amount / months.length;
+
+        const installments = months.map((month) => ({
+          plan_id: plan.id,
+          user_id: user.id,
+          due_date: month.toISOString().slice(0, 10),
+          planned_amount: monthlyAmount,
+        }));
+
+        const { error: installmentsError } = await supabase
+          .from('plan_installments')
+          .insert(installments);
+
+        if (installmentsError) throw installmentsError;
+      }
 
       return plan;
     },
@@ -334,17 +350,69 @@ export function usePlans() {
     },
   });
 
+  const deletePlanMutation = useMutation({
+    mutationFn: async (planId: string) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      // Delete plan withdrawals first
+      const { error: withdrawalsError } = await supabase
+        .from('plan_withdrawals')
+        .delete()
+        .eq('plan_id', planId)
+        .eq('user_id', user.id);
+
+      if (withdrawalsError) throw withdrawalsError;
+
+      // Delete plan installments
+      const { error: installmentsError } = await supabase
+        .from('plan_installments')
+        .delete()
+        .eq('plan_id', planId)
+        .eq('user_id', user.id);
+
+      if (installmentsError) throw installmentsError;
+
+      // Delete the plan
+      const { error: planError } = await supabase
+        .from('plans')
+        .delete()
+        .eq('id', planId)
+        .eq('user_id', user.id);
+
+      if (planError) throw planError;
+
+      return planId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['plans', user?.id] });
+      toast({
+        title: "Plano excluído",
+        description: "O plano foi excluído com sucesso.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting plan:', error);
+      toast({
+        title: "Erro ao excluir plano",
+        description: "Não foi possível excluir o plano. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     plans,
     isLoading,
     error,
     createPlan: createPlanMutation.mutate,
     updatePlan: updatePlanMutation.mutate,
+    deletePlan: deletePlanMutation.mutate,
     settleInstallment: settleInstallmentMutation.mutate,
     createWithdrawal: createWithdrawalMutation.mutate,
     updateInstallments: updateInstallmentsMutation.mutate,
     isCreating: createPlanMutation.isPending,
     isUpdating: updatePlanMutation.isPending,
+    isDeleting: deletePlanMutation.isPending,
     isSettling: settleInstallmentMutation.isPending,
     isCreatingWithdrawal: createWithdrawalMutation.isPending,
     isUpdatingInstallments: updateInstallmentsMutation.isPending,

@@ -24,18 +24,17 @@ export function TransactionImportPreview({
   selectedStartIndex, 
   onStartIndexChange 
 }: TransactionImportPreviewProps) {
-  // Calcular quantas transações serão importadas: da selecionada (índice) até a mais recente (índice 0)
-  const transactionsToImport = selectedStartIndex + 1;
+  // Apenas a transação selecionada será importada
+  const transactionsToImport = 1;
 
   return (
     <div className="space-y-4">
       <div className="text-center p-4 bg-mint-light rounded-lg">
         <p className="text-sm text-mint-text-secondary mb-2">
-          Selecione a partir de qual transação você deseja importar
+          Selecione qual transação você deseja importar
         </p>
         <p className="text-lg font-semibold text-mint-text-primary">
-          {transactionsToImport} transação{transactionsToImport !== 1 ? 'ões' : ''} 
-          {transactionsToImport !== 1 ? ' serão importadas' : ' será importada'}
+          A transação selecionada será importada
         </p>
       </div>
 

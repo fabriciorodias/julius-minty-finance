@@ -296,7 +296,6 @@ export function CashFlowHero({ selectedAccountIds }: CashFlowHeroProps) {
               scenarioData={simulationResult?.scenarioDataPoints}
               showScenario={scenarioAdjustments.length > 0}
               height={384}
-              showBrush={mode === 'analytical'}
               chartConfig={chartConfig}
             />
           )}

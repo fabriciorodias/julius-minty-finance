@@ -47,16 +47,9 @@ export default function Projecoes() {
     sampleSize: 200
   });
 
-  const [filteredDataPoints, setFilteredDataPoints] = useState<typeof dataPoints>([]);
-  
-  // Use filtered data for metrics when brush is active, otherwise use all data
-  const metricsData = filteredDataPoints.length > 0 ? filteredDataPoints : dataPoints;
+  // Use all data for metrics
+  const metricsData = dataPoints;
   const metrics = useCashFlowMetrics(metricsData);
-
-  // Handle brush filter changes
-  const handleBrushChange = (filteredData: typeof dataPoints) => {
-    setFilteredDataPoints(filteredData);
-  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -351,8 +344,6 @@ export default function Projecoes() {
                 data={dataPoints}
                 height={400}
                 chartConfig={chartConfig}
-                showBrush={true}
-                onBrushChange={handleBrushChange}
               />
               
               {/* Summary Statistics */}

@@ -176,7 +176,6 @@ export function CashFlowModal({
               <CashFlowChartBase
                 data={dataPoints}
                 height={400}
-                showBrush={true}
                 chartConfig={chartConfig}
               />
             )}

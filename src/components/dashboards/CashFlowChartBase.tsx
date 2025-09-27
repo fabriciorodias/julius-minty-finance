@@ -27,9 +27,7 @@ interface CashFlowChartBaseProps {
   scenarioData?: CashFlowDataPoint[];
   showScenario?: boolean;
   height?: number;
-  showBrush?: boolean;
   chartConfig: Record<string, any>;
-  onBrushChange?: (filteredData: CashFlowDataPoint[]) => void;
 }
 
 export function CashFlowChartBase({ 
@@ -37,12 +35,8 @@ export function CashFlowChartBase({
   scenarioData, 
   showScenario = false,
   height = 400,
-  showBrush = false,
-  chartConfig,
-  onBrushChange 
+  chartConfig
 }: CashFlowChartBaseProps) {
-  const [brushStartIndex, setBrushStartIndex] = useState<number>(0);
-  const [brushEndIndex, setBrushEndIndex] = useState<number | null>(null);
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -67,11 +61,8 @@ export function CashFlowChartBase({
     return isValid;
   }) : [];
 
-  // Apply brush filtering if active
-  const actualEndIndex = brushEndIndex !== null ? brushEndIndex : Math.min(safeData.length - 1, 30);
-  const displayData = showBrush && (brushStartIndex > 0 || actualEndIndex < safeData.length - 1) 
-    ? safeData.slice(brushStartIndex, actualEndIndex + 1)
-    : safeData;
+  // Use all safe data for display
+  const displayData = safeData;
 
   const safeScenarioData = Array.isArray(scenarioData) ? scenarioData.filter(item => {
     const isValid = isValidDataPoint(item);
@@ -118,26 +109,13 @@ export function CashFlowChartBase({
     originalTotal: d.total
   }));
 
-  // Handle brush change
-  const handleBrushChange = (brushData: any) => {
-    if (brushData) {
-      const { startIndex, endIndex } = brushData;
-      setBrushStartIndex(startIndex || 0);
-      setBrushEndIndex(endIndex);
-      
-      if (onBrushChange) {
-        const filteredData = safeData.slice(startIndex || 0, (endIndex || safeData.length - 1) + 1);
-        onBrushChange(filteredData);
-      }
-    }
-  };
 
   return (
     <ChartContainer config={chartConfig} className="h-full">
       <ResponsiveContainer width="100%" height={height}>
         <AreaChart 
           data={displayData} 
-          margin={{ top: 20, right: 30, left: 20, bottom: showBrush ? 80 : 40 }}
+          margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
         >
           <defs>
             <linearGradient id="positiveGradient" x1="0" y1="0" x2="0" y2="1">
@@ -224,19 +202,6 @@ export function CashFlowChartBase({
             />
           )}
 
-          {/* Brush */}
-          {showBrush && safeData.length > 0 && (
-            <Brush
-              dataKey="date"
-              height={30}
-              stroke="hsl(var(--primary))"
-              tickFormatter={ultraSafeTickFormatter}
-              startIndex={brushStartIndex}
-              endIndex={actualEndIndex}
-              onChange={handleBrushChange}
-              data={safeData}
-            />
-          )}
 
           <ChartTooltip 
             content={({ active, payload, label }) => {

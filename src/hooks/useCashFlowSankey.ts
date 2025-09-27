@@ -44,7 +44,7 @@ export const useCashFlowSankey = ({
       const actualStartDate = startDate || startOfMonth(new Date());
       const actualEndDate = endDate || endOfMonth(new Date());
 
-      // Fetch transactions for the period
+      // Fetch transactions for the period - include both completed and pending
       let query = supabase
         .from('transactions')
         .select(`
@@ -53,9 +53,9 @@ export const useCashFlowSankey = ({
           account:accounts(id, name)
         `)
         .eq('user_id', user.id)
-        .eq('status', 'efetivado')
-        .gte('effective_date', format(actualStartDate, 'yyyy-MM-dd'))
-        .lte('effective_date', format(actualEndDate, 'yyyy-MM-dd'));
+        .in('status', ['efetivado', 'pendente'])
+        .gte('event_date', format(actualStartDate, 'yyyy-MM-dd'))
+        .lte('event_date', format(actualEndDate, 'yyyy-MM-dd'));
 
       if (selectedAccounts.length > 0) {
         query = query.in('account_id', selectedAccounts);
@@ -67,6 +67,9 @@ export const useCashFlowSankey = ({
         console.error('Error fetching transactions for sankey:', error);
         throw error;
       }
+
+      console.log('Sankey transactions found:', transactions?.length || 0);
+      console.log('Sample transactions:', transactions?.slice(0, 3));
 
       // Process data to create sankey structure
       const incomeByCategory = new Map<string, number>();
@@ -86,6 +89,11 @@ export const useCashFlowSankey = ({
           totalExpense += amount;
         }
       });
+
+      console.log('Income by category:', Object.fromEntries(incomeByCategory));
+      console.log('Expense by category:', Object.fromEntries(expenseByCategory));
+      console.log('Total income:', totalIncome);
+      console.log('Total expense:', totalExpense);
 
       // Create nodes
       const nodes: SankeyNode[] = [];

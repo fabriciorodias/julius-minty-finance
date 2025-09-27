@@ -27,6 +27,7 @@ export interface RecurringTransaction {
 }
 
 export interface RecurringTransactionWithAnalytics extends RecurringTransaction {
+  type: 'receita' | 'despesa'; // Garantir que o tipo está incluído na interface
   last_amount: number;
   variance_percentage: number;
   days_until_due: number;
@@ -82,11 +83,17 @@ export function useRecurringTransactions() {
         console.log('First transaction type:', data[0]);
         const comissaoTransaction = data.find(t => t.template_name === 'Comissão');
         if (comissaoTransaction) {
-          console.log('Comissão transaction from RPC:', comissaoTransaction);
+          console.log('Comissão transaction from RPC:', {
+            template_name: comissaoTransaction.template_name,
+            type: comissaoTransaction.type,
+            expected_amount: comissaoTransaction.expected_amount
+          });
         }
       }
       return data as RecurringTransactionWithAnalytics[];
-    }
+    },
+    staleTime: 0, // Forçar atualização imediata
+    refetchOnMount: true
   });
 }
 

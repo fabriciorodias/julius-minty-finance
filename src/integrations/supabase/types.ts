@@ -871,6 +871,7 @@ export type Database = {
           next_due_date: string
           status: string
           template_name: string
+          type: string
           variance_percentage: number
         }[]
       }

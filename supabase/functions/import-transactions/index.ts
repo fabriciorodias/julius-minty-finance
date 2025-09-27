@@ -213,8 +213,8 @@ function parseCSV(content: string): ParsedTransaction[] {
 
   const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0)
   
-  if (lines.length < 2) {
-    throw new Error('Arquivo CSV deve ter pelo menos um cabeçalho e uma linha de dados')
+  if (lines.length === 0) {
+    throw new Error('Arquivo CSV está vazio')
   }
 
   const transactions: ParsedTransaction[] = []
@@ -226,12 +226,43 @@ function parseCSV(content: string): ParsedTransaction[] {
   const delimiter = semicolonCount > commaCount ? ';' : ','
   
   console.log('Detected delimiter:', delimiter)
+  console.log('First line raw:', firstLine)
   
-  // Parse header to find column indices
-  const header = lines[0].toLowerCase().split(delimiter).map(col => col.replace(/"/g, '').trim())
-  console.log('CSV header:', header)
+  // Split first line to analyze structure
+  const firstLineColumns = firstLine.split(delimiter).map(col => col.replace(/"/g, '').trim())
+  console.log('First line columns:', firstLineColumns)
   
-  // Column mapping
+  // Intelligent header detection
+  const headerKeywords = ['date', 'data', 'description', 'descricao', 'descrição', 'memo', 'histórico', 'historico', 
+                         'name', 'estabelecimento', 'amount', 'valor', 'credit', 'credito', 'crédito', 
+                         'debit', 'debito', 'débito', 'entrada', 'saida', 'saída', 'dt_posted', 'trnamt']
+  
+  const hasHeaderKeywords = firstLineColumns.some(col => 
+    headerKeywords.some(keyword => col.toLowerCase().includes(keyword))
+  )
+  
+  // Check if first line contains actual transaction data
+  const hasDateInFirstColumn = isValidDateFormat(firstLineColumns[0])
+  const hasAmountInColumns = firstLineColumns.some(col => isValidAmount(col))
+  
+  const hasHeader = hasHeaderKeywords && !hasDateInFirstColumn
+  console.log('Header detection:', { hasHeaderKeywords, hasDateInFirstColumn, hasAmountInColumns, hasHeader })
+  
+  let headerColumns: string[] = []
+  let dataStartIndex = 0
+  
+  if (hasHeader) {
+    headerColumns = firstLineColumns.map(col => col.toLowerCase())
+    dataStartIndex = 1
+    console.log('Using detected header:', headerColumns)
+  } else {
+    // No header detected, use positional mapping
+    headerColumns = []
+    dataStartIndex = 0
+    console.log('No header detected, using positional mapping')
+  }
+  
+  // Column mapping - either from header or positional
   const dateColumns = ['date', 'data', 'dt_posted', 'data de lançamento', 'data lancamento']
   const descColumns = ['description', 'descricao', 'descrição', 'memo', 'histórico', 'historico', 'name', 'estabelecimento']
   const amountColumns = ['amount', 'valor', 'valor_total', 'valor da operação', 'trnamt']
@@ -240,35 +271,52 @@ function parseCSV(content: string): ParsedTransaction[] {
 
   let dateIndex = -1, descIndex = -1, amountIndex = -1, creditIndex = -1, debitIndex = -1
 
-  header.forEach((col, index) => {
-    if (dateColumns.some(dc => col.includes(dc))) dateIndex = index
-    if (descColumns.some(dc => col.includes(dc))) descIndex = index
-    if (amountColumns.some(ac => col.includes(ac))) amountIndex = index
-    if (creditColumns.some(cc => col.includes(cc))) creditIndex = index
-    if (debitColumns.some(dc => col.includes(dc))) debitIndex = index
-  })
+  if (hasHeader) {
+    // Map by header names
+    headerColumns.forEach((col, index) => {
+      if (dateColumns.some(dc => col.includes(dc))) dateIndex = index
+      if (descColumns.some(dc => col.includes(dc))) descIndex = index
+      if (amountColumns.some(ac => col.includes(ac))) amountIndex = index
+      if (creditColumns.some(cc => col.includes(cc))) creditIndex = index
+      if (debitColumns.some(dc => col.includes(dc))) debitIndex = index
+    })
+  }
 
-  // Fallback to positional if no headers matched
+  // Fallback to positional mapping if no header or no matches found
   if (dateIndex === -1) dateIndex = 0
-  if (descIndex === -1) descIndex = 1
+  if (descIndex === -1) descIndex = 1  
   if (amountIndex === -1 && creditIndex === -1 && debitIndex === -1) amountIndex = 2
 
-  console.log('Column indices:', { dateIndex, descIndex, amountIndex, creditIndex, debitIndex })
+  console.log('Final column mapping:', { dateIndex, descIndex, amountIndex, creditIndex, debitIndex })
+
+  // Ensure we have enough lines to process
+  if (lines.length <= dataStartIndex) {
+    throw new Error('Arquivo CSV não contém dados suficientes')
+  }
 
   // Process data rows
-  for (let i = 1; i < lines.length; i++) {
+  for (let i = dataStartIndex; i < lines.length; i++) {
     const line = lines[i]
     if (!line) continue
 
     const columns = line.split(delimiter).map(col => col.replace(/"/g, '').trim())
+    console.log(`Processing line ${i + 1}:`, columns)
     
-    if (columns.length < Math.max(dateIndex + 1, descIndex + 1, amountIndex + 1, creditIndex + 1, debitIndex + 1)) {
-      console.warn(`Line ${i + 1} has insufficient columns:`, columns)
+    const minRequiredColumns = Math.max(dateIndex + 1, descIndex + 1, amountIndex + 1, creditIndex + 1, debitIndex + 1)
+    if (columns.length < minRequiredColumns) {
+      console.warn(`Line ${i + 1} has insufficient columns (has ${columns.length}, needs ${minRequiredColumns}):`, columns)
       continue
     }
 
     try {
-      const date = parseDate(columns[dateIndex] || '')
+      // Validate and parse date
+      const dateValue = columns[dateIndex] || ''
+      if (!isValidDateFormat(dateValue)) {
+        console.warn(`Line ${i + 1} has invalid date format "${dateValue}", skipping`)
+        continue
+      }
+      
+      const date = parseDate(dateValue)
       const description = columns[descIndex] || 'Transação importada'
       
       let amount = 0
@@ -286,23 +334,82 @@ function parseCSV(content: string): ParsedTransaction[] {
         amount = parseAmount(columns[amountIndex] || '0')
       }
 
-      if (date && description && !isNaN(amount) && amount !== 0) {
-        transactions.push({
-          date,
-          description,
-          amount
+      // Final validation before adding transaction
+      if (!date || !description.trim() || isNaN(amount) || amount === 0) {
+        console.warn(`Line ${i + 1} failed validation:`, { 
+          date, 
+          description: description.trim(), 
+          amount, 
+          isValidDate: !!date,
+          isValidDesc: !!description.trim(),
+          isValidAmount: !isNaN(amount) && amount !== 0
         })
-      } else {
-        console.warn(`Skipping invalid transaction on line ${i + 1}:`, { date, description, amount })
+        continue
       }
+      
+      transactions.push({
+        date,
+        description: description.trim(),
+        amount
+      })
+      
+      console.log(`Successfully parsed transaction ${transactions.length}:`, { date, description: description.trim(), amount })
+      
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      console.warn(`Error parsing line ${i + 1}:`, errorMessage)
+      console.warn(`Error parsing line ${i + 1}:`, errorMessage, 'Raw line:', line)
     }
   }
 
-  console.log(`Parsed ${transactions.length} transactions from CSV`)
+  if (transactions.length === 0) {
+    throw new Error('Nenhuma transação válida foi encontrada no arquivo CSV')
+  }
+
+  console.log(`Successfully parsed ${transactions.length} valid transactions from CSV`)
   return transactions
+}
+
+function isValidDateFormat(dateStr: string): boolean {
+  if (!dateStr || typeof dateStr !== 'string') return false
+  
+  // Check for common date patterns
+  const datePatterns = [
+    /^\d{1,2}\/\d{1,2}\/\d{4}$/,     // DD/MM/YYYY or MM/DD/YYYY  
+    /^\d{1,2}-\d{1,2}-\d{4}$/,      // DD-MM-YYYY or MM-DD-YYYY
+    /^\d{4}-\d{1,2}-\d{1,2}$/,      // YYYY-MM-DD
+    /^\d{1,2}\/\d{1,2}\/\d{2}$/,    // DD/MM/YY or MM/DD/YY
+    /^\d{8}$/,                      // YYYYMMDD
+  ]
+  
+  const matchesPattern = datePatterns.some(pattern => pattern.test(dateStr.trim()))
+  
+  if (!matchesPattern) {
+    console.log(`Date "${dateStr}" does not match expected patterns`)
+    return false
+  }
+  
+  // Try to parse as date to verify it's actually a valid date
+  const date = new Date(dateStr)
+  const isValidDate = !isNaN(date.getTime())
+  
+  console.log(`Date validation for "${dateStr}": pattern=${matchesPattern}, parseable=${isValidDate}`)
+  return matchesPattern && isValidDate
+}
+
+function isValidAmount(amountStr: string): boolean {
+  if (!amountStr || typeof amountStr !== 'string') return false
+  
+  // Remove common currency symbols and whitespace
+  const cleaned = amountStr.trim().replace(/[R$\s]/g, '')
+  
+  // Check if it looks like a number (including negative, decimals, thousand separators)
+  const amountPattern = /^[+-]?[\d,.]+$/
+  
+  if (!amountPattern.test(cleaned)) return false
+  
+  // Try to parse it
+  const parsed = parseAmount(amountStr)
+  return !isNaN(parsed)
 }
 
 function parseAmount(amountStr: string): number {

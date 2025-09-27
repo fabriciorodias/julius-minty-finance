@@ -96,20 +96,6 @@ export function CashFlowChartBase({
   const maxValue = Math.max(...allValues);
   const padding = Math.abs(maxValue - minValue) * 0.1 || 100; // Fallback padding
 
-  // Create positive and negative data sets
-  const positiveData = displayData.map(d => ({
-    ...d,
-    total: d.total >= 0 ? d.total : 0,
-    originalTotal: d.total
-  }));
-
-  const negativeData = displayData.map(d => ({
-    ...d,
-    total: d.total < 0 ? d.total : 0,
-    originalTotal: d.total
-  }));
-
-
   return (
     <ChartContainer config={chartConfig} className="h-full">
       <ResponsiveContainer width="100%" height={height}>
@@ -118,15 +104,10 @@ export function CashFlowChartBase({
           margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
         >
           <defs>
-            <linearGradient id="positiveGradient" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="cashFlowGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.8}/>
-              <stop offset="30%" stopColor="hsl(150, 70%, 45%)" stopOpacity={0.6}/>
-              <stop offset="70%" stopColor="hsl(158, 64%, 52%)" stopOpacity={0.3}/>
-              <stop offset="100%" stopColor="hsl(174, 100%, 33%)" stopOpacity={0.1}/>
-            </linearGradient>
-            <linearGradient id="negativeGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(346, 77%, 49%)" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="hsl(346, 77%, 49%)" stopOpacity={0.05}/>
+              <stop offset="50%" stopColor="hsl(150, 70%, 45%)" stopOpacity={0.4}/>
+              <stop offset="100%" stopColor="hsl(158, 64%, 52%)" stopOpacity={0.1}/>
             </linearGradient>
           </defs>
 
@@ -158,34 +139,13 @@ export function CashFlowChartBase({
             />
           )}
 
-          {/* Positive area */}
+          {/* Single area for cash flow */}
           <Area
-            type="monotone"
-            data={positiveData}
-            dataKey="total"
-            stroke="hsl(142, 76%, 36%)"
-            strokeWidth={0}
-            fill="url(#positiveGradient)"
-            dot={false}
-          />
-
-          {/* Negative area */}
-          <Area
-            type="monotone"
-            data={negativeData}
-            dataKey="total"
-            stroke="hsl(346, 77%, 49%)"
-            strokeWidth={0}
-            fill="url(#negativeGradient)"
-            dot={false}
-          />
-
-          {/* Main line */}
-          <Line
             type="monotone"
             dataKey="total"
             stroke="hsl(142, 76%, 36%)"
-            strokeWidth={3}
+            strokeWidth={2}
+            fill="url(#cashFlowGradient)"
             dot={false}
           />
 

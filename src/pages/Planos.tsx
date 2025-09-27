@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus } from 'lucide-react';
 import { usePlans, PlanWithInstallments } from '@/hooks/usePlans';
 import { PlanCard } from '@/components/plans/PlanCard';
 import { CreatePlanModal } from '@/components/plans/CreatePlanModal';
@@ -10,7 +11,6 @@ import { WithdrawModal } from '@/components/plans/WithdrawModal';
 import { TimelineModal } from '@/components/plans/TimelineModal';
 import { EditPlanModal } from '@/components/plans/EditPlanModal';
 import { DeleteConfirmationDialog } from '@/components/transactions/DeleteConfirmationDialog';
-import { Plus } from 'lucide-react';
 
 const Planos = () => {
   const {

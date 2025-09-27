@@ -83,6 +83,35 @@ const config: Config = {
           dark: "rgba(0, 0, 0, 0.1)",
           "dark-light": "rgba(0, 0, 0, 0.05)",
         },
+        // Recurring Transaction Colors - Receitas (Revenue)
+        revenue: {
+          DEFAULT: "hsl(142, 71%, 45%)", // Verde esmeralda
+          light: "hsl(142, 50%, 85%)", // Verde claro para background
+          lighter: "hsl(142, 30%, 95%)", // Verde muito claro
+          accent: "hsl(45, 100%, 60%)", // Dourado accent
+          border: "hsl(142, 60%, 55%)", // Verde para bordas
+          glow: "hsl(142, 71%, 45%)", // Verde para glow effect
+        },
+        // Recurring Transaction Colors - Despesas (Expenses)
+        expense: {
+          DEFAULT: "hsl(14, 90%, 53%)", // Vermelho coral elegante
+          light: "hsl(14, 60%, 85%)", // Vermelho claro para background
+          lighter: "hsl(14, 30%, 95%)", // Vermelho muito claro
+          accent: "hsl(25, 95%, 53%)", // Laranja accent
+          border: "hsl(14, 70%, 60%)", // Vermelho para bordas
+          glow: "hsl(14, 90%, 53%)", // Vermelho para glow effect
+        },
+        // Status Colors
+        status: {
+          overdue: "hsl(0, 85%, 60%)", // Vermelho para atraso
+          "overdue-bg": "hsl(0, 100%, 97%)", // Background vermelho claro
+          upcoming: "hsl(45, 100%, 50%)", // Amarelo/dourado para próximos
+          "upcoming-bg": "hsl(45, 100%, 97%)", // Background amarelo claro
+          active: "hsl(142, 71%, 45%)", // Verde para ativos
+          "active-bg": "hsl(142, 30%, 97%)", // Background verde claro
+          paused: "hsl(220, 13%, 60%)", // Cinza para pausados
+          "paused-bg": "hsl(220, 13%, 97%)", // Background cinza claro
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -109,12 +138,27 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translateX(-10px)" },
           "100%": { opacity: "1", transform: "translateX(0)" },
         },
+        "scale-in": {
+          "0%": { transform: "scale(0.95)", opacity: "0" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+        "glow-pulse": {
+          "0%, 100%": { boxShadow: "0 0 5px currentColor" },
+          "50%": { boxShadow: "0 0 20px currentColor, 0 0 30px currentColor" },
+        },
+        "float": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-2px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.3s ease-out",
         "slide-in": "slide-in 0.3s ease-out",
+        "scale-in": "scale-in 0.2s ease-out",
+        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+        "float": "float 3s ease-in-out infinite",
       },
     },
   },

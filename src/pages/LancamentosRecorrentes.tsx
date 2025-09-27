@@ -8,7 +8,7 @@ import { RecurringTransactionsTimeline } from "@/components/transactions/Recurri
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Calendar, BarChart3, Settings, ArrowLeft } from "lucide-react";
+import { Plus, Calendar, BarChart3, Settings, ArrowLeft, TrendingUp, TrendingDown, Clock, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function LancamentosRecorrentes() {
@@ -80,63 +80,91 @@ export default function LancamentosRecorrentes() {
           </Button>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
+        {/* Enhanced Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Receitas Stats */}
+          <Card className="border-l-4 border-l-revenue bg-gradient-to-r from-revenue-lighter to-white hover:shadow-lg transition-all duration-300">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Lançamentos Ativos
+              <CardTitle className="text-sm font-semibold text-revenue flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Receitas Ativas
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {isLoading ? <Skeleton className="h-8 w-12" /> : activeTransactions.length}
+              <div className="text-2xl font-bold text-revenue">
+                {isLoading ? <Skeleton className="h-8 w-12" /> : (
+                  recurringTransactions.filter(t => t.type === 'receita' && t.status === 'active').length
+                )}
               </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {isLoading ? '-' : (
+                  `R$ ${recurringTransactions
+                    .filter(t => t.type === 'receita' && t.status === 'active')
+                    .reduce((sum, t) => sum + (t.expected_amount || 0), 0)
+                    .toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`
+                )} / mês
+              </p>
             </CardContent>
           </Card>
 
-          <Card>
+          {/* Despesas Stats */}
+          <Card className="border-l-4 border-l-expense bg-gradient-to-r from-expense-lighter to-white hover:shadow-lg transition-all duration-300">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-semibold text-expense flex items-center gap-2">
+                <TrendingDown className="h-4 w-4" />
+                Despesas Ativas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-expense">
+                {isLoading ? <Skeleton className="h-8 w-12" /> : (
+                  recurringTransactions.filter(t => t.type === 'despesa' && t.status === 'active').length
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {isLoading ? '-' : (
+                  `R$ ${recurringTransactions
+                    .filter(t => t.type === 'despesa' && t.status === 'active')
+                    .reduce((sum, t) => sum + (t.expected_amount || 0), 0)
+                    .toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`
+                )} / mês
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Upcoming Stats */}
+          <Card className="border-l-4 border-l-status-upcoming bg-gradient-to-r from-status-upcoming-bg to-white hover:shadow-lg transition-all duration-300">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold text-status-upcoming flex items-center gap-2">
+                <Clock className="h-4 w-4" />
                 Vencendo em 7 dias
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-amber-600">
+              <div className="text-2xl font-bold text-status-upcoming">
                 {isLoading ? <Skeleton className="h-8 w-12" /> : upcomingTransactions.length}
               </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Requer atenção
+              </p>
             </CardContent>
           </Card>
 
-          <Card>
+          {/* Overdue Stats */}
+          <Card className="border-l-4 border-l-status-overdue bg-gradient-to-r from-status-overdue-bg to-white hover:shadow-lg transition-all duration-300">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-semibold text-status-overdue flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
                 Em Atraso
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-destructive">
+              <div className="text-2xl font-bold text-status-overdue">
                 {isLoading ? <Skeleton className="h-8 w-12" /> : overdueTransactions.length}
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Valor Médio Mensal
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">
-                {isLoading ? (
-                  <Skeleton className="h-8 w-20" />
-                ) : (
-                  `R$ ${activeTransactions
-                    .reduce((sum, t) => sum + (t.expected_amount || 0), 0)
-                    .toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`
-                )}
-              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {overdueTransactions.length > 0 ? 'Ação necessária' : 'Tudo em dia'}
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -163,7 +191,7 @@ export default function LancamentosRecorrentes() {
           </TabsList>
 
           {/* Cards View - Main Management */}
-          <TabsContent value="cards" className="space-y-4">
+          <TabsContent value="cards" className="space-y-6">
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...Array(6)].map((_, i) => (
@@ -189,14 +217,76 @@ export default function LancamentosRecorrentes() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {recurringTransactions.map((transaction) => (
-                  <RecurringTransactionCard
-                    key={transaction.id}
-                    transaction={transaction}
-                    onEdit={() => setEditingTransaction(transaction.id)}
-                  />
-                ))}
+              <div className="space-y-8">
+                {/* Receitas Section */}
+                {(() => {
+                  const receitas = recurringTransactions.filter(t => t.type === 'receita');
+                  return receitas.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-1 h-8 bg-revenue rounded-full"></div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-revenue flex items-center gap-2">
+                            <TrendingUp className="h-6 w-6" />
+                            Receitas Recorrentes
+                          </h2>
+                          <p className="text-sm text-muted-foreground">
+                            {receitas.length} lançamento{receitas.length > 1 ? 's' : ''} de receita
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {receitas.map((transaction, index) => (
+                          <div 
+                            key={transaction.id}
+                            className="animate-fade-in"
+                            style={{ animationDelay: `${index * 100}ms` }}
+                          >
+                            <RecurringTransactionCard
+                              transaction={transaction}
+                              onEdit={() => setEditingTransaction(transaction.id)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
+
+                {/* Despesas Section */}
+                {(() => {
+                  const despesas = recurringTransactions.filter(t => t.type === 'despesa');
+                  return despesas.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-1 h-8 bg-expense rounded-full"></div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-expense flex items-center gap-2">
+                            <TrendingDown className="h-6 w-6" />
+                            Despesas Recorrentes
+                          </h2>
+                          <p className="text-sm text-muted-foreground">
+                            {despesas.length} lançamento{despesas.length > 1 ? 's' : ''} de despesa
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {despesas.map((transaction, index) => (
+                          <div 
+                            key={transaction.id}
+                            className="animate-fade-in"
+                            style={{ animationDelay: `${index * 100}ms` }}
+                          >
+                            <RecurringTransactionCard
+                              transaction={transaction}
+                              onEdit={() => setEditingTransaction(transaction.id)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
               </div>
             )}
           </TabsContent>

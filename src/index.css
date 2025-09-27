@@ -115,6 +115,32 @@
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 174 100% 27%;
     --sidebar-ring: 174 100% 27%;
+
+    /* Recurring Transaction Colors - Receitas (Revenue) */
+    --revenue: 142 71% 45%; /* Verde esmeralda */
+    --revenue-light: 142 50% 85%; /* Verde claro para background */
+    --revenue-lighter: 142 30% 95%; /* Verde muito claro */
+    --revenue-accent: 45 100% 60%; /* Dourado accent */
+    --revenue-border: 142 60% 55%; /* Verde para bordas */
+    --revenue-glow: 142 71% 45%; /* Verde para glow effect */
+
+    /* Recurring Transaction Colors - Despesas (Expenses) */
+    --expense: 14 90% 53%; /* Vermelho coral elegante */
+    --expense-light: 14 60% 85%; /* Vermelho claro para background */
+    --expense-lighter: 14 30% 95%; /* Vermelho muito claro */
+    --expense-accent: 25 95% 53%; /* Laranja accent */
+    --expense-border: 14 70% 60%; /* Vermelho para bordas */
+    --expense-glow: 14 90% 53%; /* Vermelho para glow effect */
+
+    /* Status Colors */
+    --status-overdue: 0 85% 60%; /* Vermelho para atraso */
+    --status-overdue-bg: 0 100% 97%; /* Background vermelho claro */
+    --status-upcoming: 45 100% 50%; /* Amarelo/dourado para próximos */
+    --status-upcoming-bg: 45 100% 97%; /* Background amarelo claro */
+    --status-active: 142 71% 45%; /* Verde para ativos */
+    --status-active-bg: 142 30% 97%; /* Background verde claro */
+    --status-paused: 220 13% 60%; /* Cinza para pausados */
+    --status-paused-bg: 220 13% 97%; /* Background cinza claro */
   }
 
   .dark {

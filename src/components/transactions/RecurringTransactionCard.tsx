@@ -1,33 +1,34 @@
-import { useState } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { useRecurringTransactionMutations } from "@/hooks/useRecurringTransactions";
-import { MarkAsPaidModal } from "./MarkAsPaidModal";
 import { 
-  Calendar,
-  TrendingUp,
+  Calendar, 
+  Clock, 
+  MoreVertical, 
+  Edit, 
+  Trash2, 
+  Play, 
+  Pause, 
+  DollarSign, 
+  TrendingUp, 
   TrendingDown,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  MoreVertical,
-  Edit,
-  Trash2,
-  Play,
-  Pause,
-  DollarSign
+  AlertTriangle,
+  CheckCircle2,
+  ArrowUpRight,
+  ArrowDownRight,
+  Banknote,
+  CreditCard
 } from "lucide-react";
-import type { RecurringTransactionWithAnalytics } from "@/hooks/useRecurringTransactions";
+import { RecurringTransactionWithAnalytics, useRecurringTransactionMutations } from "@/hooks/useRecurringTransactions";
+import { formatCurrency } from "@/lib/utils";
+import { MarkAsPaidModal } from "./MarkAsPaidModal";
 
 interface RecurringTransactionCardProps {
   transaction: RecurringTransactionWithAnalytics;
@@ -46,60 +47,77 @@ export function RecurringTransactionCard({
     isDeleting 
   } = useRecurringTransactionMutations();
 
+  // Determinar cores e estilos baseados no tipo
+  const getTransactionTheme = (type: string) => {
+    const isRevenue = type === 'receita';
+    return {
+      isRevenue,
+      borderColor: isRevenue ? 'border-l-revenue' : 'border-l-expense',
+      bgGradient: isRevenue 
+        ? 'bg-gradient-to-br from-revenue-lighter to-white' 
+        : 'bg-gradient-to-br from-expense-lighter to-white',
+      textColor: isRevenue ? 'text-revenue' : 'text-expense',
+      iconBg: isRevenue ? 'bg-revenue/10' : 'bg-expense/10',
+      icon: isRevenue ? ArrowUpRight : ArrowDownRight,
+      typeLabel: isRevenue ? 'Receita' : 'Despesa',
+      accentColor: isRevenue ? 'text-revenue-accent' : 'text-expense-accent'
+    };
+  };
+
   const getDaysUntilDueColor = (days: number) => {
-    if (days < 0) return "text-destructive";
-    if (days <= 3) return "text-amber-600";
-    if (days <= 7) return "text-amber-500";
+    if (days < 0) return "text-status-overdue";
+    if (days <= 3) return "text-status-upcoming";
+    if (days <= 7) return "text-yellow-600";
     return "text-muted-foreground";
   };
 
   const getDaysUntilDueIcon = (days: number) => {
-    if (days < 0) return <AlertCircle className="h-4 w-4" />;
-    if (days <= 3) return <Clock className="h-4 w-4" />;
-    return <Calendar className="h-4 w-4" />;
+    if (days < 0) return AlertTriangle;
+    if (days <= 7) return Clock;
+    return Calendar;
   };
 
-  const getStatusBadge = (status: string, days: number) => {
-    if (status !== 'active') {
-      return (
-        <Badge variant={status === 'paused' ? 'secondary' : 'destructive'}>
-          {status === 'paused' ? 'Pausada' : 'Cancelada'}
-        </Badge>
-      );
+  const getStatusBadge = (status: string, theme: any) => {
+    switch (status) {
+      case 'active':
+        return (
+          <Badge 
+            variant="outline" 
+            className={`${theme.textColor} border-current bg-current/5 font-medium`}
+          >
+            Ativo
+          </Badge>
+        );
+      case 'paused':
+        return (
+          <Badge 
+            variant="outline" 
+            className="text-status-paused border-status-paused bg-status-paused-bg"
+          >
+            Pausado
+          </Badge>
+        );
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
-
-    if (days < 0) {
-      return <Badge variant="destructive">Em atraso</Badge>;
-    }
-    if (days <= 3) {
-      return <Badge variant="default" className="bg-amber-500">Vence em breve</Badge>;
-    }
-    if (days <= 7) {
-      return <Badge variant="secondary">Próxima semana</Badge>;
-    }
-    return <Badge variant="outline">Em dia</Badge>;
   };
 
-  const getVarianceInfo = (variance: number) => {
-    if (variance === 0) return { icon: null, color: "text-muted-foreground" };
-    if (variance <= 10) return { 
-      icon: <CheckCircle className="h-4 w-4" />, 
-      color: "text-green-600" 
-    };
-    if (variance <= 25) return { 
-      icon: <TrendingUp className="h-4 w-4" />, 
-      color: "text-amber-600" 
-    };
-    return { 
-      icon: <TrendingDown className="h-4 w-4" />, 
-      color: "text-destructive" 
+  const getVarianceInfo = (variance: number, theme: any) => {
+    if (variance === 0) return null;
+    
+    const isHighVariance = variance > 20;
+    const color = isHighVariance ? "text-status-upcoming" : theme.textColor;
+    const icon = isHighVariance ? AlertTriangle : TrendingUp;
+    const IconComponent = icon;
+    
+    return {
+      color,
+      icon: IconComponent,
+      text: `${variance.toFixed(1)}% variação`
     };
   };
 
-  const varianceInfo = getVarianceInfo(transaction.variance_percentage);
-  const progressValue = Math.min(100, (transaction.variance_percentage / 50) * 100);
-
-  const handleStatusToggle = () => {
+  const handleStatusToggle = async () => {
     const newStatus = transaction.status === 'active' ? 'paused' : 'active';
     updateRecurringTransaction({
       id: transaction.id,
@@ -107,42 +125,90 @@ export function RecurringTransactionCard({
     });
   };
 
-  const handleDelete = () => {
-    if (confirm('Tem certeza que deseja excluir este lançamento recorrente?')) {
+  const handleDelete = async () => {
+    if (window.confirm('Tem certeza que deseja excluir este lançamento recorrente?')) {
       deleteRecurringTransaction(transaction.id);
     }
   };
 
+  const theme = getTransactionTheme(transaction.type);
+  const IconComponent = theme.icon;
+
   return (
-    <>
-      <Card className="h-full hover:ring-2 hover:ring-primary/20 transition-all duration-200">
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-foreground truncate">
-                {transaction.template_name}
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                {transaction.description}
-              </p>
-            </div>
-            
+    <Card className={`
+      group relative overflow-hidden transition-all duration-300 ease-out
+      border-l-4 ${theme.borderColor} ${theme.bgGradient}
+      hover:shadow-lg hover:shadow-current/5 hover:-translate-y-1
+      animate-fade-in
+    `}>
+      {/* Gradient Overlay on Hover */}
+      <div className={`
+        absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300
+        bg-gradient-to-r ${theme.isRevenue ? 'from-revenue/5' : 'from-expense/5'} to-transparent
+      `} />
+      
+      {/* Type Icon with Glow Effect */}
+      <div className={`
+        absolute top-4 right-4 w-10 h-10 rounded-full ${theme.iconBg}
+        flex items-center justify-center transition-all duration-300
+        group-hover:scale-110 group-hover:shadow-lg
+      `}>
+        <IconComponent className={`h-5 w-5 ${theme.textColor}`} />
+      </div>
+      
+      <CardHeader className="pb-3 relative z-10 pr-16">
+        <div className="space-y-2">
+          {/* Header with Type Badge */}
+          <div className="flex items-center gap-2 mb-1">
+            <Badge 
+              variant="outline" 
+              className={`
+                ${theme.textColor} border-current bg-current/10 text-xs font-semibold
+                px-2 py-0.5
+              `}
+            >
+              {theme.typeLabel}
+            </Badge>
+            {getStatusBadge(transaction.status, theme)}
+          </div>
+          
+          {/* Title */}
+          <h3 className={`
+            font-bold text-xl leading-tight ${theme.textColor}
+            group-hover:scale-105 transition-transform duration-200 origin-left
+          `}>
+            {transaction.template_name}
+          </h3>
+          
+          {/* Description */}
+          {transaction.description && (
+            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+              {transaction.description}
+            </p>
+          )}
+
+          {/* Action Menu */}
+          <div className="absolute top-3 right-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={`
+                    opacity-0 group-hover:opacity-100 transition-all duration-200
+                    h-8 w-8 p-0 hover:bg-current/10 ${theme.textColor}
+                  `}
+                >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onEdit} className="flex items-center gap-2">
+              <DropdownMenuContent align="end" className="w-48 z-50 bg-card border shadow-lg">
+                <DropdownMenuItem onClick={onEdit} className="gap-2">
                   <Edit className="h-4 w-4" />
                   Editar
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={handleStatusToggle}
-                  disabled={isUpdating}
-                  className="flex items-center gap-2"
-                >
+                
+                <DropdownMenuItem onClick={handleStatusToggle} className="gap-2">
                   {transaction.status === 'active' ? (
                     <>
                       <Pause className="h-4 w-4" />
@@ -155,122 +221,120 @@ export function RecurringTransactionCard({
                     </>
                   )}
                 </DropdownMenuItem>
+                
                 <DropdownMenuItem 
-                  onClick={handleDelete}
+                  onClick={() => setShowMarkAsPaidModal(true)} 
+                  className="gap-2"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  Marcar como Pago
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem 
+                  onClick={handleDelete} 
+                  className="gap-2 text-destructive focus:text-destructive"
                   disabled={isDeleting}
-                  className="flex items-center gap-2 text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
-                  Excluir
+                  {isDeleting ? 'Excluindo...' : 'Excluir'}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+        </div>
+      </CardHeader>
 
-          <div className="flex items-center gap-2 mt-2">
-            {getStatusBadge(transaction.status, transaction.days_until_due)}
-            <Badge variant="outline" className="text-xs">
-              {transaction.type === 'receita' ? 'Receita' : 'Despesa'}
-            </Badge>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          {/* Amount Info */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Valor Esperado</span>
-              <span className="font-semibold text-foreground">
-                R$ {transaction.expected_amount.toLocaleString('pt-BR', { 
-                  minimumFractionDigits: 2 
-                })}
-              </span>
-            </div>
-            
-            {transaction.last_amount > 0 && (
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Último Valor</span>
-                <span className="text-sm">
-                  R$ {transaction.last_amount.toLocaleString('pt-BR', { 
-                    minimumFractionDigits: 2 
-                  })}
-                </span>
-              </div>
-            )}
-
-            {transaction.variance_percentage > 0 && (
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    {varianceInfo.icon}
-                    <span className="text-xs text-muted-foreground">Variação</span>
-                  </div>
-                  <span className={`text-xs ${varianceInfo.color}`}>
-                    {transaction.variance_percentage.toFixed(1)}%
-                  </span>
-                </div>
-                <Progress 
-                  value={progressValue} 
-                  className="h-1" 
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Due Date Info */}
-          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+      <CardContent className="space-y-4 relative z-10">
+        {/* Financial Information - Enhanced Design */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className={`
+            space-y-1 p-3 rounded-lg bg-current/5 border border-current/20
+            ${theme.textColor}
+          `}>
             <div className="flex items-center gap-2">
-              {getDaysUntilDueIcon(transaction.days_until_due)}
-              <div>
-                <p className="text-sm font-medium">
-                  {format(new Date(transaction.next_due_date), "dd 'de' MMM", { locale: ptBR })}
-                </p>
-                <p className={`text-xs ${getDaysUntilDueColor(transaction.days_until_due)}`}>
-                  {transaction.days_until_due < 0 
-                    ? `${Math.abs(transaction.days_until_due)} dias em atraso`
-                    : transaction.days_until_due === 0
-                    ? 'Vence hoje'
-                    : `${transaction.days_until_due} dias`
-                  }
-                </p>
-              </div>
+              <Banknote className="h-4 w-4" />
+              <p className="text-xs font-semibold opacity-80">Valor Esperado</p>
             </div>
-
-            {transaction.status === 'active' && (
-              <Button 
-                size="sm" 
-                onClick={() => setShowMarkAsPaidModal(true)}
-                className="h-8"
-              >
-                <DollarSign className="h-3 w-3 mr-1" />
-                Pagar
-              </Button>
-            )}
+            <p className="text-lg font-bold">
+              {formatCurrency(transaction.expected_amount)}
+            </p>
           </div>
-
-          {/* Category & Account Info */}
-          {(transaction.category_name || transaction.account_name) && (
-            <div className="flex flex-wrap gap-1">
-              {transaction.category_name && (
-                <Badge variant="secondary" className="text-xs">
-                  {transaction.category_name}
-                </Badge>
-              )}
-              {transaction.account_name && (
-                <Badge variant="outline" className="text-xs">
-                  {transaction.account_name}
-                </Badge>
-              )}
+          
+          <div className="space-y-1 p-3 rounded-lg bg-muted/30 border border-muted">
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs font-semibold text-muted-foreground">Último Valor</p>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <div className="flex items-center gap-2">
+              <p className="text-lg font-bold text-foreground">
+                {transaction.last_amount ? formatCurrency(transaction.last_amount) : 'N/A'}
+              </p>
+              {(() => {
+                const varianceInfo = getVarianceInfo(transaction.variance_percentage, theme);
+                return varianceInfo ? (
+                  <div className={`flex items-center gap-1 ${varianceInfo.color}`}>
+                    <varianceInfo.icon className="h-3 w-3" />
+                    <span className="text-xs font-medium">
+                      {varianceInfo.text}
+                    </span>
+                  </div>
+                ) : null;
+              })()}
+            </div>
+          </div>
+        </div>
+
+        {/* Due Date Section - Enhanced */}
+        <div className={`
+          p-3 rounded-lg border transition-all duration-200
+          ${transaction.days_until_due < 0 
+            ? 'bg-status-overdue-bg border-status-overdue/20' 
+            : transaction.days_until_due <= 7 
+              ? 'bg-status-upcoming-bg border-status-upcoming/20'
+              : 'bg-status-active-bg border-status-active/20'
+          }
+        `}>
+          <div className="flex items-center gap-2 mb-1">
+            {(() => {
+              const DaysIcon = getDaysUntilDueIcon(transaction.days_until_due);
+              return (
+                <>
+                  <DaysIcon className={`h-4 w-4 ${getDaysUntilDueColor(transaction.days_until_due)}`} />
+                  <span className={`text-sm font-semibold ${getDaysUntilDueColor(transaction.days_until_due)}`}>
+                    {transaction.days_until_due < 0 
+                      ? `${Math.abs(transaction.days_until_due)} dias em atraso`
+                      : transaction.days_until_due === 0 
+                        ? 'Vence hoje!' 
+                        : `${transaction.days_until_due} dias até vencer`
+                    }
+                  </span>
+                </>
+              );
+            })()}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Próximo vencimento: {new Date(transaction.next_due_date).toLocaleDateString('pt-BR')}
+          </div>
+        </div>
+
+        {/* Category and Account Info */}
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="flex flex-col">
+            <span className="text-muted-foreground font-medium">Categoria</span>
+            <span className="font-semibold text-foreground truncate">{transaction.category_name}</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-muted-foreground font-medium">Conta</span>
+            <span className="font-semibold text-foreground truncate">{transaction.account_name}</span>
+          </div>
+        </div>
+      </CardContent>
 
       <MarkAsPaidModal
         open={showMarkAsPaidModal}
         onOpenChange={setShowMarkAsPaidModal}
         transaction={transaction}
       />
-    </>
+    </Card>
   );
 }

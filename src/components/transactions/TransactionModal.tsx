@@ -318,8 +318,8 @@ export function TransactionModal({
       description: data.description,
       amount: finalAmount,
       event_date: data.event_date,
-      category_id: data.category_id,
-      counterparty_id: data.counterparty_id,
+      category_id: data.category_id === "none" || !data.category_id ? undefined : data.category_id,
+      counterparty_id: data.counterparty_id === "none" || !data.counterparty_id ? undefined : data.counterparty_id,
       account_id: data.account_id,
       credit_card_id: undefined,
       tags: data.tags || [],
@@ -628,7 +628,7 @@ export function TransactionModal({
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="none">Sem categoria</SelectItem>
+                                <SelectItem value="">Sem categoria</SelectItem>
                                 {filteredCategories.map((category) => (
                                   <SelectItem key={category.id} value={category.id}>
                                     {category.name}

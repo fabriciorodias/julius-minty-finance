@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format, startOfMonth, endOfMonth, subMonths, subDays } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, subMonths, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar as CalendarIcon, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -97,8 +97,8 @@ export function QuickDateFilters({
   const formatDateRange = () => {
     if (!currentStartDate || !currentEndDate) return '';
     
-    const start = format(new Date(currentStartDate), 'dd/MM', { locale: ptBR });
-    const end = format(new Date(currentEndDate), 'dd/MM/yyyy', { locale: ptBR });
+    const start = format(parseISO(currentStartDate), 'dd/MM', { locale: ptBR });
+    const end = format(parseISO(currentEndDate), 'dd/MM/yyyy', { locale: ptBR });
     return `${start} - ${end}`;
   };
 

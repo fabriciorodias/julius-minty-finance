@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { format, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -313,7 +314,7 @@ export function RecurringTransactionCard({
             })()}
           </div>
           <div className="text-xs text-muted-foreground">
-            Próximo vencimento: {new Date(transaction.next_due_date).toLocaleDateString('pt-BR')}
+            Próximo vencimento: {format(parseISO(transaction.next_due_date), 'dd/MM/yyyy')}
           </div>
         </div>
 

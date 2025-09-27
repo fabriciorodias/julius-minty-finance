@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
+import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -233,7 +233,7 @@ export function RecurringTransactionsTimeline({
                             })}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {format(new Date(transaction.next_due_date), "dd/MM/yyyy")}
+                            {format(parseISO(transaction.next_due_date), "dd/MM/yyyy")}
                           </div>
                         </div>
 

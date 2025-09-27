@@ -14,7 +14,7 @@ import { useAccountInitialBalance } from '@/hooks/useAccountInitialBalance';
 import { useProfile } from '@/hooks/useProfile';
 import { useDefaultAccounts } from '@/hooks/useDefaultAccounts';
 import { useReconciliationSettings } from '@/hooks/useReconciliationSettings';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getBalanceColors, formatBalanceWithSign, calculateBalanceIntensities } from '@/lib/balance-colors';
 
@@ -49,7 +49,7 @@ function AccountInitialBalanceInfo({ accountId }: { accountId: string }) {
   };
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
+    return format(parseISO(dateString), 'dd/MM/yyyy', { locale: ptBR });
   };
 
   return (

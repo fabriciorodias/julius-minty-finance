@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { format, parseISO } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -144,7 +145,7 @@ export function InvoiceManagerModal({ isOpen, onClose }: InvoiceManagerModalProp
                                       <div className="flex-1">
                                         <div className="font-medium text-sm">{transaction.description}</div>
                                         <div className="text-xs text-muted-foreground">
-                                          {new Date(transaction.event_date).toLocaleDateString('pt-BR')}
+                                          {format(parseISO(transaction.event_date), 'dd/MM/yyyy')}
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-2">

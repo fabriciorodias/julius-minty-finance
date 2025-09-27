@@ -8,7 +8,7 @@ import { TrendingUp, TrendingDown, Wallet, Info, CreditCard } from 'lucide-react
 import { Account } from '@/hooks/useAccounts';
 import { Institution } from '@/hooks/useInstitutions';
 import { useProvisionedTotals } from '@/hooks/useProvisionedTotals';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface DynamicBalanceCardProps {
@@ -69,8 +69,8 @@ export function DynamicBalanceCard({
   const formatDateRange = () => {
     if (!dateRange.startDate || !dateRange.endDate) return '';
     
-    const start = format(new Date(dateRange.startDate), 'dd/MM', { locale: ptBR });
-    const end = format(new Date(dateRange.endDate), 'dd/MM/yyyy', { locale: ptBR });
+    const start = format(parseISO(dateRange.startDate), 'dd/MM', { locale: ptBR });
+    const end = format(parseISO(dateRange.endDate), 'dd/MM/yyyy', { locale: ptBR });
     return `${start} - ${end}`;
   };
 

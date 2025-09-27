@@ -10,7 +10,7 @@ import { useAccounts } from "@/hooks/useAccounts";
 import { useInstitutions } from "@/hooks/useInstitutions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, AlertTriangle, Shield, Eye, Calendar } from "lucide-react";
-import { format, addDays } from "date-fns";
+import { format, parseISO, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export default function Projecoes() {
@@ -171,7 +171,7 @@ export default function Projecoes() {
                   {formatCurrency(metrics.worstDayBalance)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {metrics.worstDayDate && format(new Date(metrics.worstDayDate), 'dd/MM', { locale: ptBR })}
+                  {metrics.worstDayDate && format(parseISO(metrics.worstDayDate), 'dd/MM', { locale: ptBR })}
                 </p>
               </div>
               <TrendingDown className="h-6 w-6 text-financial-expense-light" />
@@ -424,7 +424,7 @@ export default function Projecoes() {
                 <p className="text-sm font-medium text-financial-expense">Menor saldo:</p>
                 <p className="text-lg font-semibold text-financial-expense">
                   {formatCurrency(metrics.worstDayBalance)} em {" "}
-                  {format(new Date(metrics.worstDayDate), 'dd/MM/yyyy', { locale: ptBR })}
+                  {format(parseISO(metrics.worstDayDate), 'dd/MM/yyyy', { locale: ptBR })}
                 </p>
               </div>
             )}

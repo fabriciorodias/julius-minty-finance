@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, CheckCircle, User } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Account, RECONCILIATION_METHOD_LABELS } from '@/hooks/useAccounts';
@@ -126,7 +126,7 @@ export function ReconcileAccountModal({
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800">
                 <strong>Última conciliação:</strong>{' '}
-                {format(new Date(account.last_reconciled_at), "PPP 'às' HH:mm", { locale: ptBR })}
+                {format(parseISO(account.last_reconciled_at), "PPP 'às' HH:mm", { locale: ptBR })}
                 {account.last_reconciliation_method && (
                   <span className="ml-2">
                     ({RECONCILIATION_METHOD_LABELS[account.last_reconciliation_method]})

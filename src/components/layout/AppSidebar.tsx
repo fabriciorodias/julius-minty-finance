@@ -16,6 +16,11 @@ import { BrandLogo } from "@/components/layout/BrandLogo";
 
 const mainMenuItems = [
   {
+    title: "Projeções",
+    url: "/projecoes",
+    icon: "timeline"
+  },
+  {
     title: "Panorama",
     url: "/dashboard",
     icon: "dashboard"

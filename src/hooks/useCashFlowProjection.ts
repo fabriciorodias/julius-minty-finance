@@ -301,6 +301,8 @@ export function useCashFlowProjection({
       return { dataPoints: finalDataPoints, accounts };
     },
     enabled: !!user?.id && selectedAccountIds.length > 0,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   return {

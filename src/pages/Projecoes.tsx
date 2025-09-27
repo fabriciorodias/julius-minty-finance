@@ -1,0 +1,430 @@
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CashFlowChartBase } from "@/components/dashboards/CashFlowChartBase";
+import { useCashFlowProjection } from "@/hooks/useCashFlowProjection";
+import { useCashFlowMetrics } from "@/hooks/useCashFlowMetrics";
+import { useAccounts } from "@/hooks/useAccounts";
+import { useInstitutions } from "@/hooks/useInstitutions";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TrendingUp, TrendingDown, AlertTriangle, Shield, Eye, Calendar } from "lucide-react";
+import { format, addDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+export default function Projecoes() {
+  const { accounts = [] } = useAccounts();
+  const { institutions = [] } = useInstitutions();
+  
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+
+  // Update selected accounts when accounts data loads
+  useEffect(() => {
+    if (accounts.length > 0 && selectedAccountIds.length === 0) {
+      setSelectedAccountIds(accounts.filter(acc => acc.type === 'on_budget').map(acc => acc.id));
+    }
+  }, [accounts, selectedAccountIds.length]);
+  const [dateFilters, setDateFilters] = useState({
+    startDate: format(new Date(), 'yyyy-MM-dd'),
+    endDate: format(addDays(new Date(), 90), 'yyyy-MM-dd')
+  });
+  const [includeRecurring, setIncludeRecurring] = useState(true);
+  const [visibleAccounts, setVisibleAccounts] = useState<Set<string>>(new Set());
+  const [showTotal, setShowTotal] = useState(true);
+
+  const { dataPoints, accounts: accountsInfo, isLoading } = useCashFlowProjection({
+    selectedAccountIds,
+    dateFilters,
+    includeRecurring,
+    sampleSize: 200
+  });
+
+  const metrics = useCashFlowMetrics(dataPoints);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
+  const chartConfig = accountsInfo.reduce((config, account) => {
+    config[account.id] = {
+      label: account.name,
+      color: account.color,
+    };
+    return config;
+  }, {} as Record<string, any>);
+
+  const toggleAccountVisibility = (accountId: string) => {
+    setVisibleAccounts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(accountId)) {
+        newSet.delete(accountId);
+      } else {
+        newSet.add(accountId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleDatePeriodChange = (days: number) => {
+    setDateFilters({
+      startDate: format(new Date(), 'yyyy-MM-dd'),
+      endDate: format(addDays(new Date(), days), 'yyyy-MM-dd')
+    });
+  };
+
+  const getRiskColor = (score: string) => {
+    switch (score) {
+      case 'low': return 'text-financial-success-light';
+      case 'medium': return 'text-financial-warning-light';
+      case 'high': return 'text-financial-expense-light';
+      default: return 'text-muted-foreground';
+    }
+  };
+
+  const getRiskIcon = (score: string) => {
+    switch (score) {
+      case 'low': return <Shield className="w-4 h-4" />;
+      case 'medium': return <Eye className="w-4 h-4" />;
+      case 'high': return <AlertTriangle className="w-4 h-4" />;
+      default: return null;
+    }
+  };
+
+  return (
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Projeções de Fluxo de Caixa</h1>
+          <p className="text-muted-foreground">
+            Visualize como seu dinheiro se comportará no futuro com base nas decisões de hoje
+          </p>
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant={dateFilters.endDate === format(addDays(new Date(), 30), 'yyyy-MM-dd') ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleDatePeriodChange(30)}
+          >
+            30 dias
+          </Button>
+          <Button
+            variant={dateFilters.endDate === format(addDays(new Date(), 90), 'yyyy-MM-dd') ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleDatePeriodChange(90)}
+          >
+            90 dias
+          </Button>
+          <Button
+            variant={dateFilters.endDate === format(addDays(new Date(), 180), 'yyyy-MM-dd') ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleDatePeriodChange(180)}
+          >
+            6 meses
+          </Button>
+          <Button
+            variant={dateFilters.endDate === format(addDays(new Date(), 365), 'yyyy-MM-dd') ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleDatePeriodChange(365)}
+          >
+            1 ano
+          </Button>
+        </div>
+      </div>
+
+      {/* Quick Metrics Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border-l-4 border-l-financial-success">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Liquidez Atual</p>
+                <p className="text-2xl font-bold text-financial-success">
+                  {formatCurrency(metrics.liquidityNow)}
+                </p>
+              </div>
+              <TrendingUp className="h-6 w-6 text-financial-success-light" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-financial-expense">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Pior Dia</p>
+                <p className="text-xl font-bold text-financial-expense">
+                  {formatCurrency(metrics.worstDayBalance)}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {metrics.worstDayDate && format(new Date(metrics.worstDayDate), 'dd/MM', { locale: ptBR })}
+                </p>
+              </div>
+              <TrendingDown className="h-6 w-6 text-financial-expense-light" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={`border-l-4 ${
+          metrics.riskScore === 'low' ? 'border-l-financial-success' :
+          metrics.riskScore === 'medium' ? 'border-l-financial-warning' :
+          'border-l-financial-expense'
+        }`}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Nível de Risco</p>
+                <div className="flex items-center gap-2">
+                  <span className={`text-lg font-bold ${getRiskColor(metrics.riskScore)}`}>
+                    {metrics.riskScore === 'low' ? 'Baixo' : 
+                     metrics.riskScore === 'medium' ? 'Médio' : 'Alto'}
+                  </span>
+                  {getRiskIcon(metrics.riskScore)}
+                </div>
+                {metrics.daysBelowZero > 0 && (
+                  <p className="text-xs text-financial-expense">
+                    {metrics.daysBelowZero} dias negativos
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-primary">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Saldo Final</p>
+                <p className={`text-2xl font-bold ${
+                  metrics.projectedEndBalance >= 0 ? 'text-financial-success' : 'text-financial-expense'
+                }`}>
+                  {formatCurrency(metrics.projectedEndBalance)}
+                </p>
+                <div className="flex items-center gap-1 mt-1">
+                  {metrics.trendDirection === 'up' && <TrendingUp className="h-3 w-3 text-financial-success" />}
+                  {metrics.trendDirection === 'down' && <TrendingDown className="h-3 w-3 text-financial-expense" />}
+                  <span className="text-xs text-muted-foreground">
+                    Tendência {metrics.trendDirection === 'up' ? 'crescente' : 
+                              metrics.trendDirection === 'down' ? 'decrescente' : 'estável'}
+                  </span>
+                </div>
+              </div>
+              <Calendar className="h-6 w-6 text-primary" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Chart */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle className="text-xl">Projeção de Fluxo de Caixa</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Evolução do saldo ao longo do tempo
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="include-recurring"
+                  checked={includeRecurring}
+                  onCheckedChange={(checked) => setIncludeRecurring(checked === true)}
+                />
+                <label
+                  htmlFor="include-recurring"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Incluir recorrentes
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Account Visibility Controls */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="show-total"
+                checked={showTotal}
+                onCheckedChange={(checked) => setShowTotal(checked === true)}
+              />
+              <Badge variant="outline" className="font-medium">
+                Total
+              </Badge>
+            </div>
+            
+            {accountsInfo.map((account) => (
+              <div key={account.id} className="flex items-center gap-2">
+                <Checkbox
+                  id={`account-${account.id}`}
+                  checked={visibleAccounts.has(account.id)}
+                  onCheckedChange={() => toggleAccountVisibility(account.id)}
+                />
+                <Badge 
+                  variant="outline"
+                  style={{ borderColor: account.color }}
+                  className="font-medium"
+                >
+                  <div 
+                    className="w-2 h-2 rounded-full mr-2" 
+                    style={{ backgroundColor: account.color }}
+                  />
+                  {account.name}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-64 w-full" />
+              <div className="flex gap-4">
+                <Skeleton className="h-16 flex-1" />
+                <Skeleton className="h-16 flex-1" />
+                <Skeleton className="h-16 flex-1" />
+                <Skeleton className="h-16 flex-1" />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <CashFlowChartBase 
+                data={dataPoints}
+                height={400}
+                chartConfig={chartConfig}
+                showBrush={true}
+              />
+              
+              {/* Summary Statistics */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Saldo Inicial</p>
+                  <p className="text-lg font-semibold">
+                    {formatCurrency(dataPoints[0]?.total || 0)}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Saldo Final</p>
+                  <p className="text-lg font-semibold">
+                    {formatCurrency(dataPoints[dataPoints.length - 1]?.total || 0)}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Variação</p>
+                  <p className={`text-lg font-semibold ${
+                    (dataPoints[dataPoints.length - 1]?.total || 0) - (dataPoints[0]?.total || 0) >= 0 
+                      ? 'text-financial-success' 
+                      : 'text-financial-expense'
+                  }`}>
+                    {((dataPoints[dataPoints.length - 1]?.total || 0) - (dataPoints[0]?.total || 0)) >= 0 ? '+' : ''}
+                    {formatCurrency(
+                      (dataPoints[dataPoints.length - 1]?.total || 0) - (dataPoints[0]?.total || 0)
+                    )}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Período</p>
+                  <p className="text-lg font-semibold">
+                    {Math.ceil((new Date(dateFilters.endDate).getTime() - new Date(dateFilters.startDate).getTime()) / (1000 * 60 * 60 * 24))} dias
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Insights Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Insights Financeiros</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {metrics.daysBelowZero === 0 ? (
+              <div className="flex items-center gap-3 p-3 bg-financial-success/10 rounded-lg">
+                <Shield className="h-5 w-5 text-financial-success" />
+                <div>
+                  <p className="font-medium text-financial-success">Excelente!</p>
+                  <p className="text-sm text-muted-foreground">
+                    Seu saldo permanece positivo durante todo o período
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 p-3 bg-financial-expense/10 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-financial-expense" />
+                <div>
+                  <p className="font-medium text-financial-expense">Atenção necessária</p>
+                  <p className="text-sm text-muted-foreground">
+                    Seu saldo ficará negativo por {metrics.daysBelowZero} dias
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Saldo médio do período:</p>
+              <p className="text-lg font-semibold">{formatCurrency(metrics.averageBalance)}</p>
+            </div>
+
+            {metrics.worstDayBalance < 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-financial-expense">Menor saldo:</p>
+                <p className="text-lg font-semibold text-financial-expense">
+                  {formatCurrency(metrics.worstDayBalance)} em {" "}
+                  {format(new Date(metrics.worstDayDate), 'dd/MM/yyyy', { locale: ptBR })}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Recomendações</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {metrics.riskScore === 'high' && (
+              <div className="p-3 bg-financial-warning/10 rounded-lg">
+                <p className="font-medium text-financial-warning mb-2">Revisar orçamento</p>
+                <p className="text-sm text-muted-foreground">
+                  Considere reduzir gastos ou aumentar receitas para evitar saldo negativo
+                </p>
+              </div>
+            )}
+
+            {metrics.trendDirection === 'up' && metrics.riskScore === 'low' && (
+              <div className="p-3 bg-financial-success/10 rounded-lg">
+                <p className="font-medium text-financial-success mb-2">Oportunidade de investimento</p>
+                <p className="text-sm text-muted-foreground">
+                  Seu saldo está crescendo. Consider alocar excedentes em investimentos
+                </p>
+              </div>
+            )}
+
+            {metrics.averageBalance > metrics.liquidityNow * 1.5 && (
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <p className="font-medium text-blue-700 mb-2">Reserva de emergência</p>
+                <p className="text-sm text-muted-foreground">
+                  Considere manter pelo menos 3-6 meses de gastos como reserva
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

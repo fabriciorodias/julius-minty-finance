@@ -23,7 +23,10 @@ export function useAccountBalances() {
       console.log('🏦 Fetching account balances for date:', today);
       
       const { data, error } = await supabase
-        .rpc('get_account_balances', { p_as_of_date: today });
+        .rpc('get_account_balances_for_user', { 
+          p_user_id: user.id, 
+          p_as_of_date: today 
+        });
 
       if (error) {
         console.error('❌ Error fetching account balances:', error);

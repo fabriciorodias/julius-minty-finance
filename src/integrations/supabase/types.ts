@@ -844,6 +844,13 @@ export type Database = {
           current_balance: number
         }[]
       }
+      get_account_balances_for_user: {
+        Args: { p_as_of_date?: string; p_user_id: string }
+        Returns: {
+          account_id: string
+          current_balance: number
+        }[]
+      }
       get_monthly_budget_actuals: {
         Args: { p_month: string }
         Returns: {

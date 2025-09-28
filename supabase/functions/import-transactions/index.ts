@@ -58,12 +58,20 @@ serve(async (req) => {
     
     let transactions;
     try {
+      console.log('Starting file parsing...')
       transactions = await parseFile(fileContent, file.type, file.name)
-      console.log('Before sorting - first 3 transactions:', transactions.slice(0, 3).map(t => ({ date: t.date, desc: t.description.substring(0, 30) })))
+      console.log(`Total transactions parsed: ${transactions.length}`)
+      
+      // Log first and last few transactions to verify complete parsing
+      if (transactions.length > 0) {
+        console.log('First 3 transactions after parsing:', transactions.slice(0, 3).map(t => ({ date: t.date, desc: t.description.substring(0, 30) })))
+        console.log('Last 3 transactions after parsing:', transactions.slice(-3).map(t => ({ date: t.date, desc: t.description.substring(0, 30) })))
+      }
       
       // Sort transactions by date descending (most recent first)
       transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      console.log('After sorting - first 3 transactions:', transactions.slice(0, 3).map(t => ({ date: t.date, desc: t.description.substring(0, 30) })))
+      console.log(`After sorting by date (newest first) - total: ${transactions.length}`)
+      console.log('First 3 after sorting:', transactions.slice(0, 3).map(t => ({ date: t.date, desc: t.description.substring(0, 30) })))
       
       // Limit to 50 most recent transactions
       const originalCount = transactions.length;
@@ -72,6 +80,10 @@ serve(async (req) => {
       console.log(`Transactions processed: ${originalCount} total, limited to ${transactions.length} most recent`)
       if (originalCount > 50) {
         console.log(`Warning: ${originalCount - 50} older transactions were excluded`)
+        console.log('Date range after limiting:', {
+          newest: transactions[0]?.date,
+          oldest: transactions[transactions.length - 1]?.date
+        });
       }
     } catch (parseError) {
       console.error('Parse error:', parseError)
@@ -258,6 +270,8 @@ function parseCSV(content: string): ParsedTransaction[] {
   }
 
   const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0)
+  console.log(`Total lines in CSV: ${lines.length}`)
+  console.log('First line raw:', lines[0])
   
   if (lines.length === 0) {
     throw new Error('Arquivo CSV está vazio')
@@ -434,12 +448,25 @@ function parseCSV(content: string): ParsedTransaction[] {
   }
 
   // Process data rows
+  console.log(`Starting to process data from line ${dataStartIndex + 1} to ${lines.length}`)
+  let processedLines = 0
+  let validTransactions = 0
+  let skippedLines = 0
+  
   for (let i = dataStartIndex; i < lines.length; i++) {
     const line = lines[i]
-    if (!line) continue
+    processedLines++
+    
+    if (!line) {
+      skippedLines++
+      continue
+    }
 
     const columns = line.split(delimiter).map(col => col.replace(/"/g, '').trim())
-    console.log(`Processing line ${i + 1}:`, columns)
+    if (i < dataStartIndex + 3 || i >= lines.length - 3) {
+      // Log first and last few lines for debugging
+      console.log(`Processing line ${i + 1}:`, columns)
+    }
     
     const minRequiredColumns = Math.max(dateIndex + 1, descIndex + 1, amountIndex + 1, creditIndex + 1, debitIndex + 1)
     if (columns.length < minRequiredColumns) {
@@ -491,14 +518,17 @@ function parseCSV(content: string): ParsedTransaction[] {
       })
       
       if (!date || !description.trim() || isNaN(amount) || amount === 0) {
-        console.warn(`Line ${i + 1} failed validation:`, { 
-          date, 
-          description: description.trim(), 
-          amount, 
-          isValidDate: !!date,
-          isValidDesc: !!description.trim(),
-          isValidAmount: !isNaN(amount) && amount !== 0
-        })
+        if (i < dataStartIndex + 3 || i >= lines.length - 3) {
+          console.warn(`Line ${i + 1} failed validation:`, { 
+            date, 
+            description: description.trim(), 
+            amount, 
+            isValidDate: !!date,
+            isValidDesc: !!description.trim(),
+            isValidAmount: !isNaN(amount) && amount !== 0
+          })
+        }
+        skippedLines++
         continue
       }
       
@@ -508,13 +538,25 @@ function parseCSV(content: string): ParsedTransaction[] {
         amount
       })
       
-      console.log(`Successfully parsed transaction ${transactions.length}:`, { date, description: description.trim(), amount })
+      validTransactions++
+      if (validTransactions <= 3 || validTransactions > transactions.length - 3) {
+        console.log(`Successfully parsed transaction ${validTransactions}:`, { date, description: description.trim(), amount })
+      }
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      console.warn(`Error parsing line ${i + 1}:`, errorMessage, 'Raw line:', line)
+      if (i < dataStartIndex + 3 || i >= lines.length - 3) {
+        console.warn(`Error parsing line ${i + 1}:`, errorMessage, 'Raw line:', line)
+      }
+      skippedLines++
     }
   }
+
+  console.log(`CSV Processing Summary:`)
+  console.log(`- Total lines processed: ${processedLines}`)
+  console.log(`- Valid transactions: ${validTransactions}`)
+  console.log(`- Skipped lines: ${skippedLines}`)
+  console.log(`- Success rate: ${((validTransactions / processedLines) * 100).toFixed(1)}%`)
 
   if (transactions.length === 0) {
     throw new Error('Nenhuma transação válida foi encontrada no arquivo CSV')

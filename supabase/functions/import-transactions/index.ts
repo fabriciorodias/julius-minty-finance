@@ -299,11 +299,23 @@ function parseCSVRecentFirst(content: string): ParsedTransaction[] {
   
   // For Nubank format: description,amount,id,date
   if (hasHeader && firstLineColumns.length === 4) {
-    console.log('Detected Nubank 4-column format')
-    descIndex = 0    // description
-    amountIndex = 1  // amount  
-    // Skip column 2 (id)
-    dateIndex = 3    // date
+    const headerLower = firstLineColumns.map(h => h.toLowerCase())
+    console.log('Header columns (lowercase):', headerLower)
+    
+    // Map columns by header names for Nubank
+    descIndex = headerLower.findIndex(h => h.includes('description') || h.includes('descri'))
+    amountIndex = headerLower.findIndex(h => h.includes('amount') || h.includes('valor'))
+    dateIndex = headerLower.findIndex(h => h.includes('date') || h.includes('data'))
+    
+    console.log('Nubank header mapping:', { descIndex, amountIndex, dateIndex })
+    
+    // If header mapping failed, use positional mapping for Nubank format
+    if (descIndex === -1 || amountIndex === -1 || dateIndex === -1) {
+      console.log('Header mapping failed, using Nubank positional mapping')
+      descIndex = 0    // description
+      amountIndex = 1  // amount  
+      dateIndex = 3    // date (skip column 2 which is id)
+    }
   } else {
     // Try to detect columns from sample data
     const sampleLine = recentLines[0] || dataLines[0]
@@ -319,7 +331,7 @@ function parseCSVRecentFirst(content: string): ParsedTransaction[] {
       }
     }
     
-    // Find amount column (numbers with +/- signs)
+    // Find amount column (numbers with +/- signs) - avoid date column
     for (let i = 0; i < sampleColumns.length; i++) {
       if (i !== dateIndex && isValidAmount(sampleColumns[i])) {
         amountIndex = i
@@ -328,13 +340,18 @@ function parseCSVRecentFirst(content: string): ParsedTransaction[] {
       }
     }
     
-    // Description is usually the first or longest text column
+    // Description is usually the longest text column, avoid date and amount
+    let bestDescIndex = -1
+    let maxLength = 0
     for (let i = 0; i < sampleColumns.length; i++) {
-      if (i !== dateIndex && i !== amountIndex) {
-        descIndex = i
-        console.log(`Using description column at index ${i}:`, sampleColumns[i])
-        break
+      if (i !== dateIndex && i !== amountIndex && sampleColumns[i].length > maxLength) {
+        bestDescIndex = i
+        maxLength = sampleColumns[i].length
       }
+    }
+    if (bestDescIndex !== -1) {
+      descIndex = bestDescIndex
+      console.log(`Found description column at index ${descIndex}:`, sampleColumns[descIndex])
     }
     
     // Final fallback positioning if still not found
@@ -354,17 +371,19 @@ function parseCSVRecentFirst(content: string): ParsedTransaction[] {
   
   console.log('Final column mapping:', { dateIndex, descIndex, amountIndex })
   
-  // Process the recent lines
+  // Process the recent lines with detailed logging
   let validTransactions = 0
   let rejectedLines = 0
   
-  for (const line of recentLines) {
+  console.log('Starting to process lines with mapping:', { dateIndex, descIndex, amountIndex })
+  
+  for (const [lineIndex, line] of recentLines.entries()) {
     try {
       const columns = line.split(delimiter).map(col => col.replace(/"/g, '').trim())
       
       if (columns.length < 2) {
         rejectedLines++
-        console.log('Rejected: insufficient columns -', line.substring(0, 50))
+        console.log(`Line ${lineIndex}: Rejected - insufficient columns (${columns.length})`)
         continue
       }
       
@@ -372,10 +391,12 @@ function parseCSVRecentFirst(content: string): ParsedTransaction[] {
       const description = columns[descIndex] || 'Transação importada'
       const amountStr = columns[amountIndex] || '0'
       
+      console.log(`Line ${lineIndex}: Extracted data - date:"${dateStr}", desc:"${description}", amount:"${amountStr}"`)
+      
       // Validate date
       if (!dateStr || !isValidDateFormat(dateStr)) {
         rejectedLines++
-        console.log('Rejected: invalid date -', { dateStr, line: line.substring(0, 50) })
+        console.log(`Line ${lineIndex}: Rejected - invalid date "${dateStr}"`)
         continue
       }
       
@@ -383,28 +404,31 @@ function parseCSVRecentFirst(content: string): ParsedTransaction[] {
       let amount = parseAmount(amountStr)
       if (isNaN(amount)) {
         rejectedLines++
-        console.log('Rejected: invalid amount -', { amountStr, line: line.substring(0, 50) })
+        console.log(`Line ${lineIndex}: Rejected - invalid amount "${amountStr}" -> ${amount}`)
         continue
       }
       
       const formattedDate = parseDate(dateStr)
       if (!formattedDate) {
         rejectedLines++
-        console.log('Rejected: date parse failed -', { dateStr, line: line.substring(0, 50) })
+        console.log(`Line ${lineIndex}: Rejected - date parse failed "${dateStr}"`)
         continue
       }
       
-      transactions.push({
+      const transaction = {
         date: formattedDate,
         description: description.substring(0, 200),
         amount: amount
-      })
+      }
       
+      console.log(`Line ${lineIndex}: VALID TRANSACTION -`, transaction)
+      
+      transactions.push(transaction)
       validTransactions++
       
     } catch (error) {
       rejectedLines++
-      console.log('Error processing line:', error, line.substring(0, 50))
+      console.log(`Line ${lineIndex}: Error processing -`, error)
       continue
     }
   }

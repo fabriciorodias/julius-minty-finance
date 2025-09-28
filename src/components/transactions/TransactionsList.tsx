@@ -159,20 +159,20 @@ export function TransactionsList({
         const institution = institutions.find(inst => inst.id === account?.institution_id);
         
         return (
-          <div className="flex flex-col min-w-0">
-            <div className="font-medium text-sm truncate">
+          <div className="flex flex-col min-w-0 max-w-[250px]">
+            <div className="font-medium text-sm truncate" title={transaction.description}>
               {transaction.description}
             </div>
-            <div className="text-xs text-muted-foreground truncate">
+            <div className="text-xs text-muted-foreground truncate" title={`${institution?.name} - ${account?.name}`}>
               {institution?.name} - {account?.name}
             </div>
             {transaction.counterparties && (
-              <div className="text-xs text-muted-foreground truncate">
+              <div className="text-xs text-muted-foreground truncate" title={`Fav.: ${transaction.counterparties.name}`}>
                 Fav.: {transaction.counterparties.name}
               </div>
             )}
             {transaction.installment_number && transaction.total_installments && (
-              <div className="text-xs text-blue-600 font-medium">
+              <div className="text-xs text-blue-600 font-medium truncate">
                 Parcela {transaction.installment_number}/{transaction.total_installments}
               </div>
             )}

@@ -272,14 +272,15 @@ function parseCSVRecentFirst(content: string): ParsedTransaction[] {
   
   console.log('Detected delimiter:', delimiter)
   
-  // Detect if first line is header
+  // Detect if first line is header - check for Nubank specific headers too
   const firstLineColumns = firstLine.split(delimiter).map(col => col.replace(/"/g, '').trim())
-  const headerKeywords = ['date', 'data', 'description', 'descricao', 'descrição', 'memo', 'histórico', 'historico', 'amount', 'valor']
+  const headerKeywords = ['date', 'data', 'description', 'descricao', 'descrição', 'memo', 'histórico', 'historico', 'amount', 'valor', 'id']
   const hasHeader = firstLineColumns.some(col => 
     headerKeywords.some(keyword => col.toLowerCase().includes(keyword))
   )
   
   console.log('Header detected:', hasHeader)
+  console.log('First line columns:', firstLineColumns)
   
   // Determine data start line
   const dataStartIndex = hasHeader ? 1 : 0
@@ -287,60 +288,84 @@ function parseCSVRecentFirst(content: string): ParsedTransaction[] {
   console.log(`Data lines available: ${dataLines.length}`)
   
   // STRATEGY: Take last 50-70 lines to ensure we get recent transactions
-  // This accounts for potential non-transaction lines at end
   const linesToProcess = Math.min(70, dataLines.length)
   const recentLines = dataLines.slice(-linesToProcess)
   console.log(`Processing last ${linesToProcess} lines for recent transactions`)
   
   const transactions: ParsedTransaction[] = []
   
-  // Use the same column detection logic but apply to recent lines
-  const sampleLine = recentLines[0] || dataLines[0]
-  const sampleColumns = sampleLine.split(delimiter).map(col => col.replace(/"/g, '').trim())
-  
-  // Smart column detection
+  // Enhanced column detection - handle Nubank format specifically
   let dateIndex = -1, descIndex = -1, amountIndex = -1
   
-  // Find date column by testing actual values
-  for (let i = 0; i < sampleColumns.length; i++) {
-    if (isValidDateFormat(sampleColumns[i])) {
-      dateIndex = i
-      break
+  // For Nubank format: description,amount,id,date
+  if (hasHeader && firstLineColumns.length === 4) {
+    console.log('Detected Nubank 4-column format')
+    descIndex = 0    // description
+    amountIndex = 1  // amount  
+    // Skip column 2 (id)
+    dateIndex = 3    // date
+  } else {
+    // Try to detect columns from sample data
+    const sampleLine = recentLines[0] || dataLines[0]
+    const sampleColumns = sampleLine.split(delimiter).map(col => col.replace(/"/g, '').trim())
+    console.log('Sample columns for analysis:', sampleColumns)
+    
+    // Find date column by testing actual values
+    for (let i = 0; i < sampleColumns.length; i++) {
+      if (isValidDateFormat(sampleColumns[i])) {
+        dateIndex = i
+        console.log(`Found date column at index ${i}:`, sampleColumns[i])
+        break
+      }
+    }
+    
+    // Find amount column (numbers with +/- signs)
+    for (let i = 0; i < sampleColumns.length; i++) {
+      if (i !== dateIndex && isValidAmount(sampleColumns[i])) {
+        amountIndex = i
+        console.log(`Found amount column at index ${i}:`, sampleColumns[i])
+        break
+      }
+    }
+    
+    // Description is usually the first or longest text column
+    for (let i = 0; i < sampleColumns.length; i++) {
+      if (i !== dateIndex && i !== amountIndex) {
+        descIndex = i
+        console.log(`Using description column at index ${i}:`, sampleColumns[i])
+        break
+      }
+    }
+    
+    // Final fallback positioning if still not found
+    if (dateIndex === -1) {
+      dateIndex = sampleColumns.length >= 4 ? 3 : (sampleColumns.length >= 2 ? sampleColumns.length - 1 : 0)
+      console.log(`Fallback: setting date index to ${dateIndex}`)
+    }
+    if (descIndex === -1) {
+      descIndex = 0
+      console.log(`Fallback: setting description index to ${descIndex}`)
+    }
+    if (amountIndex === -1) {
+      amountIndex = 1
+      console.log(`Fallback: setting amount index to ${amountIndex}`)
     }
   }
   
-  // Find amount column (numbers with +/- signs)
-  for (let i = 0; i < sampleColumns.length; i++) {
-    if (i !== dateIndex && isValidAmount(sampleColumns[i])) {
-      amountIndex = i
-      break
-    }
-  }
-  
-  // Description is remaining column
-  for (let i = 0; i < sampleColumns.length; i++) {
-    if (i !== dateIndex && i !== amountIndex) {
-      descIndex = i
-      break
-    }
-  }
-  
-  // Fallback positioning
-  if (dateIndex === -1) dateIndex = sampleColumns.length >= 3 ? sampleColumns.length - 1 : 0
-  if (descIndex === -1) descIndex = dateIndex === 0 ? 1 : 0
-  if (amountIndex === -1) amountIndex = sampleColumns.length >= 3 ? 1 : (dateIndex === 0 ? 1 : 0)
-  
-  console.log('Column mapping for recent lines:', { dateIndex, descIndex, amountIndex })
+  console.log('Final column mapping:', { dateIndex, descIndex, amountIndex })
   
   // Process the recent lines
   let validTransactions = 0
+  let rejectedLines = 0
   
   for (const line of recentLines) {
     try {
       const columns = line.split(delimiter).map(col => col.replace(/"/g, '').trim())
       
       if (columns.length < 2) {
-        continue // Skip incomplete lines
+        rejectedLines++
+        console.log('Rejected: insufficient columns -', line.substring(0, 50))
+        continue
       }
       
       const dateStr = columns[dateIndex] || ''
@@ -349,38 +374,47 @@ function parseCSVRecentFirst(content: string): ParsedTransaction[] {
       
       // Validate date
       if (!dateStr || !isValidDateFormat(dateStr)) {
+        rejectedLines++
+        console.log('Rejected: invalid date -', { dateStr, line: line.substring(0, 50) })
         continue
       }
       
       // Parse amount
       let amount = parseAmount(amountStr)
       if (isNaN(amount)) {
+        rejectedLines++
+        console.log('Rejected: invalid amount -', { amountStr, line: line.substring(0, 50) })
         continue
       }
       
       const formattedDate = parseDate(dateStr)
       if (!formattedDate) {
+        rejectedLines++
+        console.log('Rejected: date parse failed -', { dateStr, line: line.substring(0, 50) })
         continue
       }
       
       transactions.push({
         date: formattedDate,
-        description: description.substring(0, 200), // Limit description length
+        description: description.substring(0, 200),
         amount: amount
       })
       
       validTransactions++
       
     } catch (error) {
-      console.log('Error processing line:', error)
+      rejectedLines++
+      console.log('Error processing line:', error, line.substring(0, 50))
       continue
     }
   }
   
-  console.log(`Valid transactions parsed from recent lines: ${validTransactions}`)
+  console.log(`Processing summary: ${validTransactions} valid, ${rejectedLines} rejected`)
   
+  // If no valid transactions found, try fallback with full file
   if (transactions.length === 0) {
-    throw new Error('Nenhuma transação válida encontrada nas linhas mais recentes')
+    console.log('No transactions found in recent lines, trying fallback with full file')
+    return parseCSVFallback(content, delimiter, dataStartIndex)
   }
   
   // Sort by date descending (most recent first) and limit to 50
@@ -388,12 +422,74 @@ function parseCSVRecentFirst(content: string): ParsedTransaction[] {
   const finalTransactions = transactions.slice(0, 50)
   
   console.log(`Final result: ${finalTransactions.length} most recent transactions`)
-  console.log('Date range:', {
-    newest: finalTransactions[0]?.date,
-    oldest: finalTransactions[finalTransactions.length - 1]?.date
-  })
+  if (finalTransactions.length > 0) {
+    console.log('Date range:', {
+      newest: finalTransactions[0]?.date,
+      oldest: finalTransactions[finalTransactions.length - 1]?.date
+    })
+  }
   
   return finalTransactions
+}
+
+// Fallback function to process entire CSV if recent-first fails
+function parseCSVFallback(content: string, delimiter: string, dataStartIndex: number): ParsedTransaction[] {
+  console.log('Using CSV fallback strategy - processing entire file')
+  
+  const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0)
+  const dataLines = lines.slice(dataStartIndex)
+  
+  const transactions: ParsedTransaction[] = []
+  
+  // Use standard column detection from original parseCSV function
+  for (const line of dataLines) {
+    try {
+      const columns = line.split(delimiter).map(col => col.replace(/"/g, '').trim())
+      
+      if (columns.length < 2) continue
+      
+      // Try different column arrangements
+      const possibleMappings = [
+        { desc: 0, amount: 1, date: 3 }, // Nubank format
+        { desc: 0, amount: 1, date: 2 }, // Common format 1
+        { desc: 1, amount: 2, date: 0 }, // Common format 2
+        { desc: 2, amount: 1, date: 0 }, // Common format 3
+      ]
+      
+      for (const mapping of possibleMappings) {
+        if (columns.length > Math.max(mapping.desc, mapping.amount, mapping.date)) {
+          const dateStr = columns[mapping.date] || ''
+          const description = columns[mapping.desc] || 'Transação importada'
+          const amountStr = columns[mapping.amount] || '0'
+          
+          if (isValidDateFormat(dateStr)) {
+            const amount = parseAmount(amountStr)
+            if (!isNaN(amount)) {
+              const formattedDate = parseDate(dateStr)
+              if (formattedDate) {
+                transactions.push({
+                  date: formattedDate,
+                  description: description.substring(0, 200),
+                  amount: amount
+                })
+                break // Found valid mapping for this line
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      continue
+    }
+  }
+  
+  if (transactions.length === 0) {
+    throw new Error('Não foi possível encontrar transações válidas no arquivo')
+  }
+  
+  // Sort by date descending and limit to 50
+  transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  return transactions.slice(0, 50)
 }
 
 async function parseFile(content: string, mimeType: string, fileName: string): Promise<ParsedTransaction[]> {
@@ -768,6 +864,9 @@ function parseCSV(content: string): ParsedTransaction[] {
 function isValidDateFormat(dateStr: string): boolean {
   if (!dateStr || typeof dateStr !== 'string') return false
   
+  // Clean the date string
+  const cleaned = dateStr.trim()
+  
   // Check for common date patterns
   const datePatterns = [
     /^\d{1,2}\/\d{1,2}\/\d{4}$/,     // DD/MM/YYYY or MM/DD/YYYY  
@@ -777,19 +876,34 @@ function isValidDateFormat(dateStr: string): boolean {
     /^\d{8}$/,                      // YYYYMMDD
   ]
   
-  const matchesPattern = datePatterns.some(pattern => pattern.test(dateStr.trim()))
+  const matchesPattern = datePatterns.some(pattern => pattern.test(cleaned))
   
   if (!matchesPattern) {
-    console.log(`Date "${dateStr}" does not match expected patterns`)
     return false
   }
   
-  // Try to parse as date to verify it's actually a valid date
-  const date = new Date(dateStr)
-  const isValidDate = !isNaN(date.getTime())
+  // For Brazilian format DD/MM/YYYY, parse correctly
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(cleaned)) {
+    const parts = cleaned.split('/')
+    const day = parseInt(parts[0], 10)
+    const month = parseInt(parts[1], 10)
+    const year = parseInt(parts[2], 10)
+    
+    // Validate ranges
+    if (month < 1 || month > 12) return false
+    if (day < 1 || day > 31) return false
+    if (year < 1900 || year > 2100) return false
+    
+    // Create date object with correct month (0-indexed)
+    const date = new Date(year, month - 1, day)
+    return date.getFullYear() === year && 
+           date.getMonth() === (month - 1) && 
+           date.getDate() === day
+  }
   
-  console.log(`Date validation for "${dateStr}": pattern=${matchesPattern}, parseable=${isValidDate}`)
-  return matchesPattern && isValidDate
+  // For other formats, use standard parsing
+  const date = new Date(cleaned)
+  return !isNaN(date.getTime())
 }
 
 function isValidAmount(amountStr: string): boolean {

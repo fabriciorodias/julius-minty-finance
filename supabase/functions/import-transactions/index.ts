@@ -58,29 +58,17 @@ serve(async (req) => {
     
     let transactions;
     try {
-      console.log('Starting file parsing...')
-      transactions = await parseFile(fileContent, file.type, file.name)
+      console.log('Starting file parsing with reverse strategy...')
+      
+      // NEW STRATEGY: Process from the end to ensure we get the most recent transactions
+      transactions = await parseFileRecentFirst(fileContent, file.type, file.name)
       console.log(`Total transactions parsed: ${transactions.length}`)
       
-      // Log first and last few transactions to verify complete parsing
+      // Log first and last few transactions to verify we got recent ones
       if (transactions.length > 0) {
-        console.log('First 3 transactions after parsing:', transactions.slice(0, 3).map(t => ({ date: t.date, desc: t.description.substring(0, 30) })))
-        console.log('Last 3 transactions after parsing:', transactions.slice(-3).map(t => ({ date: t.date, desc: t.description.substring(0, 30) })))
-      }
-      
-      // Sort transactions by date descending (most recent first)
-      transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      console.log(`After sorting by date (newest first) - total: ${transactions.length}`)
-      console.log('First 3 after sorting:', transactions.slice(0, 3).map(t => ({ date: t.date, desc: t.description.substring(0, 30) })))
-      
-      // Limit to 50 most recent transactions
-      const originalCount = transactions.length;
-      transactions = transactions.slice(0, 50);
-      
-      console.log(`Transactions processed: ${originalCount} total, limited to ${transactions.length} most recent`)
-      if (originalCount > 50) {
-        console.log(`Warning: ${originalCount - 50} older transactions were excluded`)
-        console.log('Date range after limiting:', {
+        console.log('Most recent 3 transactions:', transactions.slice(0, 3).map((t: ParsedTransaction) => ({ date: t.date, desc: t.description.substring(0, 30) })))
+        console.log('Oldest 3 transactions in result:', transactions.slice(-3).map((t: ParsedTransaction) => ({ date: t.date, desc: t.description.substring(0, 30) })))
+        console.log('Date range:', {
           newest: transactions[0]?.date,
           oldest: transactions[transactions.length - 1]?.date
         });
@@ -106,7 +94,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: true, 
-          transactions: transactions.map((transaction, index) => ({
+          transactions: transactions.map((transaction: ParsedTransaction, index: number) => ({
             index,
             description: transaction.description,
             amount: transaction.amount,
@@ -167,7 +155,7 @@ serve(async (req) => {
     })
 
     // Insert transactions into database with correct account/credit card assignment
-    const transactionsToInsert = transactionsToImport.map(transaction => ({
+    const transactionsToInsert = transactionsToImport.map((transaction: ParsedTransaction) => ({
       user_id: user.id,
       account_id: isAccount ? sourceId : null,
       credit_card_id: isCreditCard ? sourceId : null,
@@ -247,6 +235,165 @@ interface ParsedTransaction {
   description: string
   amount: number
   date: string
+}
+
+async function parseFileRecentFirst(content: string, mimeType: string, fileName: string): Promise<ParsedTransaction[]> {
+  const extension = fileName.split('.').pop()?.toLowerCase()
+
+  if (extension === 'csv' || mimeType.includes('csv') || mimeType === 'text/plain') {
+    return parseCSVRecentFirst(content)
+  } else if (extension === 'ofx' || mimeType.includes('ofx')) {
+    return parseOFX(content)
+  }
+
+  throw new Error('Formato de arquivo não suportado. Use CSV ou OFX.')
+}
+
+function parseCSVRecentFirst(content: string): ParsedTransaction[] {
+  console.log('Parsing CSV with recent-first strategy...')
+  
+  // Remove BOM if present
+  if (content.charCodeAt(0) === 0xFEFF) {
+    content = content.slice(1)
+  }
+
+  const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0)
+  console.log(`Total lines in CSV: ${lines.length}`)
+  
+  if (lines.length === 0) {
+    throw new Error('Arquivo CSV está vazio')
+  }
+
+  // Detect delimiter and structure from first line
+  const firstLine = lines[0]
+  const commaCount = (firstLine.match(/,/g) || []).length
+  const semicolonCount = (firstLine.match(/;/g) || []).length
+  const delimiter = semicolonCount > commaCount ? ';' : ','
+  
+  console.log('Detected delimiter:', delimiter)
+  
+  // Detect if first line is header
+  const firstLineColumns = firstLine.split(delimiter).map(col => col.replace(/"/g, '').trim())
+  const headerKeywords = ['date', 'data', 'description', 'descricao', 'descrição', 'memo', 'histórico', 'historico', 'amount', 'valor']
+  const hasHeader = firstLineColumns.some(col => 
+    headerKeywords.some(keyword => col.toLowerCase().includes(keyword))
+  )
+  
+  console.log('Header detected:', hasHeader)
+  
+  // Determine data start line
+  const dataStartIndex = hasHeader ? 1 : 0
+  const dataLines = lines.slice(dataStartIndex)
+  console.log(`Data lines available: ${dataLines.length}`)
+  
+  // STRATEGY: Take last 50-70 lines to ensure we get recent transactions
+  // This accounts for potential non-transaction lines at end
+  const linesToProcess = Math.min(70, dataLines.length)
+  const recentLines = dataLines.slice(-linesToProcess)
+  console.log(`Processing last ${linesToProcess} lines for recent transactions`)
+  
+  const transactions: ParsedTransaction[] = []
+  
+  // Use the same column detection logic but apply to recent lines
+  const sampleLine = recentLines[0] || dataLines[0]
+  const sampleColumns = sampleLine.split(delimiter).map(col => col.replace(/"/g, '').trim())
+  
+  // Smart column detection
+  let dateIndex = -1, descIndex = -1, amountIndex = -1
+  
+  // Find date column by testing actual values
+  for (let i = 0; i < sampleColumns.length; i++) {
+    if (isValidDateFormat(sampleColumns[i])) {
+      dateIndex = i
+      break
+    }
+  }
+  
+  // Find amount column (numbers with +/- signs)
+  for (let i = 0; i < sampleColumns.length; i++) {
+    if (i !== dateIndex && isValidAmount(sampleColumns[i])) {
+      amountIndex = i
+      break
+    }
+  }
+  
+  // Description is remaining column
+  for (let i = 0; i < sampleColumns.length; i++) {
+    if (i !== dateIndex && i !== amountIndex) {
+      descIndex = i
+      break
+    }
+  }
+  
+  // Fallback positioning
+  if (dateIndex === -1) dateIndex = sampleColumns.length >= 3 ? sampleColumns.length - 1 : 0
+  if (descIndex === -1) descIndex = dateIndex === 0 ? 1 : 0
+  if (amountIndex === -1) amountIndex = sampleColumns.length >= 3 ? 1 : (dateIndex === 0 ? 1 : 0)
+  
+  console.log('Column mapping for recent lines:', { dateIndex, descIndex, amountIndex })
+  
+  // Process the recent lines
+  let validTransactions = 0
+  
+  for (const line of recentLines) {
+    try {
+      const columns = line.split(delimiter).map(col => col.replace(/"/g, '').trim())
+      
+      if (columns.length < 2) {
+        continue // Skip incomplete lines
+      }
+      
+      const dateStr = columns[dateIndex] || ''
+      const description = columns[descIndex] || 'Transação importada'
+      const amountStr = columns[amountIndex] || '0'
+      
+      // Validate date
+      if (!dateStr || !isValidDateFormat(dateStr)) {
+        continue
+      }
+      
+      // Parse amount
+      let amount = parseAmount(amountStr)
+      if (isNaN(amount)) {
+        continue
+      }
+      
+      const formattedDate = parseDate(dateStr)
+      if (!formattedDate) {
+        continue
+      }
+      
+      transactions.push({
+        date: formattedDate,
+        description: description.substring(0, 200), // Limit description length
+        amount: amount
+      })
+      
+      validTransactions++
+      
+    } catch (error) {
+      console.log('Error processing line:', error)
+      continue
+    }
+  }
+  
+  console.log(`Valid transactions parsed from recent lines: ${validTransactions}`)
+  
+  if (transactions.length === 0) {
+    throw new Error('Nenhuma transação válida encontrada nas linhas mais recentes')
+  }
+  
+  // Sort by date descending (most recent first) and limit to 50
+  transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const finalTransactions = transactions.slice(0, 50)
+  
+  console.log(`Final result: ${finalTransactions.length} most recent transactions`)
+  console.log('Date range:', {
+    newest: finalTransactions[0]?.date,
+    oldest: finalTransactions[finalTransactions.length - 1]?.date
+  })
+  
+  return finalTransactions
 }
 
 async function parseFile(content: string, mimeType: string, fileName: string): Promise<ParsedTransaction[]> {

@@ -61,7 +61,15 @@ serve(async (req) => {
       transactions = await parseFile(fileContent, file.type, file.name)
       // Sort transactions by date descending (most recent first)
       transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      console.log('Parsed and sorted transactions count:', transactions.length)
+      
+      // Limit to 50 most recent transactions
+      const originalCount = transactions.length;
+      transactions = transactions.slice(0, 50);
+      
+      console.log(`Transactions processed: ${originalCount} total, limited to ${transactions.length} most recent`)
+      if (originalCount > 50) {
+        console.log(`Warning: ${originalCount - 50} older transactions were excluded`)
+      }
     } catch (parseError) {
       console.error('Parse error:', parseError)
       const errorMessage = parseError instanceof Error ? parseError.message : 'Erro desconhecido'

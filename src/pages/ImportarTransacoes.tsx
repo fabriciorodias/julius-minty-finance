@@ -229,14 +229,9 @@ export default function ImportarTransacoes() {
                   onSourceAccountChange={setSourceAccount}
                   onImportTypeChange={setImportType}
                   onTransactionsLoaded={(transactions) => {
-                    // Sort transactions by date (newest first)
-                    const sortedTransactions = [...transactions].sort((a, b) => {
-                      const dateA = new Date(a.date);
-                      const dateB = new Date(b.date);
-                      return dateB.getTime() - dateA.getTime();
-                    });
-                    setAllTransactions(sortedTransactions);
-                    setSelectedTransactionIds(sortedTransactions.map(t => t.index.toString()));
+                    // Transactions are already sorted by the Edge Function (newest first)
+                    setAllTransactions(transactions);
+                    setSelectedTransactionIds(transactions.map(t => t.index.toString()));
                     setStep('transaction-selection');
                     setErrors([]); // Clear any previous errors
                   }}

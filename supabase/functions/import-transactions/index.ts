@@ -59,8 +59,11 @@ serve(async (req) => {
     let transactions;
     try {
       transactions = await parseFile(fileContent, file.type, file.name)
+      console.log('Before sorting - first 3 transactions:', transactions.slice(0, 3).map(t => ({ date: t.date, desc: t.description.substring(0, 30) })))
+      
       // Sort transactions by date descending (most recent first)
       transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      console.log('After sorting - first 3 transactions:', transactions.slice(0, 3).map(t => ({ date: t.date, desc: t.description.substring(0, 30) })))
       
       // Limit to 50 most recent transactions
       const originalCount = transactions.length;

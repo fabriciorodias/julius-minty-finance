@@ -447,15 +447,27 @@ function parseCSV(content: string): ParsedTransaction[] {
     throw new Error('Arquivo CSV não contém dados suficientes')
   }
 
-  // Process data rows
+  // Process data rows  
   console.log(`Starting to process data from line ${dataStartIndex + 1} to ${lines.length}`)
+  console.log(`Total lines to process: ${lines.length - dataStartIndex}`)
+  
   let processedLines = 0
   let validTransactions = 0
   let skippedLines = 0
   
+  // Process in chunks to avoid timeouts and add progress tracking
+  const CHUNK_SIZE = 20;
+  const totalLinesToProcess = lines.length - dataStartIndex;
+  
   for (let i = dataStartIndex; i < lines.length; i++) {
     const line = lines[i]
     processedLines++
+    
+    // Log progress every chunk
+    if ((processedLines - 1) % CHUNK_SIZE === 0) {
+      console.log(`Processing chunk: lines ${processedLines}/${totalLinesToProcess} (${Math.round((processedLines/totalLinesToProcess)*100)}%)`);
+      console.log(`Memory usage: ${(Deno.memoryUsage?.().heapUsed || 0) / 1024 / 1024} MB`);
+    }
     
     if (!line) {
       skippedLines++
@@ -463,8 +475,13 @@ function parseCSV(content: string): ParsedTransaction[] {
     }
 
     const columns = line.split(delimiter).map(col => col.replace(/"/g, '').trim())
-    if (i < dataStartIndex + 3 || i >= lines.length - 3) {
-      // Log first and last few lines for debugging
+    
+    // Log first few, middle few, and last few lines for debugging
+    const isFirstFew = i < dataStartIndex + 3;
+    const isMiddleFew = i >= Math.floor(lines.length / 2) && i < Math.floor(lines.length / 2) + 3;
+    const isLastFew = i >= lines.length - 3;
+    
+    if (isFirstFew || isMiddleFew || isLastFew) {
       console.log(`Processing line ${i + 1}:`, columns)
     }
     
@@ -477,16 +494,23 @@ function parseCSV(content: string): ParsedTransaction[] {
     try {
       // Validate and parse date
       const dateValue = columns[dateIndex] || ''
-      console.log(`Line ${i + 1} - Date value from column ${dateIndex}: "${dateValue}"`)
+      if (isFirstFew || isMiddleFew || isLastFew) {
+        console.log(`Line ${i + 1} - Date value from column ${dateIndex}: "${dateValue}"`)
+      }
       
       if (!isValidDateFormat(dateValue)) {
-        console.warn(`Line ${i + 1} has invalid date format "${dateValue}", skipping`)
+        if (isFirstFew || isMiddleFew || isLastFew) {
+          console.warn(`Line ${i + 1} has invalid date format "${dateValue}", skipping`)
+        }
+        skippedLines++
         continue
       }
       
       const date = parseDate(dateValue)
       const description = columns[descIndex] || 'Transação importada'
-      console.log(`Line ${i + 1} - Description from column ${descIndex}: "${description}"`)
+      if (isFirstFew || isMiddleFew || isLastFew) {
+        console.log(`Line ${i + 1} - Description from column ${descIndex}: "${description}"`)
+      }
       
       let amount = 0
       
@@ -495,16 +519,24 @@ function parseCSV(content: string): ParsedTransaction[] {
         const creditValue = parseAmount(columns[creditIndex] || '0')
         const debitValue = parseAmount(columns[debitIndex] || '0')
         amount = creditValue - debitValue
-        console.log(`Line ${i + 1} - Credit/Debit: ${creditValue} - ${debitValue} = ${amount}`)
+        if (isFirstFew || isMiddleFew || isLastFew) {
+          console.log(`Line ${i + 1} - Credit/Debit: ${creditValue} - ${debitValue} = ${amount}`)
+        }
       } else if (creditIndex >= 0) {
         amount = parseAmount(columns[creditIndex] || '0')
-        console.log(`Line ${i + 1} - Credit amount: ${amount}`)
+        if (isFirstFew || isMiddleFew || isLastFew) {
+          console.log(`Line ${i + 1} - Credit amount: ${amount}`)
+        }
       } else if (debitIndex >= 0) {
         amount = -parseAmount(columns[debitIndex] || '0')
-        console.log(`Line ${i + 1} - Debit amount: ${amount}`)
+        if (isFirstFew || isMiddleFew || isLastFew) {
+          console.log(`Line ${i + 1} - Debit amount: ${amount}`)
+        }
       } else if (amountIndex >= 0) {
         amount = parseAmount(columns[amountIndex] || '0')
-        console.log(`Line ${i + 1} - Amount from column ${amountIndex}: "${columns[amountIndex]}" -> ${amount}`)
+        if (isFirstFew || isMiddleFew || isLastFew) {
+          console.log(`Line ${i + 1} - Amount from column ${amountIndex}: "${columns[amountIndex]}" -> ${amount}`)
+        }
       }
 
       // Final validation before adding transaction
@@ -552,17 +584,37 @@ function parseCSV(content: string): ParsedTransaction[] {
     }
   }
 
-  console.log(`CSV Processing Summary:`)
-  console.log(`- Total lines processed: ${processedLines}`)
-  console.log(`- Valid transactions: ${validTransactions}`)
+  console.log(`CSV Processing Complete:`)
+  console.log(`- Total lines in file: ${lines.length}`)
+  console.log(`- Data lines processed: ${processedLines}`)
+  console.log(`- Valid transactions parsed: ${validTransactions}`)
   console.log(`- Skipped lines: ${skippedLines}`)
   console.log(`- Success rate: ${((validTransactions / processedLines) * 100).toFixed(1)}%`)
-
-  if (transactions.length === 0) {
-    throw new Error('Nenhuma transação válida foi encontrada no arquivo CSV')
+  console.log(`- Final transactions array length: ${transactions.length}`)
+  
+  // Log date range of all parsed transactions
+  if (transactions.length > 0) {
+    const allDates = transactions.map(t => t.date).sort();
+    console.log(`Date range of ALL parsed transactions: ${allDates[0]} to ${allDates[allDates.length - 1]}`);
+    
+    // Show sample of transactions across the date range
+    const sortedByDate = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    console.log(`Oldest transaction: ${JSON.stringify(sortedByDate[0])}`);
+    console.log(`Newest transaction: ${JSON.stringify(sortedByDate[sortedByDate.length - 1])}`);
+    
+    if (transactions.length >= 10) {
+      console.log(`Sample middle transactions:`);
+      const middle = Math.floor(sortedByDate.length / 2);
+      console.log(`- Middle: ${JSON.stringify(sortedByDate[middle])}`);
+      console.log(`- 75%: ${JSON.stringify(sortedByDate[Math.floor(sortedByDate.length * 0.75)])}`);
+    }
   }
 
-  console.log(`Successfully parsed ${transactions.length} valid transactions from CSV`)
+  if (transactions.length === 0) {
+    throw new Error(`Nenhuma transação válida foi encontrada no arquivo CSV. Processadas ${processedLines} linhas, ${skippedLines} ignoradas.`)
+  }
+
+  console.log(`✅ Successfully parsed ${transactions.length} valid transactions from CSV`)
   return transactions
 }
 

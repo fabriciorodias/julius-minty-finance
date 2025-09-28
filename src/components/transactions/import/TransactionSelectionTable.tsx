@@ -218,23 +218,24 @@ export function TransactionSelectionTable({
       </div>
 
       {/* Transactions Table */}
-      <div className="border rounded-lg">
-        <ScrollArea className="h-[500px]">
-          <Table>
-            <TableHeader className="sticky top-0 bg-background">
-              <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={allFilteredSelected && filteredTransactions.length > 0}
-                    onCheckedChange={handleSelectAll}
-                    className={someFilteredSelected && !allFilteredSelected ? 'opacity-50' : ''}
-                  />
-                </TableHead>
-                <TableHead className="w-32">Valor</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead className="w-40">Data</TableHead>
-              </TableRow>
-            </TableHeader>
+      <div className="border rounded-lg overflow-hidden">
+        <ScrollArea className="h-[500px] w-full">
+          <div className="min-w-full">
+            <Table className="w-full">
+              <TableHeader className="sticky top-0 bg-background">
+                <TableRow>
+                  <TableHead className="w-12 min-w-[48px]">
+                    <Checkbox
+                      checked={allFilteredSelected && filteredTransactions.length > 0}
+                      onCheckedChange={handleSelectAll}
+                      className={someFilteredSelected && !allFilteredSelected ? 'opacity-50' : ''}
+                    />
+                  </TableHead>
+                  <TableHead className="w-32 min-w-[128px]">Valor</TableHead>
+                  <TableHead className="min-w-[200px]">Descrição</TableHead>
+                  <TableHead className="w-40 min-w-[160px]">Data</TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {filteredTransactions.map((transaction) => {
                 const isSelected = selectedTransactionIds.includes(transaction.index.toString());
@@ -265,8 +266,8 @@ export function TransactionSelectionTable({
                       </span>
                     </TableCell>
                     
-                    <TableCell>
-                      <span className="font-medium">{transaction.description}</span>
+                    <TableCell className="max-w-0">
+                      <span className="font-medium truncate block">{transaction.description}</span>
                     </TableCell>
                     
                     <TableCell>
@@ -275,7 +276,7 @@ export function TransactionSelectionTable({
                           type="date"
                           value={formatDateForInput(transaction.currentDate)}
                           onChange={(e) => handleDateChange(transaction.index.toString(), e.target.value)}
-                          className={`w-32 ${transaction.hasDateIssue ? 'border-amber-500 bg-amber-50' : ''}`}
+                          className={`w-full min-w-[128px] ${transaction.hasDateIssue ? 'border-amber-500 bg-amber-50' : ''}`}
                         />
                         {transaction.hasDateIssue && (
                           <div title={transaction.dateValidation.message}>
@@ -288,7 +289,8 @@ export function TransactionSelectionTable({
                 );
               })}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </ScrollArea>
       </div>
 

@@ -74,7 +74,7 @@ export default function ImportarTransacoes() {
     );
 
     setIsProcessing(true);
-    setErrors([]);
+    setErrors([]); // Clear previous errors
 
     try {
       const result = await categorizeTransactions(selectedTransactions, categories);
@@ -202,8 +202,8 @@ export default function ImportarTransacoes() {
       {/* Content */}
       <div className="p-6">
         <div className="max-w-6xl mx-auto">
-          {/* Error Display */}
-          {state.errors.length > 0 && (
+          {/* Error Display - Only show if there are current errors and not processing */}
+          {state.errors.length > 0 && !state.isProcessing && !isCategorizingAI && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <h3 className="text-red-800 font-medium mb-2">Erros encontrados:</h3>
               <ul className="text-red-600 text-sm space-y-1">
@@ -229,9 +229,16 @@ export default function ImportarTransacoes() {
                   onSourceAccountChange={setSourceAccount}
                   onImportTypeChange={setImportType}
                   onTransactionsLoaded={(transactions) => {
-                    setAllTransactions(transactions);
-                    setSelectedTransactionIds(transactions.map(t => t.index.toString()));
+                    // Sort transactions by date (newest first)
+                    const sortedTransactions = [...transactions].sort((a, b) => {
+                      const dateA = new Date(a.date);
+                      const dateB = new Date(b.date);
+                      return dateB.getTime() - dateA.getTime();
+                    });
+                    setAllTransactions(sortedTransactions);
+                    setSelectedTransactionIds(sortedTransactions.map(t => t.index.toString()));
                     setStep('transaction-selection');
+                    setErrors([]); // Clear any previous errors
                   }}
                   isProcessing={state.isProcessing}
                   onProcessingChange={setIsProcessing}

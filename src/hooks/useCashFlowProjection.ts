@@ -421,8 +421,8 @@ export function useCashFlowProjection({
       return { dataPoints: finalDataPoints, accounts };
     },
     enabled: !!user?.id && selectedAccountIds.length > 0,
-    staleTime: 0,
-    refetchOnMount: true,
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: true,
   });
 
   return {

@@ -7,8 +7,12 @@ import { useProvisionedTotals } from '@/hooks/useProvisionedTotals';
 import { useCashFlowProjection } from '@/hooks/useCashFlowProjection';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useInstitutions } from '@/hooks/useInstitutions';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { safeCurrencyFormatter, safeFormatDate, safeFormatDateLong } from '@/lib/date-utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BalanceCardSkeleton } from '@/components/ui/enhanced-skeleton';
 import { TrendingUp, TrendingDown, Calendar, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 interface AnxiousBalancePanelProps {
@@ -20,8 +24,52 @@ interface AnxiousBalancePanelProps {
 }
 
 export function AnxiousBalancePanel({ selectedAccountIds, dateFilters }: AnxiousBalancePanelProps) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { accounts } = useAccounts();
   const { institutions } = useInstitutions();
+
+  // Set up real-time subscriptions to invalidate cache when data changes
+  React.useEffect(() => {
+    if (!user?.id) return;
+
+    console.log('🔄 Setting up realtime subscriptions for balance chart');
+
+    const transactionsChannel = supabase
+      .channel('balance-chart-transactions')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'transactions'
+        },
+        (payload) => {
+          console.log('💰 Transaction changed, invalidating balance chart queries:', payload);
+          queryClient.invalidateQueries({ queryKey: ['provisioned-totals', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['cash-flow-projection', user.id] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'account_initial_balances'
+        },
+        (payload) => {
+          console.log('🏦 Initial balance changed, invalidating balance chart queries:', payload);
+          queryClient.invalidateQueries({ queryKey: ['provisioned-totals', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['cash-flow-projection', user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🔌 Cleaning up realtime subscriptions for balance chart');
+      supabase.removeChannel(transactionsChannel);
+    };
+  }, [user?.id, queryClient]);
 
   // Get current balance (only completed transactions)
   const { completedBalance, totalBalance, isLoading: totalsLoading } = useProvisionedTotals({
@@ -89,21 +137,9 @@ export function AnxiousBalancePanel({ selectedAccountIds, dateFilters }: Anxious
 
   if (isLoading) {
     return (
-      <Card className="w-full">
-        <CardContent className="p-6">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-8 w-48" />
-              </div>
-              <div className="space-y-2 text-right">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-8 w-48" />
-              </div>
-            </div>
-            <Skeleton className="h-20 w-full" />
-          </div>
+      <Card className="w-full bg-gradient-to-br from-background to-muted/30 border-muted/50 shadow-sm">
+        <CardContent>
+          <BalanceCardSkeleton />
         </CardContent>
       </Card>
     );

@@ -41,6 +41,8 @@ export function useProvisionedTotals({ selectedAccountIds, dateFilters }: UsePro
     isLoading,
   } = useQuery({
     queryKey: ['provisioned-totals', user?.id, selectedAccountIds, dateFilters],
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: true,
     queryFn: async (): Promise<ProvisionedTotals> => {
       if (!user?.id || selectedAccountIds.length === 0) {
         const today = format(new Date(), 'yyyy-MM-dd');

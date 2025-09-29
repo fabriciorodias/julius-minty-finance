@@ -105,8 +105,37 @@ export function AICategorizeModal({
     );
   };
 
+  // Create a flattened list of all categories (main + subcategories)
+  const flattenedCategories = React.useMemo(() => {
+    const result: Array<{ id: string; name: string; fullName: string; type: string }> = [];
+    
+    categories.forEach(category => {
+      // Add main category
+      result.push({
+        id: category.id,
+        name: category.name,
+        fullName: category.name,
+        type: category.type
+      });
+      
+      // Add subcategories
+      if (category.subcategories) {
+        category.subcategories.forEach(subcategory => {
+          result.push({
+            id: subcategory.id,
+            name: subcategory.name,
+            fullName: `${category.name} > ${subcategory.name}`,
+            type: subcategory.type
+          });
+        });
+      }
+    });
+    
+    return result;
+  }, [categories]);
+
   const handleCategoryChange = (transactionId: string, categoryId: string) => {
-    const category = categories.find(c => c.id === categoryId);
+    const category = flattenedCategories.find(c => c.id === categoryId);
     setSuggestions(prev =>
       prev.map(s => 
         s.transaction_id === transactionId 
@@ -250,16 +279,19 @@ export function AICategorizeModal({
                         {/* Category selection */}
                         <div className="space-y-1">
                           <Select
-                            value={suggestion.category_id}
+                            value={suggestion.category_id || undefined}
                             onValueChange={(value) => handleCategoryChange(suggestion.transaction_id, value)}
                           >
                             <SelectTrigger className="h-8 text-xs">
-                              <SelectValue />
+                              <SelectValue placeholder="Selecione uma categoria" />
                             </SelectTrigger>
                             <SelectContent>
-                              {categories.map((category) => (
+                              <SelectItem value="no-category">Sem categoria</SelectItem>
+                              {flattenedCategories
+                                .filter(cat => cat.type === (suggestion.transaction.amount < 0 ? 'despesa' : 'receita'))
+                                .map((category) => (
                                 <SelectItem key={category.id} value={category.id}>
-                                  {category.name}
+                                  {category.fullName}
                                 </SelectItem>
                               ))}
                             </SelectContent>

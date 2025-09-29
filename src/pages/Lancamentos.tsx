@@ -20,13 +20,16 @@ import { FiltersMobileDrawer } from '@/components/transactions/FiltersMobileDraw
 import { AnxiousBalancePanel } from '@/components/transactions/AnxiousBalancePanel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Upload, CreditCard, AlertTriangle, TrendingUp, Plus, MoreHorizontal, Filter, Repeat, ArrowRightLeft } from 'lucide-react';
+import { Upload, CreditCard, AlertTriangle, TrendingUp, Plus, MoreHorizontal, Filter, Repeat, ArrowRightLeft, Brain, Loader2 } from 'lucide-react';
 import { TransferModal } from '@/components/transactions/TransferModal';
 import { useTransfers, CreateTransferData } from '@/hooks/useTransfers';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { CashFlowModal } from '@/components/transactions/CashFlowModal';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { AICategorizeModal } from '@/components/transactions/AICategorizeModal';
+import { useUncategorizedCount } from '@/hooks/useUncategorizedCount';
+import { toast } from '@/components/ui/use-toast';
 
 export default function Lancamentos() {
   const { user } = useAuth();
@@ -53,11 +56,17 @@ export default function Lancamentos() {
   // Details sheet state
   const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
   const [detailsTransaction, setDetailsTransaction] = useState<TransactionWithRelations | null>(null);
+  
+  // AI Categorization state
+  const [isAICategorizeModalOpen, setIsAICategorizeModalOpen] = useState(false);
+  const [uncategorizedTransactions, setUncategorizedTransactions] = useState<TransactionWithRelations[]>([]);
+  const [isProcessingAI, setIsProcessingAI] = useState(false);
 
   const { categories } = useCategories();
   const { accounts } = useAccounts();
   const { institutions } = useInstitutions();
   const { balanceMap, isLoading: balancesLoading } = useAccountBalances();
+  const { count: uncategorizedCountFromHook } = useUncategorizedCount();
 
   // Build transaction filters
   const filters: TransactionFilters = useMemo(() => {
@@ -108,6 +117,42 @@ export default function Lancamentos() {
       }
     }
   }, [searchParams, transactions]);
+
+  // Handle AI categorization click
+  const handleAICategorizationClick = () => {
+    const uncategorized = transactions.filter(t => !t.category_id);
+    setUncategorizedTransactions(uncategorized);
+    setIsAICategorizeModalOpen(true);
+  };
+
+  // Handle applying AI categorizations
+  const handleApplyCategorizations = async (categorizations: { transaction_id: string; category_id: string }[]) => {
+    setIsProcessingAI(true);
+    try {
+      // Apply categorizations in parallel
+      await Promise.all(
+        categorizations.map(cat => 
+          updateTransaction({
+            id: cat.transaction_id,
+            category_id: cat.category_id,
+          })
+        )
+      );
+      
+      toast({
+        title: "Categorização aplicada",
+        description: `${categorizations.length} transação${categorizations.length !== 1 ? 'ões foram' : ' foi'} categorizada${categorizations.length !== 1 ? 's' : ''} com sucesso.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível aplicar algumas categorizações.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessingAI(false);
+    }
+  };
 
   const handleEdit = (transaction: TransactionWithRelations) => {
     setSelectedTransaction(transaction);
@@ -192,10 +237,8 @@ export default function Lancamentos() {
     );
   }, [transactions, searchTerm]);
 
-  // Check for uncategorized transactions
-  const uncategorizedCount = useMemo(() => {
-    return transactions.filter(t => t.category_id === null).length;
-  }, [transactions]);
+  // Use uncategorized count from hook
+  const uncategorizedCount = uncategorizedCountFromHook;
 
   useEffect(() => {
     if (!isModalOpen) {
@@ -334,9 +377,21 @@ export default function Lancamentos() {
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  className="text-amber-700 hover:text-amber-800 hover:bg-amber-100/60"
+                  className="text-amber-700 hover:text-amber-800 hover:bg-amber-100/60 hover-scale"
+                  onClick={handleAICategorizationClick}
+                  disabled={isProcessingAI}
                 >
-                  Abrir Categorias
+                  {isProcessingAI ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="h-4 w-4 mr-2" />
+                      Categorizar com IA
+                    </>
+                  )}
                 </Button>
               </div>
             </Alert>
@@ -465,6 +520,15 @@ export default function Lancamentos() {
         onDelete={handleDelete}
         onDuplicate={handleDuplicate}
         onTagClick={handleTagClick}
+      />
+
+      {/* AI Categorize Modal */}
+      <AICategorizeModal
+        open={isAICategorizeModalOpen}
+        onOpenChange={setIsAICategorizeModalOpen}
+        transactions={uncategorizedTransactions}
+        categories={categories}
+        onApplyCategorizations={handleApplyCategorizations}
       />
     </div>
   );

@@ -20,7 +20,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
+import { NotionButton } from "@/components/ui/notion-button"
+import { NotionCard } from "@/components/ui/notion-card"
 import { Input } from "@/components/ui/input"
 import { ArrowUpDown, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -121,14 +122,15 @@ export function TransactionsList({
     {
       accessorKey: "event_date",
       header: ({ column }) => (
-        <Button
+        <NotionButton
           variant="ghost"
+          size="sm"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-8 px-2 lg:px-3"
         >
           Data
           <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+        </NotionButton>
       ),
       cell: ({ row }) => {
         const transaction = row.original;
@@ -144,14 +146,15 @@ export function TransactionsList({
     {
       accessorKey: "description",
       header: ({ column }) => (
-        <Button
+        <NotionButton
           variant="ghost"
+          size="sm"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-8 px-2 lg:px-3"
         >
           Descrição
           <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+        </NotionButton>
       ),
       cell: ({ row }) => {
         const transaction = row.original;
@@ -172,7 +175,7 @@ export function TransactionsList({
               </div>
             )}
             {transaction.installment_number && transaction.total_installments && (
-              <div className="text-xs text-blue-600 font-medium truncate">
+              <div className="text-xs text-notion-blue-text font-medium truncate">
                 Parcela {transaction.installment_number}/{transaction.total_installments}
               </div>
             )}
@@ -212,14 +215,15 @@ export function TransactionsList({
       accessorKey: "amount",
       header: ({ column }) => (
         <div className="text-right">
-          <Button
+          <NotionButton
             variant="ghost"
+            size="sm"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="h-8 px-2 lg:px-3"
           >
             Valor
             <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
+          </NotionButton>
         </div>
       ),
       cell: ({ row }) => {
@@ -228,13 +232,13 @@ export function TransactionsList({
         return (
           <div className="text-right">
             <div className={cn(
-              "font-medium text-sm",
-              row.original.type === 'receita' ? "text-green-600" : "text-red-600"
+              "font-medium text-sm tabular-nums",
+              row.original.type === 'receita' ? "text-notion-success" : "text-notion-danger"
             )}>
               {row.original.type === 'receita' ? '+' : '-'}{formatCurrency(Math.abs(amount))}
             </div>
             {status === 'pendente' && (
-              <div className="text-xs text-amber-600 font-medium">
+              <div className="text-xs text-notion-warning font-medium">
                 Pendente
               </div>
             )}
@@ -252,22 +256,23 @@ export function TransactionsList({
           <div className="text-right">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
+                <NotionButton 
                   variant="ghost" 
+                  size="icon"
                   className="h-8 w-8 p-0 dropdown-trigger"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <span className="sr-only">Abrir menu</span>
                   <MoreHorizontal className="h-4 w-4" />
-                </Button>
+                </NotionButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => onEdit(transaction)}>
+              <DropdownMenuContent align="end" className="bg-white shadow-notion-lg border border-notion-gray-200">
+                <DropdownMenuLabel className="text-notion-caption font-semibold">Ações</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => onEdit(transaction)} className="text-notion-body-sm">
                   <Pencil className="h-3 w-3 mr-2" />
                   Editar
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onDelete(transaction.id)} disabled={isDeleting}>
+                <DropdownMenuItem onClick={() => onDelete(transaction.id)} disabled={isDeleting} className="text-notion-body-sm">
                   <Trash2 className="h-3 w-3 mr-2" />
                   Excluir
                 </DropdownMenuItem>
@@ -312,28 +317,31 @@ export function TransactionsList({
           className="max-w-sm"
         />
         <div className="flex items-center space-x-2 mt-2 sm:mt-0">
-          <Button size="sm" variant="outline" onClick={onNewTransaction}>
+          <NotionButton size="sm" variant="outline" onClick={onNewTransaction}>
             Novo Lançamento
-          </Button>
-          <Button
+          </NotionButton>
+          <NotionButton
             size="sm"
-            variant="destructive"
+            variant="danger"
             onClick={handleBulkDelete}
             disabled={selectedTransactionIds.length === 0 || isDeleting}
           >
             Excluir Selecionados ({selectedTransactionIds.length})
-          </Button>
+          </NotionButton>
         </div>
       </div>
 
-      <div className="rounded-md border">
+      <NotionCard padding="none" className="overflow-hidden">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-notion-gray-50">
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="border-b border-notion-gray-200 hover:bg-transparent">
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} className={cn(header.column.id === 'actions' ? 'text-right' : '')}>
+                    <TableHead key={header.id} className={cn(
+                      "text-notion-caption font-semibold text-notion-gray-700",
+                      header.column.id === 'actions' ? 'text-right' : ''
+                    )}>
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -348,15 +356,15 @@ export function TransactionsList({
           </TableHeader>
           <TableBody>
             {isLoading && (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="text-center py-4">
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={columns.length} className="text-center py-4 text-notion-body-sm text-notion-gray-500">
                   Carregando lançamentos...
                 </TableCell>
               </TableRow>
             )}
             {!isLoading && transactions.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="text-center py-4">
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={columns.length} className="text-center py-4 text-notion-body-sm text-notion-gray-500">
                   Nenhum lançamento encontrado.
                 </TableCell>
               </TableRow>
@@ -365,11 +373,19 @@ export function TransactionsList({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                className={cn(
+                  "cursor-pointer transition-notion border-b border-notion-gray-100 last:border-0",
+                  row.getIsSelected() 
+                    ? "bg-notion-blue-bg hover:bg-notion-blue-bg/80" 
+                    : "hover:bg-notion-gray-50"
+                )}
                 onClick={(e) => handleRowClick(row.original, e)}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className={cn(cell.column.id === 'actions' ? 'text-right' : '')}>
+                  <TableCell key={cell.id} className={cn(
+                    "text-notion-body-sm",
+                    cell.column.id === 'actions' ? 'text-right' : ''
+                  )}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
@@ -377,29 +393,29 @@ export function TransactionsList({
             ))}
           </TableBody>
         </Table>
-      </div>
+      </NotionCard>
 
       <div className="flex items-center justify-between py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
+        <div className="flex-1 text-notion-body-sm text-notion-gray-600">
           {table.getFilteredRowModel().rows.length} de {transactions.length} lançamentos
         </div>
         <div className="flex items-center space-x-2">
-          <Button
+          <NotionButton
             variant="outline"
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
             Anterior
-          </Button>
-          <Button
+          </NotionButton>
+          <NotionButton
             variant="outline"
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
             Próximo
-          </Button>
+          </NotionButton>
         </div>
       </div>
     </div>

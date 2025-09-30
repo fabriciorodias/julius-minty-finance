@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { NotionButton } from '@/components/ui/notion-button';
 import { useTransactions, TransactionFilters, TransactionWithRelations, CreateTransactionData } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
 import { useAccounts } from '@/hooks/useAccounts';
@@ -265,66 +265,65 @@ export default function Lancamentos() {
   const prefilledAccountId = selectedAccountIds.length === 1 ? selectedAccountIds[0] : undefined;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-notion-gray-25">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      <div className="sticky top-0 z-30 bg-white border-b border-notion-gray-200 shadow-notion-sm">
         <div className="p-6 pb-4">
           <div className="flex items-center justify-between">
-            <div className="animate-fade-in">
-              <h1 className="text-3xl font-bold tracking-tight">Lançamentos</h1>
-              <p className="text-muted-foreground mt-1">
+            <div>
+              <h1 className="text-notion-h1">Lançamentos</h1>
+              <p className="text-notion-caption text-notion-gray-600 mt-1">
                 Gerencie suas receitas e despesas
               </p>
             </div>
             
             <div className="flex items-center gap-3">
               {/* Recurring Transactions Button */}
-              <Button 
+              <NotionButton 
                 onClick={() => window.location.href = '/lancamentos/recorrentes'} 
                 variant="outline"
-                size="default"
-                className="hover-scale"
+                size="md"
               >
                 <Repeat className="h-4 w-4 mr-2" />
                 Contas Recorrentes
-              </Button>
+              </NotionButton>
               
               {/* Primary CTA */}
-              <Button 
+              <NotionButton 
                 onClick={() => setIsModalOpen(true)} 
-                size="default"
-                className="hover-scale bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+                size="md"
+                variant="primary"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Novo Lançamento
-              </Button>
+              </NotionButton>
               
               {/* More Actions Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="default" className="hover-scale">
+                  <NotionButton variant="outline" size="md">
                     <MoreHorizontal className="h-4 w-4 mr-2" />
                     Mais
-                  </Button>
+                  </NotionButton>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 z-50 bg-popover">
-                  <DropdownMenuItem onClick={() => window.location.href = '/importar'}>
+                <DropdownMenuContent align="end" className="w-56 z-50 bg-white shadow-notion-lg border border-notion-gray-200">
+                  <DropdownMenuItem onClick={() => window.location.href = '/importar'} className="text-notion-body-sm">
                     <Upload className="h-4 w-4 mr-2" />
                     Importar Extratos/Faturas
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsInvoiceModalOpen(true)}>
+                  <DropdownMenuItem onClick={() => setIsInvoiceModalOpen(true)} className="text-notion-body-sm">
                     <CreditCard className="h-4 w-4 mr-2" />
                     Gerenciar Faturas
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsTransferModalOpen(true)}>
+                  <DropdownMenuItem onClick={() => setIsTransferModalOpen(true)} className="text-notion-body-sm">
                     <ArrowRightLeft className="h-4 w-4 mr-2" />
                     Nova Transferência
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsInstallmentModalOpen(true)}>
+                  <DropdownMenuItem onClick={() => setIsInstallmentModalOpen(true)} className="text-notion-body-sm">
                     <TrendingUp className="h-4 w-4 mr-2" />
                     Lançamento Parcelado/Recorrente
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsCashFlowModalOpen(true)}>
+                  <DropdownMenuItem onClick={() => setIsCashFlowModalOpen(true)} className="text-notion-body-sm">
                     <TrendingUp className="h-4 w-4 mr-2" />
                     Fluxo de Caixa
                   </DropdownMenuItem>
@@ -333,15 +332,14 @@ export default function Lancamentos() {
 
               {/* Mobile Filters Button */}
               {isMobile && (
-                <Button 
+                <NotionButton 
                   variant="outline" 
-                  size="default"
+                  size="md"
                   onClick={() => setIsMobileFiltersOpen(true)}
-                  className="hover-scale"
                 >
                   <Filter className="h-4 w-4 mr-2" />
                   Filtros
-                </Button>
+                </NotionButton>
               )}
             </div>
           </div>
@@ -360,49 +358,47 @@ export default function Lancamentos() {
       <div className="p-6 pt-2 space-y-6">
         {/* Alert for uncategorized transactions */}
         {uncategorizedCount > 0 && (
-          <div className="animate-fade-in">
-            <Alert className="border-amber-200/60 bg-gradient-to-r from-amber-50 to-yellow-50/80 shadow-sm ring-1 ring-amber-100/50">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-100/60 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-amber-600" />
-                </div>
-                <div className="flex-1">
-                  <AlertDescription className="text-amber-800 font-medium">
-                    Você tem <strong>{uncategorizedCount}</strong> lançamento{uncategorizedCount > 1 ? 's' : ''} sem categoria.
-                  </AlertDescription>
-                  <p className="text-amber-700/80 text-sm mt-1">
-                    É recomendado categorizar todos os lançamentos para um melhor controle financeiro.
-                  </p>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  className="text-amber-700 hover:text-amber-800 hover:bg-amber-100/60 hover-scale"
-                  onClick={handleAICategorizationClick}
-                  disabled={isProcessingAI}
-                >
-                  {isProcessingAI ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Processando...
-                    </>
-                  ) : (
-                    <>
-                      <Brain className="h-4 w-4 mr-2" />
-                      Categorizar com IA
-                    </>
-                  )}
-                </Button>
+          <Alert className="border-notion-warning-border bg-notion-warning-bg">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-100 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-notion-warning" />
               </div>
-            </Alert>
-          </div>
+              <div className="flex-1">
+                <AlertDescription className="text-notion-gray-900 font-medium text-notion-body-sm">
+                  Você tem <strong>{uncategorizedCount}</strong> lançamento{uncategorizedCount > 1 ? 's' : ''} sem categoria.
+                </AlertDescription>
+                <p className="text-notion-gray-600 text-notion-caption mt-1">
+                  É recomendado categorizar todos os lançamentos para um melhor controle financeiro.
+                </p>
+              </div>
+              <NotionButton 
+                variant="ghost" 
+                size="sm"
+                className="text-notion-warning hover:bg-amber-100"
+                onClick={handleAICategorizationClick}
+                disabled={isProcessingAI}
+              >
+                {isProcessingAI ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  <>
+                    <Brain className="h-4 w-4 mr-2" />
+                    Categorizar com IA
+                  </>
+                )}
+              </NotionButton>
+            </div>
+          </Alert>
         )}
 
         {/* Two-Panel Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Panel - Filters (Desktop Only) */}
           {!isMobile && (
-            <div className="lg:col-span-1 space-y-6 animate-fade-in">
+            <div className="lg:col-span-1 space-y-6">
               <AccountsFilterPanel
                 accounts={accounts}
                 institutions={institutions}
@@ -419,7 +415,7 @@ export default function Lancamentos() {
           )}
 
           {/* Right Panel - Main Content */}
-          <div className={`${isMobile ? 'col-span-1' : 'lg:col-span-3'} space-y-6 animate-fade-in`}>
+          <div className={`${isMobile ? 'col-span-1' : 'lg:col-span-3'} space-y-6`}>
             {/* New Anxious Balance Panel */}
             <AnxiousBalancePanel
               selectedAccountIds={selectedAccountIds}

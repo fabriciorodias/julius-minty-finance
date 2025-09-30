@@ -42,24 +42,23 @@ export function InvestmentModal({ isOpen, onClose, onSave, isLoading }: Investme
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md glass-card-origin backdrop-blur-xl animate-scale-in">
         <DialogHeader>
-          <DialogTitle className="text-mint-text-primary font-bold">Adicionar Investimento</DialogTitle>
-          <DialogDescription className="text-mint-text-secondary">
+          <DialogTitle className="font-bold">Adicionar Investimento</DialogTitle>
+          <DialogDescription>
             Preencha os dados do seu novo investimento
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(handleSaveInternal)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-mint-text-primary font-medium">
+            <Label htmlFor="name" className="font-medium">
               Nome do Investimento
             </Label>
             <Input
               id="name"
               {...register('name', { required: 'Nome é obrigatório' })}
               placeholder="Ex: Tesouro Selic 2029"
-              className="mint-input"
             />
             {errors.name && (
               <p className="text-sm text-red-500">{errors.name.message}</p>
@@ -67,11 +66,11 @@ export function InvestmentModal({ isOpen, onClose, onSave, isLoading }: Investme
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="type" className="text-mint-text-primary font-medium">
+            <Label htmlFor="type" className="font-medium">
               Tipo de Investimento
             </Label>
             <Select onValueChange={(value) => setValue('type', value as any, { shouldValidate: true })}>
-              <SelectTrigger className="mint-input">
+              <SelectTrigger>
                 <SelectValue placeholder="Selecione o tipo" />
               </SelectTrigger>
               <SelectContent>
@@ -94,11 +93,11 @@ export function InvestmentModal({ isOpen, onClose, onSave, isLoading }: Investme
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="institution_id" className="text-mint-text-primary font-medium">
+            <Label htmlFor="institution_id" className="font-medium">
               Instituição Financeira
             </Label>
             <Select onValueChange={(value) => setValue('institution_id', value === 'none' ? undefined : value)}>
-              <SelectTrigger className="mint-input">
+              <SelectTrigger>
                 <SelectValue placeholder="Selecione a instituição" />
               </SelectTrigger>
               <SelectContent>
@@ -113,19 +112,18 @@ export function InvestmentModal({ isOpen, onClose, onSave, isLoading }: Investme
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="issuer" className="text-mint-text-primary font-medium">
+            <Label htmlFor="issuer" className="font-medium">
               Emissor (opcional)
             </Label>
             <Input
               id="issuer"
               {...register('issuer')}
               placeholder="Ex: Tesouro Nacional"
-              className="mint-input"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="due_date" className="text-mint-text-primary font-medium">
+            <Label htmlFor="due_date" className="font-medium">
               Data de Vencimento (opcional)
             </Label>
             <Input
@@ -134,13 +132,12 @@ export function InvestmentModal({ isOpen, onClose, onSave, isLoading }: Investme
               {...register('due_date', {
                 setValueAs: (value) => value === '' ? undefined : value
               })}
-              className="mint-input"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="initial_amount" className="text-mint-text-primary font-medium">
+              <Label htmlFor="initial_amount" className="font-medium">
                 Valor Inicial
               </Label>
               <Input
@@ -154,7 +151,6 @@ export function InvestmentModal({ isOpen, onClose, onSave, isLoading }: Investme
                   valueAsNumber: true
                 })}
                 placeholder="0,00"
-                className="mint-input"
               />
               {errors.initial_amount && (
                 <p className="text-sm text-red-500">{errors.initial_amount.message}</p>
@@ -162,14 +158,13 @@ export function InvestmentModal({ isOpen, onClose, onSave, isLoading }: Investme
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="initial_date" className="text-mint-text-primary font-medium">
+              <Label htmlFor="initial_date" className="font-medium">
                 Data do Aporte
               </Label>
               <Input
                 id="initial_date"
                 type="date"
                 {...register('initial_date', { required: 'Data é obrigatória' })}
-                className="mint-input"
               />
               {errors.initial_date && (
                 <p className="text-sm text-red-500">{errors.initial_date.message}</p>

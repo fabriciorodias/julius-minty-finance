@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { OriginCard, OriginCardContent, OriginCardHeader, OriginCardTitle } from '@/components/ui/origin-card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -51,11 +51,11 @@ export function TransactionFilters({
   [institutions]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Filtros</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <OriginCard glass className="liquid-glass-subtle animate-fade-in">
+      <OriginCardHeader>
+        <OriginCardTitle>Filtros</OriginCardTitle>
+      </OriginCardHeader>
+      <OriginCardContent className="space-y-4">
         {/* Search - Always visible */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -180,11 +180,11 @@ export function TransactionFilters({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
+              onClick={() => {
                   onFiltersChange({});
                   onSearchChange('');
                 }}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 hover-scale"
               >
                 <X className="h-4 w-4" />
                 Limpar Filtros
@@ -192,7 +192,7 @@ export function TransactionFilters({
             </div>
           </>
         )}
-      </CardContent>
-    </Card>
+      </OriginCardContent>
+    </OriginCard>
   );
 }

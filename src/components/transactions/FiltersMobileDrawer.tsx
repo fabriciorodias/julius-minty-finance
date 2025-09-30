@@ -50,7 +50,7 @@ export function FiltersMobileDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose}>
-      <DrawerContent className="max-h-[85vh]">
+      <DrawerContent className="max-h-[85vh] glass-card-origin backdrop-blur-xl">
         <DrawerHeader>
           <DrawerTitle>Filtros</DrawerTitle>
           <DrawerDescription>
@@ -83,7 +83,7 @@ export function FiltersMobileDrawer({
         </div>
         
         <DrawerFooter>
-          <Button onClick={handleApply} className="w-full">
+          <Button onClick={handleApply} className="w-full hover-scale">
             Aplicar Filtros
           </Button>
         </DrawerFooter>

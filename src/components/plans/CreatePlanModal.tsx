@@ -102,7 +102,7 @@ export function CreatePlanModal({ isOpen, onClose, onSave, isLoading }: CreatePl
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md glass-card-origin backdrop-blur-xl animate-scale-in">
         <DialogHeader>
           <DialogTitle className="text-foreground">Criar Novo Plano</DialogTitle>
         </DialogHeader>

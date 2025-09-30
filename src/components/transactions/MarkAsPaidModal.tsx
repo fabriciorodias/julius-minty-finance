@@ -93,7 +93,7 @@ export function MarkAsPaidModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md glass-card-origin backdrop-blur-xl animate-scale-in">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5" />

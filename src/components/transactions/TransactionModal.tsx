@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { OriginCard, OriginCardContent, OriginCardHeader, OriginCardTitle } from '@/components/ui/origin-card';
 import { Badge } from '@/components/ui/badge';
 import {
   Select,
@@ -363,7 +363,7 @@ export function TransactionModal({
   return (
     <TooltipProvider>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[540px] max-h-[95vh] overflow-y-auto p-0">
+        <DialogContent className="sm:max-w-[540px] max-h-[95vh] overflow-y-auto p-0 glass-card-origin backdrop-blur-xl animate-scale-in">
           <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle className="text-xl font-semibold flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
@@ -374,15 +374,15 @@ export function TransactionModal({
           <Form {...form}>
             <form className="px-6 pb-6 space-y-6">
               {/* LANÇAMENTO RÁPIDO - Main Card */}
-              <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <OriginCard glass className="liquid-glass-primary animate-fade-in">
+                <OriginCardHeader>
+                  <OriginCardTitle className="flex items-center gap-2">
                     <div className="h-2 w-2 bg-primary rounded-full"></div>
                     Lançamento Rápido
                     <Badge variant="secondary" className="text-xs">Essencial</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+                  </OriginCardTitle>
+                </OriginCardHeader>
+                <OriginCardContent className="space-y-4">
                   {/* Transaction Type - Enhanced Buttons */}
                   <FormField
                     control={form.control}
@@ -590,28 +590,28 @@ export function TransactionModal({
                       </FormItem>
                     )}
                   />
-                </CardContent>
-              </Card>
+                </OriginCardContent>
+              </OriginCard>
 
               {/* DETALHES ADICIONAIS - Collapsible Card */}
               <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
                 <CollapsibleTrigger asChild>
-                  <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-medium flex items-center justify-between">
+                  <OriginCard glass className="cursor-pointer hover:bg-muted/50 transition-colors liquid-glass-subtle">
+                    <OriginCardHeader>
+                      <OriginCardTitle className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Plus className={cn("h-4 w-4 transition-transform", detailsOpen && "rotate-45")} />
                           Detalhes Adicionais
                           <Badge variant="outline" className="text-xs">Opcional</Badge>
                         </div>
                         <ChevronDown className={cn("h-4 w-4 transition-transform", detailsOpen && "rotate-180")} />
-                      </CardTitle>
-                    </CardHeader>
-                  </Card>
+                      </OriginCardTitle>
+                    </OriginCardHeader>
+                  </OriginCard>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <Card className="mt-3">
-                    <CardContent className="pt-6 space-y-4">
+                  <OriginCard glass className="mt-3 liquid-glass-subtle animate-fade-in">
+                    <OriginCardContent className="space-y-4">
                       {/* Category */}
                       <FormField
                         control={form.control}
@@ -684,8 +684,8 @@ export function TransactionModal({
                         )}
                       />
 
-                    </CardContent>
-                  </Card>
+                    </OriginCardContent>
+                  </OriginCard>
                 </CollapsibleContent>
               </Collapsible>
 

@@ -88,20 +88,18 @@ export function AppSidebar() {
         <NavLink
           to={item.url}
           className={({ isActive }) =>
-            `flex items-start w-full px-3 py-3 rounded-xl transition-all duration-300 min-h-[48px] relative overflow-hidden hover-scale ${
+            `flex items-center w-full px-2 py-1.5 rounded-md transition-notion ${
               isActive
-                ? "liquid-glass-primary text-white shadow-xl font-semibold border border-white/30 backdrop-blur-md"
-                : "text-white/90 hover:bg-white/20 hover:text-white hover:shadow-lg hover:backdrop-blur-md"
+                ? "bg-notion-blue-bg text-notion-gray-900 font-medium"
+                : "text-notion-gray-700 hover:bg-notion-gray-100"
             }`
           }
         >
-          <span className="material-icons text-xl mr-3 mt-0.5 flex-shrink-0 relative z-10">
+          <span className="material-icons text-lg flex-shrink-0">
             {item.icon}
           </span>
           {!isCollapsed && (
-            <div className="flex items-center justify-between w-full min-h-[24px] relative z-10">
-              <span className="text-sm font-medium leading-tight flex-1 pr-2">{item.title}</span>
-            </div>
+            <span className="text-notion-body-sm ml-3">{item.title}</span>
           )}
         </NavLink>
       </SidebarMenuButton>
@@ -109,38 +107,26 @@ export function AppSidebar() {
   );
 
   return (
-    <Sidebar collapsible="icon" className="border-r-0 glass-origin backdrop-blur-2xl">
-      {/* Enhanced gradient overlay for depth */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-primary/5 to-black/20 pointer-events-none z-0" />
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent pointer-events-none z-0" />
-      
-      <SidebarHeader className="p-6 border-b border-white/30 relative z-10 backdrop-blur-lg shadow-lg">
+    <Sidebar collapsible="icon" className="border-r border-notion-gray-200 bg-notion-gray-50">
+      <SidebarHeader className="p-3 border-b border-notion-gray-200">
         <BrandLogo collapsed={isCollapsed} />
       </SidebarHeader>
 
-      <SidebarContent className="px-4 py-6 relative z-10">
+      <SidebarContent className="px-2 py-4">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-2">
-              {mainMenuItems.map((item, index) => (
-                <div key={item.title} className="animate-fade-in" style={{ animationDelay: `${index * 30}ms` }}>
-                  {renderMenuItem(item)}
-                </div>
-              ))}
+            <SidebarMenu className="space-y-0.5">
+              {mainMenuItems.map((item) => renderMenuItem(item))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <Separator className="my-6 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+        <Separator className="my-4 bg-notion-gray-200" />
 
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-2">
-              {settingsMenuItems.map((item, index) => (
-                <div key={item.title} className="animate-fade-in" style={{ animationDelay: `${(mainMenuItems.length + index) * 30}ms` }}>
-                  {renderMenuItem(item)}
-                </div>
-              ))}
+            <SidebarMenu className="space-y-0.5">
+              {settingsMenuItems.map((item) => renderMenuItem(item))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

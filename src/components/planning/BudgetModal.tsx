@@ -75,7 +75,7 @@ export function BudgetModal({ isOpen, onClose, onSubmit, category, isLoading, in
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto liquid-glass-subtle backdrop-blur-xl animate-scale-in">
         <DialogHeader>
           <DialogTitle>
             Definir Orçamento - {category.name}
@@ -128,7 +128,7 @@ export function BudgetModal({ isOpen, onClose, onSubmit, category, isLoading, in
 
           {/* Planejamento Variável */}
           {budgetType === 'variable' && (
-            <Card>
+            <Card className="glass-card-origin origin-transition">
               <CardHeader>
                 <CardTitle className="text-base">Valores por Mês</CardTitle>
               </CardHeader>
@@ -157,12 +157,12 @@ export function BudgetModal({ isOpen, onClose, onSubmit, category, isLoading, in
           )}
 
           {/* Seção de Referência Histórica - Por enquanto placeholder */}
-          <Card className="bg-muted/50">
+          <Card className="glass-card-origin origin-transition bg-muted/30">
             <CardHeader>
               <CardTitle className="text-base">Referência Histórica</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm opacity-90">
                 Dados históricos serão exibidos aqui quando o módulo de lançamentos estiver implementado.
               </p>
             </CardContent>

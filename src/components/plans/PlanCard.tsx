@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { OriginCard, OriginCardHeader, OriginCardTitle, OriginCardContent } from '@/components/ui/origin-card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { OriginProgress } from '@/components/ui/origin-progress';
 import { Badge } from '@/components/ui/badge';
 import { PlanWithInstallments } from '@/hooks/usePlans';
 
@@ -27,24 +27,24 @@ export function PlanCard({ plan, onViewTimeline, onSettleInstallment, onWithdraw
   const getTypeInfo = (type: string) => {
     switch (type) {
       case 'poupanca':
-        return { label: 'Poupança', icon: 'savings', variant: 'default' as const };
+        return { label: 'Poupança', icon: 'savings', variant: 'default' as const, liquidClass: 'liquid-glass-success' };
       case 'divida':
-        return { label: 'Dívida', icon: 'account_balance', variant: 'secondary' as const };
+        return { label: 'Dívida', icon: 'account_balance', variant: 'secondary' as const, liquidClass: 'liquid-glass-warning' };
       case 'despesa_planejada':
-        return { label: 'Despesa Planejada', icon: 'shopping_cart', variant: 'destructive' as const };
+        return { label: 'Despesa Planejada', icon: 'shopping_cart', variant: 'destructive' as const, liquidClass: 'liquid-glass-info' };
       default:
-        return { label: type, icon: 'description', variant: 'outline' as const };
+        return { label: type, icon: 'description', variant: 'outline' as const, liquidClass: 'liquid-glass-subtle' };
     }
   };
 
   const typeInfo = getTypeInfo(plan.type);
 
   return (
-    <Card className="mint-card">
-      <CardHeader className="pb-3">
+    <OriginCard glass hover className={`animate-fade-in ${typeInfo.liquidClass}`}>
+      <OriginCardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-lg bg-mint-primary bg-opacity-10 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center">
               {plan.image_url ? (
                 <img 
                   src={plan.image_url} 
@@ -52,51 +52,56 @@ export function PlanCard({ plan, onViewTimeline, onSettleInstallment, onWithdraw
                   className="w-full h-full object-cover rounded-lg"
                 />
               ) : (
-                <span className="material-icons text-mint-primary text-xl">
+                <span className="material-icons text-white text-xl">
                   {typeInfo.icon}
                 </span>
               )}
             </div>
             <div>
-              <CardTitle className="text-lg font-bold text-mint-text-primary">{plan.name}</CardTitle>
+              <OriginCardTitle className="text-lg">{plan.name}</OriginCardTitle>
               <Badge variant={typeInfo.variant} className="mt-1">
                 {typeInfo.label}
               </Badge>
             </div>
           </div>
         </div>
-      </CardHeader>
+      </OriginCardHeader>
 
-      <CardContent className="space-y-4">
+      <OriginCardContent className="space-y-4">
         {/* Progress */}
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-mint-text-secondary">Progresso</span>
-            <span className="text-mint-text-primary font-medium">
+            <span className="opacity-90">Progresso</span>
+            <span className="font-medium">
               {progressPercentage.toFixed(1)}%
             </span>
           </div>
-          <Progress value={progressPercentage} className="h-2" />
+          <OriginProgress 
+            value={progressPercentage} 
+            max={100}
+            gradient={plan.type === 'poupanca' ? 'green' : plan.type === 'divida' ? 'orange' : 'blue'}
+            showPercentage={false}
+          />
         </div>
 
         {/* Amounts */}
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <p className="text-mint-text-secondary">Meta Total</p>
-            <p className="font-bold text-mint-text-primary">{formatCurrency(plan.total_amount)}</p>
+            <p className="opacity-75">Meta Total</p>
+            <p className="font-bold text-base">{formatCurrency(plan.total_amount)}</p>
           </div>
           <div>
-            <p className="text-mint-text-secondary">
+            <p className="opacity-75">
               {plan.type === 'poupanca' ? 'Guardado' : plan.type === 'despesa_planejada' ? 'Valor' : 'Pago'}
             </p>
-            <p className="font-bold text-mint-primary">{formatCurrency(totalSettled)}</p>
+            <p className="font-bold text-base">{formatCurrency(totalSettled)}</p>
           </div>
         </div>
 
         {plan.type === 'poupanca' && totalWithdrawn > 0 && (
           <div className="text-sm">
-            <p className="text-mint-text-secondary">Saldo Atual</p>
-            <p className="font-bold text-mint-text-primary">{formatCurrency(currentBalance)}</p>
+            <p className="opacity-75">Saldo Atual</p>
+            <p className="font-bold text-base">{formatCurrency(currentBalance)}</p>
           </div>
         )}
 
@@ -106,7 +111,7 @@ export function PlanCard({ plan, onViewTimeline, onSettleInstallment, onWithdraw
             variant="outline" 
             size="sm" 
             onClick={() => onViewTimeline(plan)}
-            className="flex-1"
+            className="flex-1 hover-scale"
           >
             <span className="material-icons text-sm mr-1">schedule</span>
             Linha do Tempo
@@ -115,7 +120,7 @@ export function PlanCard({ plan, onViewTimeline, onSettleInstallment, onWithdraw
           <Button 
             size="sm" 
             onClick={() => onSettleInstallment(plan)}
-            className="flex-1"
+            className="flex-1 hover-scale"
             disabled={plan.type === 'despesa_planejada'}
           >
             <span className="material-icons text-sm mr-1">payment</span>
@@ -127,6 +132,7 @@ export function PlanCard({ plan, onViewTimeline, onSettleInstallment, onWithdraw
               variant="outline" 
               size="sm" 
               onClick={() => onWithdraw(plan)}
+              className="hover-scale"
             >
               <span className="material-icons text-sm mr-1">account_balance_wallet</span>
               Retirar
@@ -140,7 +146,7 @@ export function PlanCard({ plan, onViewTimeline, onSettleInstallment, onWithdraw
             variant="outline" 
             size="sm" 
             onClick={() => onEdit(plan)}
-            className="flex-1"
+            className="flex-1 hover-scale"
           >
             <span className="material-icons text-sm mr-1">edit</span>
             Editar
@@ -150,13 +156,13 @@ export function PlanCard({ plan, onViewTimeline, onSettleInstallment, onWithdraw
             variant="outline" 
             size="sm" 
             onClick={() => onDelete(plan)}
-            className="flex-1 text-destructive hover:text-destructive"
+            className="flex-1 text-destructive hover:text-destructive hover-scale"
           >
             <span className="material-icons text-sm mr-1">delete</span>
             Excluir
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </OriginCardContent>
+    </OriginCard>
   );
 }

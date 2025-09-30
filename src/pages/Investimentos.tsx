@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
+import { OriginCard, OriginCardContent } from "@/components/ui/origin-card";
+import { MetricCard } from "@/components/ui/metric-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -19,7 +21,7 @@ import { BalanceUpdateModal } from '@/components/investments/BalanceUpdateModal'
 import { InvestmentPortfolioChart } from '@/components/investments/InvestmentPortfolioChart';
 import { MonthSelector } from '@/components/planning/MonthSelector';
 import { DeleteConfirmationDialog } from '@/components/transactions/DeleteConfirmationDialog';
-import { RefreshCw, TrendingUp, TrendingDown, Trash2 } from 'lucide-react';
+import { RefreshCw, TrendingUp, TrendingDown, Trash2, Wallet, Percent, Target } from 'lucide-react';
 
 const Investimentos = () => {
   const { user } = useAuth();
@@ -221,128 +223,92 @@ const Investimentos = () => {
       </div>
 
       {/* Dashboard KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="mint-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-mint-text-secondary">
-              Patrimônio Total
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-mint-text-primary">
-              {dashboardLoading ? (
-                <Skeleton className="h-8 w-32" />
-              ) : (
-                formatCurrency(dashboardData?.totalPortfolio || 0)
-              )}
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-fade-in">
+        <MetricCard
+          glass
+          label="Patrimônio Total"
+          value={dashboardLoading ? '...' : formatCurrency(dashboardData?.totalPortfolio || 0)}
+          icon={Wallet}
+          className="liquid-glass-primary"
+        />
 
-        <Card className="mint-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-mint-text-secondary">
-              Rendimento Mensal
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-mint-primary">
-              {dashboardLoading ? (
-                <Skeleton className="h-8 w-32" />
-              ) : (
-                formatCurrency(dashboardData?.monthlyReturn || 0)
-              )}
-            </div>
-            <p className="text-sm text-mint-text-secondary mt-1">
-              {dashboardLoading ? (
-                <Skeleton className="h-4 w-16" />
-              ) : (
-                `${dashboardData?.returnPercentage.toFixed(2) || '0.00'}%`
-              )}
-            </p>
-          </CardContent>
-        </Card>
+        <MetricCard
+          glass
+          label="Rendimento Mensal"
+          value={dashboardLoading ? '...' : formatCurrency(dashboardData?.monthlyReturn || 0)}
+          icon={TrendingUp}
+          description={dashboardLoading ? '' : `${dashboardData?.returnPercentage.toFixed(2) || '0.00'}%`}
+          trend={dashboardData && dashboardData.returnPercentage !== 0 ? {
+            value: dashboardData.returnPercentage,
+            isPositive: dashboardData.returnPercentage > 0
+          } : undefined}
+          className="liquid-glass-success"
+        />
 
-        <Card className="mint-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-mint-text-secondary">
-              Independência Financeira
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-mint-accent">
-              {dashboardLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                `${dashboardData?.financialIndependenceRatio.toFixed(1) || '0.0'}%`
-              )}
-            </div>
-            <p className="text-xs text-mint-text-secondary mt-1">
-              Do custo de vida mensal
-            </p>
-          </CardContent>
-        </Card>
+        <MetricCard
+          glass
+          label="Independência Financeira"
+          value={dashboardLoading ? '...' : `${dashboardData?.financialIndependenceRatio.toFixed(1) || '0.0'}%`}
+          icon={Target}
+          description="Do custo de vida mensal"
+          className="liquid-glass-info"
+        />
 
-        <Card className="mint-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-mint-text-secondary">
-              Total de Ativos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-mint-text-primary">
-              {investments.length}
-            </div>
-            <p className="text-sm text-mint-text-secondary mt-1">
-              Investimentos ativos
-            </p>
-          </CardContent>
-        </Card>
+        <MetricCard
+          glass
+          label="Total de Ativos"
+          value={investments.length.toString()}
+          icon={Percent}
+          description="Investimentos ativos"
+          className="liquid-glass-subtle"
+        />
       </div>
 
       {/* Portfolio Charts */}
       {!dashboardLoading && dashboardData && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="mint-card">
-            <CardContent className="pt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+          <OriginCard textured="ocean" className="liquid-glass-subtle">
+            <OriginCardContent className="pt-6">
               <InvestmentPortfolioChart 
                 data={dashboardData.portfolioComposition}
                 title="Composição da Carteira"
               />
-            </CardContent>
-          </Card>
+            </OriginCardContent>
+          </OriginCard>
 
-          <Card className="mint-card">
-            <CardContent className="pt-6">
+          <OriginCard textured="mint" className="liquid-glass-subtle">
+            <OriginCardContent className="pt-6">
               <InvestmentPortfolioChart 
                 data={dashboardData.institutionAllocation}
                 title="Alocação por Instituição"
               />
-            </CardContent>
-          </Card>
+            </OriginCardContent>
+          </OriginCard>
         </div>
       )}
 
       {/* Investments Table */}
-      <Card className="mint-card">
+      <OriginCard glass className="liquid-glass-subtle animate-fade-in">
         <CardHeader>
-          <CardTitle className="text-mint-text-primary font-bold">
+          <CardTitle className="font-bold">
             Meus Investimentos
           </CardTitle>
         </CardHeader>
         <CardContent>
           {investments.length === 0 ? (
             <div className="text-center py-8">
-              <span className="material-icons text-6xl text-mint-text-secondary mb-4 block">
-                trending_up
-              </span>
-              <h3 className="text-lg font-medium text-mint-text-primary mb-2">
+              <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="material-icons text-white text-2xl">
+                  trending_up
+                </span>
+              </div>
+              <h3 className="text-lg font-medium mb-2">
                 Nenhum investimento cadastrado
               </h3>
-              <p className="text-mint-text-secondary mb-4">
+              <p className="opacity-90 mb-4">
                 Comece adicionando seu primeiro investimento para acompanhar sua carteira.
               </p>
-              <Button onClick={() => setShowInvestmentModal(true)}>
+              <Button onClick={() => setShowInvestmentModal(true)} className="hover-scale">
                 <span className="material-icons text-sm mr-2">add</span>
                 Adicionar Primeiro Investimento
               </Button>
@@ -360,10 +326,10 @@ const Investimentos = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {investments.map((investment) => {
+                  {investments.map((investment) => {
                   const balance = getCurrentBalance(investment.id);
                   return (
-                    <TableRow key={investment.id}>
+                    <TableRow key={investment.id} className="hover-scale transition-transform">
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">
@@ -386,7 +352,7 @@ const Investimentos = () => {
                       <TableCell className="font-medium">
                         {investment.name}
                         {investment.issuer && (
-                          <div className="text-sm text-mint-text-secondary">
+                          <div className="text-sm opacity-75">
                             {investment.issuer}
                           </div>
                         )}
@@ -410,6 +376,7 @@ const Investimentos = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => handleOpenTransactionModal(investment)}
+                            className="hover-scale"
                           >
                             <span className="material-icons text-sm mr-1">swap_horiz</span>
                             Movimentar
@@ -418,6 +385,7 @@ const Investimentos = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => handleOpenBalanceModal(investment)}
+                            className="hover-scale"
                           >
                             <span className="material-icons text-sm mr-1">account_balance</span>
                             Atualizar Saldo
@@ -426,7 +394,7 @@ const Investimentos = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => handleOpenDeleteDialog(investment)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 hover-scale"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -439,7 +407,7 @@ const Investimentos = () => {
             </Table>
           )}
         </CardContent>
-      </Card>
+      </OriginCard>
 
       {/* Modals */}
       <InvestmentModal

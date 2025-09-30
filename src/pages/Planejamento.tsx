@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { OriginCard, OriginCardContent, OriginCardHeader, OriginCardTitle } from "@/components/ui/origin-card";
+import { MetricCard } from "@/components/ui/metric-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { PlusCircle, Edit2, ChevronDown, ChevronRight, TrendingUp, TrendingDown } from "lucide-react";
+import { PlusCircle, Edit2, ChevronDown, ChevronRight, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 import { useCategories, Category } from '@/hooks/useCategories';
 import { useBudgets } from '@/hooks/useBudgets';
 import { useBudgetActuals } from '@/hooks/useBudgetActuals';
@@ -519,11 +521,11 @@ const Planejamento = () => {
     const allLeafCategoryIds = getAllLeafCategoryIds(categoriesList);
 
     return (
-      <Card className="mint-card">
-        <CardHeader>
+      <OriginCard glass className={`liquid-glass-${type === 'receita' ? 'success' : 'danger'} animate-fade-in`}>
+        <OriginCardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-mint-text-primary flex items-center">
-              <Icon className={`mr-2 h-5 w-5 ${iconColor}`} />
+            <OriginCardTitle className="flex items-center">
+              <Icon className={`mr-2 h-5 w-5`} />
               {title}
               <Button
                 variant="ghost"
@@ -539,46 +541,45 @@ const Planejamento = () => {
                     allCategoryIds
                   );
                 }}
-                className="ml-auto text-xs text-mint-text-secondary hover:text-mint-text-primary"
+                className="ml-auto text-xs opacity-75 hover:opacity-100 hover-scale"
               >
                 {expandedCategories.size > 0 ? 'Recolher Todas' : 'Expandir Todas'}
               </Button>
-            </CardTitle>
+            </OriginCardTitle>
           </div>
           
           {/* Totalizador */}
-          <div className={`mt-4 p-4 rounded-lg border ${bgColor} ${borderColor}`}>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center">
-                <p className="text-sm font-medium text-mint-text-secondary mb-1">Total Planejado</p>
-                <p className="text-lg font-bold text-mint-text-primary">{formatCurrency(totalPlanned)}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-medium text-mint-text-secondary mb-1">Total Realizado</p>
-                <p className="text-lg font-bold text-mint-text-primary">
-                  <RealizedTransactionsHover
-                    categoryIds={allLeafCategoryIds}
-                    selectedMonth={currentMonth}
-                  >
-                    {formatCurrency(totalRealized)}
-                  </RealizedTransactionsHover>
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-medium text-mint-text-secondary mb-1">Diferença</p>
-                <p className={`text-lg font-bold ${
-                  totalDifference > 0 ? 'text-green-600' : 
-                  totalDifference < 0 ? 'text-red-600' : 'text-mint-text-secondary'
-                }`}>
-                  {formatCurrency(Math.abs(totalDifference))}
-                  {totalDifference > 0 && <span className="text-sm ml-1">↑</span>}
-                  {totalDifference < 0 && <span className="text-sm ml-1">↓</span>}
-                </p>
-              </div>
-            </div>
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            <MetricCard
+              glass
+              label="Total Planejado"
+              value={formatCurrency(totalPlanned)}
+              icon={DollarSign}
+              className="liquid-glass-info"
+            />
+            
+            <MetricCard
+              glass
+              label="Total Realizado"
+              value={formatCurrency(totalRealized)}
+              icon={type === 'receita' ? TrendingUp : TrendingDown}
+              className={type === 'receita' ? 'liquid-glass-success' : 'liquid-glass-warning'}
+            />
+            
+            <MetricCard
+              glass
+              label="Diferença"
+              value={formatCurrency(Math.abs(totalDifference))}
+              icon={totalDifference > 0 ? TrendingUp : TrendingDown}
+              trend={totalDifference !== 0 ? {
+                value: Math.abs(totalDifference),
+                isPositive: totalDifference > 0
+              } : undefined}
+              className={totalDifference > 0 ? 'liquid-glass-success' : totalDifference < 0 ? 'liquid-glass-danger' : 'liquid-glass-subtle'}
+            />
           </div>
-        </CardHeader>
-        <CardContent>
+        </OriginCardHeader>
+        <OriginCardContent>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
@@ -597,8 +598,8 @@ const Planejamento = () => {
               </tbody>
             </table>
           </div>
-        </CardContent>
-      </Card>
+        </OriginCardContent>
+      </OriginCard>
     );
   };
 
@@ -648,23 +649,25 @@ const Planejamento = () => {
         )}
 
         {receitas.length === 0 && despesas.length === 0 && (
-          <Card className="mint-card">
-            <CardContent className="text-center py-8">
-              <PlusCircle className="mx-auto h-12 w-12 text-mint-text-secondary mb-4" />
-              <h3 className="text-lg font-semibold text-mint-text-primary mb-2">
+          <OriginCard glass className="liquid-glass-subtle animate-fade-in">
+            <OriginCardContent className="text-center py-8">
+              <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
+                <PlusCircle className="h-8 w-8" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">
                 Nenhuma categoria encontrada
               </h3>
-              <p className="text-mint-text-secondary mb-4">
+              <p className="opacity-90 mb-4">
                 Você precisa criar categorias antes de poder definir orçamentos.
               </p>
               <Button 
                 onClick={() => window.location.href = '/entidades'} 
-                className="bg-mint-primary hover:bg-mint-primary/90"
+                className="hover-scale"
               >
                 Gerenciar Categorias
               </Button>
-            </CardContent>
-          </Card>
+            </OriginCardContent>
+          </OriginCard>
         )}
       </div>
 

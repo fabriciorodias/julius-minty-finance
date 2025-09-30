@@ -1,8 +1,9 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus } from 'lucide-react';
+import { OriginCard, OriginCardHeader, OriginCardTitle, OriginCardContent } from '@/components/ui/origin-card';
+import { MetricCard } from '@/components/ui/metric-card';
+import { Plus, TrendingUp, Target, CheckCircle } from 'lucide-react';
 import { usePlans, PlanWithInstallments } from '@/hooks/usePlans';
 import { PlanCard } from '@/components/plans/PlanCard';
 import { CreatePlanModal } from '@/components/plans/CreatePlanModal';
@@ -129,61 +130,56 @@ const Planos = () => {
       </div>
 
       {/* Monthly Summary */}
-      <Card className="mint-card mint-gradient-light">
-        <CardHeader>
-          <CardTitle className="text-mint-text-primary flex items-center font-bold">
-            <span className="material-icons text-mint-primary mr-2">assessment</span>
-            Resumo do Mês Atual
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center">
-              <p className="text-sm text-mint-text-secondary">Parcelas dos Planos</p>
-              <p className="text-2xl font-bold text-mint-primary">
-                {formatCurrency(monthlyPlanAmount)}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-mint-text-secondary">Total de Planos</p>
-              <p className="text-2xl font-bold text-mint-text-primary">
-                {plans.length}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-mint-text-secondary">Planos Ativos</p>
-              <p className="text-2xl font-bold text-mint-text-primary">
-                {plans.filter(plan => 
-                  plan.installments.some(inst => inst.status === 'pendente')
-                ).length}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
+        <MetricCard
+          glass
+          label="Parcelas dos Planos"
+          value={formatCurrency(monthlyPlanAmount)}
+          icon={TrendingUp}
+          className="liquid-glass-primary"
+        />
+        
+        <MetricCard
+          glass
+          label="Total de Planos"
+          value={plans.length.toString()}
+          icon={Target}
+          className="liquid-glass-info"
+        />
+        
+        <MetricCard
+          glass
+          label="Planos Ativos"
+          value={plans.filter(plan => 
+            plan.installments.some(inst => inst.status === 'pendente')
+          ).length.toString()}
+          icon={CheckCircle}
+          className="liquid-glass-success"
+        />
+      </div>
 
       {/* Plans Grid */}
       {plans.length === 0 ? (
-        <Card className="mint-card">
-          <CardContent className="py-12 text-center">
-            <div className="w-16 h-16 bg-mint-primary bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="material-icons text-mint-primary text-2xl">
+        <OriginCard glass className="liquid-glass-subtle animate-fade-in">
+          <OriginCardContent className="py-12 text-center">
+            <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="material-icons text-white text-2xl">
                 flag
               </span>
             </div>
-            <h3 className="text-lg font-semibold text-mint-text-primary mb-2">
+            <h3 className="text-lg font-semibold mb-2">
               Nenhum plano criado ainda
             </h3>
-            <p className="text-mint-text-secondary mb-6 max-w-md mx-auto">
+            <p className="opacity-90 mb-6 max-w-md mx-auto">
               Comece criando seu primeiro plano financeiro. Defina suas metas de poupança 
               ou organize o pagamento de dívidas e financiamentos.
             </p>
-            <Button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2">
+            <Button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2 hover-scale">
               <Plus className="h-4 w-4" />
               Criar Primeiro Plano
             </Button>
-          </CardContent>
-        </Card>
+          </OriginCardContent>
+        </OriginCard>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {plans.map((plan) => (

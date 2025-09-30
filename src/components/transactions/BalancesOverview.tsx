@@ -43,7 +43,7 @@ export function BalancesOverview({
   // Se não há contas selecionadas, mostra apenas o card consolidado
   if (!hasSelectedAccounts) {
     return (
-      <div className="animate-fade-in">
+      <div>
         <DynamicBalanceCard
           selectedAccountIds={[]}
           accounts={accounts}
@@ -58,10 +58,10 @@ export function BalancesOverview({
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 animate-fade-in">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* Card de Contas de Orçamento */}
       {hasBudgetAccounts && (
-        <div className="hover-scale">
+        <div>
           <DynamicBalanceCard
             selectedAccountIds={budgetAccountIds}
             accounts={accounts}
@@ -78,7 +78,7 @@ export function BalancesOverview({
 
       {/* Card de Cartões de Crédito */}
       {hasCreditAccounts && (
-        <div className="hover-scale">
+        <div>
           <DynamicBalanceCard
             selectedAccountIds={creditAccountIds}
             accounts={accounts}
@@ -95,7 +95,7 @@ export function BalancesOverview({
 
       {/* Card Consolidado */}
       {(hasBudgetAccounts && hasCreditAccounts) || (selectedAccountIds.length > (budgetAccountIds.length + creditAccountIds.length)) ? (
-        <div className="hover-scale">
+        <div>
           <DynamicBalanceCard
             selectedAccountIds={selectedAccountIds}
             accounts={accounts}
@@ -112,7 +112,7 @@ export function BalancesOverview({
 
       {/* Se só há um tipo de conta, o card único já mostra tudo */}
       {!hasBudgetAccounts && !hasCreditAccounts && hasSelectedAccounts && (
-        <div className="hover-scale">
+        <div>
           <DynamicBalanceCard
             selectedAccountIds={selectedAccountIds}
             accounts={accounts}

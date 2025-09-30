@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { NotionCard, NotionCardContent } from '@/components/ui/notion-card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { useProvisionedTotals } from '@/hooks/useProvisionedTotals';
@@ -137,31 +137,31 @@ export function AnxiousBalancePanel({ selectedAccountIds, dateFilters }: Anxious
 
   if (isLoading) {
     return (
-      <div className="w-full liquid-glass-subtle rounded-2xl shadow-origin">
-        <div className="p-6">
+      <NotionCard variant="muted" className="transition-notion">
+        <NotionCardContent>
           <BalanceCardSkeleton />
-        </div>
-      </div>
+        </NotionCardContent>
+      </NotionCard>
     );
   }
 
   return (
-    <div className="w-full liquid-glass-primary rounded-2xl shadow-origin hover-lift-origin origin-transition">
-      <div className="p-6">
+    <NotionCard variant="hoverable" className="transition-notion">
+      <NotionCardContent>
         <div className="space-y-6">
           {/* Balance Display */}
           <div className="flex items-start justify-between">
             {/* Today's Balance */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="flex items-center gap-2 text-notion-gray-600">
                 <Calendar className="h-4 w-4" />
-                <span className="text-sm font-medium">Saldo Atual</span>
+                <span className="text-notion-caption font-medium">Saldo Atual</span>
               </div>
               <div className="space-y-1">
-                <div className="text-2xl font-bold text-foreground">
+                <div className="text-notion-value tabular-nums text-notion-gray-900">
                   R$ {safeCurrencyFormatter(todaysAssetBalance)}
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-notion-caption text-notion-gray-500">
                   Baseado em transações efetivadas
                 </p>
               </div>
@@ -169,21 +169,21 @@ export function AnxiousBalancePanel({ selectedAccountIds, dateFilters }: Anxious
 
             {/* Projected Balance */}
             <div className="space-y-2 text-right">
-              <div className="flex items-center gap-2 text-muted-foreground justify-end">
+              <div className="flex items-center gap-2 text-notion-gray-600 justify-end">
                 {isPositiveTrend ? (
-                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <TrendingUp className="h-4 w-4 text-notion-success" />
                 ) : (
-                  <TrendingDown className="h-4 w-4 text-red-600" />
+                  <TrendingDown className="h-4 w-4 text-notion-danger" />
                 )}
-                <span className="text-sm font-medium">Saldo Projetado</span>
+                <span className="text-notion-caption font-medium">Saldo Projetado</span>
               </div>
               <div className="space-y-1">
-                <div className={`text-2xl font-bold ${
-                  finalProjectedBalance >= 0 ? 'text-foreground' : 'text-destructive'
+                <div className={`text-notion-value tabular-nums ${
+                  finalProjectedBalance >= 0 ? 'text-notion-gray-900' : 'text-notion-danger'
                 }`}>
                   R$ {safeCurrencyFormatter(finalProjectedBalance)}
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-notion-caption text-notion-gray-500">
                   {dateFilters?.endDate ? `até ${safeFormatDate(dateFilters.endDate)}` : 'Fim do período'}
                 </p>
               </div>
@@ -192,10 +192,10 @@ export function AnxiousBalancePanel({ selectedAccountIds, dateFilters }: Anxious
 
           {/* Balance Change Indicator */}
           <div className="flex items-center justify-center">
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-notion-caption font-medium border transition-notion ${
               isPositiveTrend 
-                ? 'bg-green-50 text-green-700 border border-green-200' 
-                : 'bg-red-50 text-red-700 border border-red-200'
+                ? 'bg-notion-success-light text-notion-success border-notion-success-border' 
+                : 'bg-notion-danger-light text-notion-danger border-notion-danger-border'
             }`}>
               {isPositiveTrend ? (
                 <TrendingUp className="h-3 w-3" />
@@ -298,13 +298,13 @@ export function AnxiousBalancePanel({ selectedAccountIds, dateFilters }: Anxious
           {/* Period Info */}
           {dateFilters?.startDate && dateFilters?.endDate && (
             <div className="text-center">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-notion-caption text-notion-gray-500">
                 Período: {safeFormatDate(dateFilters.startDate)} - {safeFormatDate(dateFilters.endDate)}
               </p>
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </NotionCardContent>
+    </NotionCard>
   );
 }

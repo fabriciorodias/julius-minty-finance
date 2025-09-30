@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState } from 'react';
-import { OriginCard, OriginCardContent, OriginCardHeader, OriginCardTitle } from '@/components/ui/origin-card';
+import { NotionCard, NotionCardContent, NotionCardHeader, NotionCardTitle } from '@/components/ui/notion-card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
+import { NotionButton } from '@/components/ui/notion-button';
 import { Search, X, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Category } from '@/hooks/useCategories';
 import { Account } from '@/hooks/useAccounts';
@@ -51,14 +51,14 @@ export function TransactionFilters({
   [institutions]);
 
   return (
-    <OriginCard glass className="liquid-glass-subtle animate-fade-in">
-      <OriginCardHeader>
-        <OriginCardTitle>Filtros</OriginCardTitle>
-      </OriginCardHeader>
-      <OriginCardContent className="space-y-4">
+    <NotionCard variant="default" className="transition-notion">
+      <NotionCardHeader>
+        <NotionCardTitle>Filtros</NotionCardTitle>
+      </NotionCardHeader>
+      <NotionCardContent className="space-y-4">
         {/* Search - Always visible */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-notion-gray-500 h-4 w-4" />
           <Input
             placeholder="Buscar por descrição..."
             className="pl-10"
@@ -69,7 +69,7 @@ export function TransactionFilters({
 
         {/* Toggle Advanced Filters */}
         <div className="flex justify-center">
-          <Button
+          <NotionButton
             type="button"
             variant="outline"
             size="sm"
@@ -82,7 +82,7 @@ export function TransactionFilters({
             ) : (
               <ChevronDown className="h-4 w-4" />
             )}
-          </Button>
+          </NotionButton>
         </div>
 
         {/* Advanced Filters - Collapsible */}
@@ -177,22 +177,22 @@ export function TransactionFilters({
 
             {/* Clear Filters Button */}
             <div className="flex justify-end">
-              <Button
+              <NotionButton
                 variant="outline"
                 size="sm"
               onClick={() => {
                   onFiltersChange({});
                   onSearchChange('');
                 }}
-                className="flex items-center gap-2 hover-scale"
+                className="flex items-center gap-2 transition-notion"
               >
                 <X className="h-4 w-4" />
                 Limpar Filtros
-              </Button>
+              </NotionButton>
             </div>
           </>
         )}
-      </OriginCardContent>
-    </OriginCard>
+      </NotionCardContent>
+    </NotionCard>
   );
 }

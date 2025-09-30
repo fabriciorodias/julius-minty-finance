@@ -1,5 +1,4 @@
-import { MetricCard } from '@/components/ui/metric-card';
-import { OriginBadge } from '@/components/ui/origin-badge';
+import { NotionCard, NotionCardContent } from '@/components/ui/notion-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
@@ -55,17 +54,19 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
 
   if (isLoading) {
     return (
-      <div className="space-y-4 mb-6 animate-fade-in">
+      <div className="space-y-4 mb-6">
         <div>
-          <h2 className="text-xl font-semibold mb-2">Resumo das Contas</h2>
-          <p className="text-muted-foreground text-sm">Visão geral dos seus saldos e liquidez</p>
+          <h2 className="text-notion-h2 text-notion-gray-900 mb-2">Resumo das Contas</h2>
+          <p className="text-notion-body-sm text-notion-gray-600">Visão geral dos seus saldos e liquidez</p>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="liquid-glass-subtle rounded-2xl p-6 animate-pulse">
-              <Skeleton className="h-4 w-24 mb-4" />
-              <Skeleton className="h-8 w-32" />
-            </div>
+            <NotionCard key={i} variant="muted">
+              <NotionCardContent>
+                <Skeleton className="h-4 w-24 mb-4" />
+                <Skeleton className="h-8 w-32" />
+              </NotionCardContent>
+            </NotionCard>
           ))}
         </div>
       </div>
@@ -79,10 +80,10 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
 
   return (
     <TooltipProvider>
-      <div className="space-y-4 mb-6 animate-fade-in">
+      <div className="space-y-4 mb-6">
         <div>
-          <h2 className="text-xl font-semibold mb-2">Resumo das Contas</h2>
-          <p className="text-muted-foreground text-sm">Visão geral dos seus saldos e liquidez</p>
+          <h2 className="text-notion-h2 text-notion-gray-900 mb-2">Resumo das Contas</h2>
+          <p className="text-notion-body-sm text-notion-gray-600">Visão geral dos seus saldos e liquidez</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
@@ -90,14 +91,24 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
           <Tooltip>
             <TooltipTrigger asChild>
               <div>
-                <MetricCard
-                  label="Total em Ativos"
-                  value={formatCurrency(totalAssetBalance)}
-                  description={`${assetAccounts.length} conta${assetAccounts.length !== 1 ? 's' : ''}`}
-                  icon={Wallet}
-                  glass
-                  className="hover-scale liquid-glass-success"
-                />
+                <NotionCard variant="hoverable" className="transition-notion">
+                  <NotionCardContent>
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 flex-1">
+                        <p className="text-notion-caption text-notion-gray-600">Total em Ativos</p>
+                        <p className="text-notion-value tabular-nums text-notion-gray-900">
+                          {formatCurrency(totalAssetBalance)}
+                        </p>
+                        <p className="text-notion-body-sm text-notion-gray-500">
+                          {assetAccounts.length} conta{assetAccounts.length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      <div className="bg-notion-gray-100 rounded-md p-2">
+                        <Wallet className="h-6 w-6 text-notion-gray-700" />
+                      </div>
+                    </div>
+                  </NotionCardContent>
+                </NotionCard>
               </div>
             </TooltipTrigger>
             <TooltipContent>
@@ -111,14 +122,24 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
           <Tooltip>
             <TooltipTrigger asChild>
               <div>
-                <MetricCard
-                  label="Total em Passivos"
-                  value={formatCurrency(totalLiabilityBalance)}
-                  description={`${liabilityAccounts.length} passivo${liabilityAccounts.length !== 1 ? 's' : ''}`}
-                  icon={TrendingDown}
-                  glass
-                  className="hover-scale liquid-glass-danger"
-                />
+                <NotionCard variant="hoverable" className="transition-notion">
+                  <NotionCardContent>
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 flex-1">
+                        <p className="text-notion-caption text-notion-gray-600">Total em Passivos</p>
+                        <p className="text-notion-value tabular-nums text-notion-gray-900">
+                          {formatCurrency(totalLiabilityBalance)}
+                        </p>
+                        <p className="text-notion-body-sm text-notion-gray-500">
+                          {liabilityAccounts.length} passivo{liabilityAccounts.length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      <div className="bg-notion-gray-100 rounded-md p-2">
+                        <TrendingDown className="h-6 w-6 text-notion-gray-700" />
+                      </div>
+                    </div>
+                  </NotionCardContent>
+                </NotionCard>
               </div>
             </TooltipTrigger>
             <TooltipContent>
@@ -132,14 +153,26 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
           <Tooltip>
             <TooltipTrigger asChild>
               <div>
-                <MetricCard
-                  label="Liquidez Imediata"
-                  value={formatCurrency(immediateLiquidity)}
-                  description={`${immediateLiquidity >= 0 ? 'Saldo positivo' : 'Saldo negativo'} • ${liquidityPercentage.toFixed(0)}%`}
-                  icon={Zap}
-                  glass
-                  className={`hover-scale ${immediateLiquidity >= 0 ? 'liquid-glass-success' : 'liquid-glass-warning'}`}
-                />
+                <NotionCard variant="hoverable" className="transition-notion">
+                  <NotionCardContent>
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 flex-1">
+                        <p className="text-notion-caption text-notion-gray-600">Liquidez Imediata</p>
+                        <p className={`text-notion-value tabular-nums ${
+                          immediateLiquidity >= 0 ? 'text-notion-gray-900' : 'text-notion-danger'
+                        }`}>
+                          {formatCurrency(immediateLiquidity)}
+                        </p>
+                        <p className="text-notion-body-sm text-notion-gray-500">
+                          {immediateLiquidity >= 0 ? 'Saldo positivo' : 'Saldo negativo'} • {liquidityPercentage.toFixed(0)}%
+                        </p>
+                      </div>
+                      <div className="bg-notion-gray-100 rounded-md p-2">
+                        <Zap className="h-6 w-6 text-notion-gray-700" />
+                      </div>
+                    </div>
+                  </NotionCardContent>
+                </NotionCard>
               </div>
             </TooltipTrigger>
             <TooltipContent>

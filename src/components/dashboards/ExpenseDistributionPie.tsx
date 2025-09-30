@@ -1,5 +1,5 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { NotionCard, NotionCardContent, NotionCardHeader, NotionCardTitle } from "@/components/ui/notion-card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { ExpenseDistributionData } from "@/hooks/dashboard/useExpenseDistribution";
 
@@ -14,40 +14,40 @@ export function ExpenseDistributionPie({ data, isLoading }: ExpenseDistributionP
 
   if (isLoading) {
     return (
-      <Card className="mint-card">
-        <CardHeader>
-          <CardTitle>Distribuição de Despesas</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <NotionCard variant="muted" className="transition-notion">
+        <NotionCardHeader>
+          <NotionCardTitle>Distribuição de Despesas</NotionCardTitle>
+        </NotionCardHeader>
+        <NotionCardContent>
           <div className="h-80 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-notion-blue"></div>
           </div>
-        </CardContent>
-      </Card>
+        </NotionCardContent>
+      </NotionCard>
     );
   }
 
   if (data.length === 0) {
     return (
-      <Card className="mint-card">
-        <CardHeader>
-          <CardTitle>Distribuição de Despesas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80 flex items-center justify-center text-mint-text-secondary">
+      <NotionCard variant="muted" className="transition-notion">
+        <NotionCardHeader>
+          <NotionCardTitle>Distribuição de Despesas</NotionCardTitle>
+        </NotionCardHeader>
+        <NotionCardContent>
+          <div className="h-80 flex items-center justify-center text-notion-gray-600">
             Nenhuma despesa encontrada para este período
           </div>
-        </CardContent>
-      </Card>
+        </NotionCardContent>
+      </NotionCard>
     );
   }
 
   return (
-    <div className="liquid-glass-primary rounded-2xl shadow-origin hover-lift-origin origin-transition animate-fade-in">
-      <div className="p-6 pb-4">
-        <h3 className="text-origin-title">Distribuição de Despesas</h3>
-      </div>
-      <div className="px-6 pb-6">
+    <NotionCard variant="hoverable" className="transition-notion">
+      <NotionCardHeader>
+        <NotionCardTitle>Distribuição de Despesas</NotionCardTitle>
+      </NotionCardHeader>
+      <NotionCardContent>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
@@ -67,7 +67,7 @@ export function ExpenseDistributionPie({ data, isLoading }: ExpenseDistributionP
             />
           </PieChart>
         </ResponsiveContainer>
-      </div>
-    </div>
+      </NotionCardContent>
+    </NotionCard>
   );
 }

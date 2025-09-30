@@ -13,6 +13,7 @@ const notionButtonVariants = cva(
         ghost: "text-notion-gray-700 hover:bg-notion-gray-100",
         danger: "bg-notion-danger text-white hover:bg-notion-danger-hover shadow-notion-sm",
         outline: "border border-notion-gray-300 bg-white text-notion-gray-700 hover:bg-notion-gray-50",
+        filter: "bg-notion-gray-100 text-notion-gray-700 hover:bg-notion-gray-200 data-[active=true]:bg-notion-gray-900 data-[active=true]:text-white data-[active=true]:shadow-notion-sm",
       },
       size: {
         sm: "h-8 px-3 text-xs",

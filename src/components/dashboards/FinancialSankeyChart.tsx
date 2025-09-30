@@ -215,14 +215,14 @@ export const FinancialSankeyChart: React.FC<FinancialSankeyChartProps> = ({
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Fluxo de Recursos por Categoria</CardTitle>
+    <div className="w-full liquid-glass-primary rounded-2xl shadow-origin hover-lift-origin origin-transition">
+      <div className="p-6 pb-4">
+        <h3 className="text-origin-title mb-2">Fluxo de Recursos por Categoria</h3>
         <p className="text-sm text-muted-foreground">
           Visualização do fluxo de receitas e despesas por categoria no período selecionado
         </p>
-      </CardHeader>
-      <CardContent>
+      </div>
+      <div className="px-6 pb-6">
         <div className="w-full overflow-x-auto">
           <svg ref={svgRef} className="w-full" style={{ minWidth: '800px' }} />
         </div>
@@ -240,7 +240,7 @@ export const FinancialSankeyChart: React.FC<FinancialSankeyChartProps> = ({
             <span>Despesas</span>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };

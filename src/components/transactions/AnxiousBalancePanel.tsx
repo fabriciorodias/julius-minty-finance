@@ -137,17 +137,17 @@ export function AnxiousBalancePanel({ selectedAccountIds, dateFilters }: Anxious
 
   if (isLoading) {
     return (
-      <Card className="w-full bg-gradient-to-br from-background to-muted/30 border-muted/50 shadow-sm">
-        <CardContent>
+      <div className="w-full liquid-glass-subtle rounded-2xl shadow-origin">
+        <div className="p-6">
           <BalanceCardSkeleton />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className="w-full bg-gradient-to-br from-background to-muted/30 border-muted/50 shadow-sm">
-      <CardContent className="p-6">
+    <div className="w-full liquid-glass-primary rounded-2xl shadow-origin hover-lift-origin origin-transition">
+      <div className="p-6">
         <div className="space-y-6">
           {/* Balance Display */}
           <div className="flex items-start justify-between">
@@ -304,7 +304,7 @@ export function AnxiousBalancePanel({ selectedAccountIds, dateFilters }: Anxious
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

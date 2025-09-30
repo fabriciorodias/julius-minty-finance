@@ -43,11 +43,11 @@ export function ExpenseDistributionPie({ data, isLoading }: ExpenseDistributionP
   }
 
   return (
-    <Card className="mint-card">
-      <CardHeader>
-        <CardTitle className="text-mint-text-primary">Distribuição de Despesas</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="liquid-glass-primary rounded-2xl shadow-origin hover-lift-origin origin-transition animate-fade-in">
+      <div className="p-6 pb-4">
+        <h3 className="text-origin-title">Distribuição de Despesas</h3>
+      </div>
+      <div className="px-6 pb-6">
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
@@ -67,7 +67,7 @@ export function ExpenseDistributionPie({ data, isLoading }: ExpenseDistributionP
             />
           </PieChart>
         </ResponsiveContainer>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

@@ -158,20 +158,20 @@ export function CashFlowHero({ selectedAccountIds }: CashFlowHeroProps) {
 
   if (selectedAccountIds.length === 0) {
     return (
-      <Card className="mint-card">
-        <CardContent className="flex items-center justify-center h-64">
+      <div className="liquid-glass-subtle rounded-2xl p-8">
+        <div className="flex items-center justify-center h-64">
           <div className="text-center text-muted-foreground">
             <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>Selecione pelo menos uma conta para ver a projeção</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className="mint-card">
-      <CardHeader>
+    <div className="liquid-glass-primary rounded-2xl shadow-origin hover-lift-origin origin-transition">
+      <div className="p-6 pb-0">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-2xl font-bold text-mint-text-primary flex items-center gap-3">
@@ -226,12 +226,12 @@ export function CashFlowHero({ selectedAccountIds }: CashFlowHeroProps) {
             </Button>
           ))}
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="space-y-6">
+      <div className="p-6 space-y-6">
         {/* Key Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="p-4">
+          <div className="liquid-glass-success rounded-xl p-4 hover-scale origin-transition">
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-1">Liquidez Atual</p>
               <p className={`text-xl font-bold ${
@@ -240,9 +240,9 @@ export function CashFlowHero({ selectedAccountIds }: CashFlowHeroProps) {
                 {formatCurrency(completedBalance)}
               </p>
             </div>
-          </Card>
+          </div>
 
-          <Card className="p-4">
+          <div className="liquid-glass-danger rounded-xl p-4 hover-scale origin-transition">
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-1">Pior Momento</p>
               <p className={`text-xl font-bold ${
@@ -254,9 +254,9 @@ export function CashFlowHero({ selectedAccountIds }: CashFlowHeroProps) {
                 {safeFormatDate(metrics.worstDayDate, 'dd/MM')}
               </p>
             </div>
-          </Card>
+          </div>
 
-          <Card className="p-4">
+          <div className="liquid-glass-primary rounded-xl p-4 hover-scale origin-transition">
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-1">Saldo Final</p>
               <p className={`text-xl font-bold ${
@@ -265,9 +265,9 @@ export function CashFlowHero({ selectedAccountIds }: CashFlowHeroProps) {
                 {formatCurrency(metrics.projectedEndBalance)}
               </p>
             </div>
-          </Card>
+          </div>
 
-          <Card className="p-4">
+          <div className="liquid-glass-warning rounded-xl p-4 hover-scale origin-transition">
             <div className="text-center flex flex-col items-center">
               <p className="text-sm text-muted-foreground mb-1">Risco</p>
               <div className="flex items-center gap-2">
@@ -281,7 +281,7 @@ export function CashFlowHero({ selectedAccountIds }: CashFlowHeroProps) {
                 </Badge>
               </div>
             </div>
-          </Card>
+          </div>
         </div>
 
         {/* Chart */}
@@ -308,8 +308,8 @@ export function CashFlowHero({ selectedAccountIds }: CashFlowHeroProps) {
 
         {/* Pending Transactions Summary */}
         {(pendingIncome > 0 || pendingExpense > 0) && (
-          <Card className="bg-muted/30">
-            <CardContent className="pt-4">
+          <div className="liquid-glass-subtle rounded-xl p-6">
+            <div>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <p className="text-sm text-muted-foreground">Receitas Pendentes</p>
@@ -332,10 +332,10 @@ export function CashFlowHero({ selectedAccountIds }: CashFlowHeroProps) {
                   </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

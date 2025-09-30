@@ -67,19 +67,18 @@ export function AccountBalancesContainer({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+    <div className="liquid-glass-primary rounded-2xl shadow-origin hover-lift-origin origin-transition animate-fade-in">
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <Wallet className="h-5 w-5" />
-            Saldos das Contas
+            <Wallet className="h-5 w-5 text-primary" />
+            <h3 className="text-origin-title">Saldos das Contas</h3>
           </div>
           <div className="text-lg font-bold text-primary">
             Total: {formatCurrency(totalBalance)}
           </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+        </div>
+        <div>
         {accounts.length === 0 ? (
           <p className="text-muted-foreground text-center py-8">
             Nenhuma conta cadastrada
@@ -98,16 +97,16 @@ export function AccountBalancesContainer({
               });
               
               return (
-                <Card
+                <div
                   key={account.id}
-                  className={`cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] border-l-4 ${
+                  className={`cursor-pointer liquid-glass-subtle rounded-xl p-4 hover-scale origin-transition border-l-4 ${
                     isSelected 
                       ? 'ring-2 ring-primary shadow-md border-l-primary' 
-                      : `hover:bg-muted/50 ${balanceColors.borderColor}`
-                  } ${balanceColors.bgColor}`}
+                      : `${balanceColors.borderColor}`
+                  }`}
                   onClick={() => onSelectAccount(account.id)}
                 >
-                  <CardContent className="p-4">
+                  <div>
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div className="mt-1">
@@ -136,13 +135,14 @@ export function AccountBalancesContainer({
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               );
             })}
           </div>
         )}
-      </CardContent>
-    </Card>
+        </div>
+      </div>
+    </div>
   );
 }

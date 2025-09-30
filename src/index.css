@@ -4,6 +4,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Notion Design System */
+@import './styles/notion-design-tokens.css';
+
 @layer base {
   :root {
     /* Base colors - Origin inspired */

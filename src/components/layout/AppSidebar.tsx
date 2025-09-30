@@ -11,7 +11,6 @@ import {
   SidebarHeader,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
 import { BrandLogo } from "@/components/layout/BrandLogo";
 
 const mainMenuItems = [
@@ -82,29 +81,35 @@ export function AppSidebar() {
 
   const isActive = (path: string) => location.pathname === path;
 
-  const renderMenuItem = (item: typeof mainMenuItems[0]) => (
-    <SidebarMenuItem key={item.title}>
-      <SidebarMenuButton asChild>
-        <NavLink
-          to={item.url}
-          className={({ isActive }) =>
-            `flex items-center w-full px-2 py-1.5 rounded-md transition-notion ${
-              isActive
-                ? "bg-notion-blue-bg text-notion-gray-900 font-medium"
-                : "text-notion-gray-700 hover:bg-notion-gray-100"
-            }`
-          }
-        >
-          <span className="material-icons text-lg flex-shrink-0">
-            {item.icon}
-          </span>
-          {!isCollapsed && (
-            <span className="text-notion-body-sm ml-3">{item.title}</span>
-          )}
-        </NavLink>
-      </SidebarMenuButton>
-    </SidebarMenuItem>
-  );
+  const renderMenuItem = (item: typeof mainMenuItems[0]) => {
+    const active = isActive(item.url);
+    
+    return (
+      <SidebarMenuItem key={item.title}>
+        <SidebarMenuButton asChild>
+          <NavLink
+            to={item.url}
+            className={({ isActive }) =>
+              `flex items-center w-full px-2.5 py-2 rounded-lg transition-notion ${
+                isActive
+                  ? "bg-notion-gray-100 text-notion-gray-900 font-medium shadow-notion-sm"
+                  : "text-notion-gray-600 hover:bg-notion-gray-100 hover:text-notion-gray-900"
+              }`
+            }
+          >
+            <span className={`material-icons text-lg flex-shrink-0 transition-notion ${
+              active ? "text-notion-gray-900" : "text-notion-gray-500"
+            }`}>
+              {item.icon}
+            </span>
+            {!isCollapsed && (
+              <span className="text-notion-body-sm ml-3">{item.title}</span>
+            )}
+          </NavLink>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-notion-gray-200 bg-notion-gray-50">
@@ -121,7 +126,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <Separator className="my-4 bg-notion-gray-200" />
+        <div className="my-3" />
 
         <SidebarGroup>
           <SidebarGroupContent>

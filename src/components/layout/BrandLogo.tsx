@@ -18,13 +18,14 @@ export function BrandLogo({ variant = "sidebar", collapsed = false, className }:
     )}>
       {/* Logo Icon */}
       <div className={cn(
-        "rounded-md flex items-center justify-center flex-shrink-0 bg-notion-blue transition-notion",
+        "rounded-lg flex items-center justify-center flex-shrink-0 transition-notion",
+        "bg-notion-gray-100 border border-notion-gray-200",
         isHeader 
           ? "w-7 h-7" 
           : "w-9 h-9",
       )}>
         <span className={cn(
-          "material-icons text-white",
+          "material-icons text-notion-gray-700",
           isHeader ? "text-base" : "text-lg"
         )}>
           account_balance_wallet

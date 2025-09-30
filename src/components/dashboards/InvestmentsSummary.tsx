@@ -1,4 +1,4 @@
-import { MetricCard } from "@/components/ui/metric-card";
+import { NotionCard } from "@/components/ui/notion-card";
 import { TrendingUp, TrendingDown, PiggyBank, Target } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -22,67 +22,103 @@ export function InvestmentsSummary({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 animate-fade-in">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="liquid-glass-subtle rounded-2xl p-6 animate-pulse">
+          <NotionCard key={i} padding="md" className="animate-pulse">
             <Skeleton className="h-4 w-24 mb-4" />
             <Skeleton className="h-8 w-32" />
-          </div>
+          </NotionCard>
         ))}
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 animate-fade-in">
-      <MetricCard
-        label="Patrimônio Total"
-        value={formatCurrency(totalPortfolio)}
-        icon={PiggyBank}
-        textured="blue-gray"
-        className="hover-scale"
-      />
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <NotionCard variant="hoverable" className="transition-notion">
+        <div className="p-6">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <p className="text-notion-caption text-notion-gray-600">Patrimônio Total</p>
+              <p className="text-notion-value tabular-nums text-notion-gray-900">
+                {formatCurrency(totalPortfolio)}
+              </p>
+            </div>
+            <div className="bg-notion-gray-100 rounded-md p-2">
+              <PiggyBank className="h-6 w-6 text-notion-gray-700" />
+            </div>
+          </div>
+        </div>
+      </NotionCard>
 
-      <MetricCard
-        label="Retorno Mensal"
-        value={formatCurrency(monthlyReturn)}
-        icon={monthlyReturn >= 0 ? TrendingUp : TrendingDown}
-        trend={
-          Math.abs(monthlyReturn) > 0
-            ? {
-                value: Math.abs(monthlyReturn),
-                isPositive: monthlyReturn >= 0
-              }
-            : undefined
-        }
-        textured="earth"
-        className="hover-scale"
-      />
+      <NotionCard variant="hoverable" className="transition-notion">
+        <div className="p-6">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <p className="text-notion-caption text-notion-gray-600">Retorno Mensal</p>
+              <p className={`text-notion-value tabular-nums ${monthlyReturn >= 0 ? 'text-notion-success' : 'text-notion-danger'}`}>
+                {formatCurrency(monthlyReturn)}
+              </p>
+              {Math.abs(monthlyReturn) > 0 && (
+                <div className={`flex items-center gap-1 text-sm font-medium ${monthlyReturn >= 0 ? 'text-notion-success' : 'text-notion-danger'}`}>
+                  <span>{monthlyReturn >= 0 ? "↑" : "↓"}</span>
+                  <span>{Math.abs(monthlyReturn).toFixed(1)}%</span>
+                </div>
+              )}
+            </div>
+            <div className="bg-notion-gray-100 rounded-md p-2">
+              {monthlyReturn >= 0 ? (
+                <TrendingUp className="h-6 w-6 text-notion-success" />
+              ) : (
+                <TrendingDown className="h-6 w-6 text-notion-danger" />
+              )}
+            </div>
+          </div>
+        </div>
+      </NotionCard>
 
-      <MetricCard
-        label="Retorno %"
-        value={`${returnPercentage.toFixed(2)}%`}
-        icon={returnPercentage >= 0 ? TrendingUp : TrendingDown}
-        trend={
-          Math.abs(returnPercentage) > 0
-            ? {
-                value: Math.abs(returnPercentage),
-                isPositive: returnPercentage >= 0
-              }
-            : undefined
-        }
-        textured="ocean"
-        className="hover-scale"
-      />
+      <NotionCard variant="hoverable" className="transition-notion">
+        <div className="p-6">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <p className="text-notion-caption text-notion-gray-600">Retorno %</p>
+              <p className={`text-notion-value tabular-nums ${returnPercentage >= 0 ? 'text-notion-success' : 'text-notion-danger'}`}>
+                {returnPercentage.toFixed(2)}%
+              </p>
+              {Math.abs(returnPercentage) > 0 && (
+                <div className={`flex items-center gap-1 text-sm font-medium ${returnPercentage >= 0 ? 'text-notion-success' : 'text-notion-danger'}`}>
+                  <span>{returnPercentage >= 0 ? "↑" : "↓"}</span>
+                  <span>{Math.abs(returnPercentage).toFixed(1)}%</span>
+                </div>
+              )}
+            </div>
+            <div className="bg-notion-gray-100 rounded-md p-2">
+              {returnPercentage >= 0 ? (
+                <TrendingUp className="h-6 w-6 text-notion-success" />
+              ) : (
+                <TrendingDown className="h-6 w-6 text-notion-danger" />
+              )}
+            </div>
+          </div>
+        </div>
+      </NotionCard>
 
-      <MetricCard
-        label="Independência Financeira"
-        value={`${financialIndependenceRatio.toFixed(1)}%`}
-        description="do custo mensal"
-        icon={Target}
-        textured="mint"
-        className="hover-scale"
-      />
+      <NotionCard variant="hoverable" className="transition-notion">
+        <div className="p-6">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <p className="text-notion-caption text-notion-gray-600">Independência Financeira</p>
+              <p className="text-notion-value tabular-nums text-notion-gray-900">
+                {financialIndependenceRatio.toFixed(1)}%
+              </p>
+              <p className="text-sm text-notion-gray-600">do custo mensal</p>
+            </div>
+            <div className="bg-notion-gray-100 rounded-md p-2">
+              <Target className="h-6 w-6 text-notion-blue" />
+            </div>
+          </div>
+        </div>
+      </NotionCard>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 
 import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { NotionCard, NotionCardHeader, NotionCardTitle } from '@/components/ui/notion-card';
+import { NotionButton } from '@/components/ui/notion-button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CashFlowChartBase } from './CashFlowChartBase';
@@ -158,27 +158,27 @@ export function CashFlowHero({ selectedAccountIds }: CashFlowHeroProps) {
 
   if (selectedAccountIds.length === 0) {
     return (
-      <div className="liquid-glass-subtle rounded-2xl p-8">
+      <NotionCard variant="muted" padding="lg">
         <div className="flex items-center justify-center h-64">
-          <div className="text-center text-muted-foreground">
+          <div className="text-center text-notion-gray-500">
             <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>Selecione pelo menos uma conta para ver a projeção</p>
           </div>
         </div>
-      </div>
+      </NotionCard>
     );
   }
 
   return (
-    <div className="liquid-glass-primary rounded-2xl shadow-origin hover-lift-origin origin-transition">
+    <NotionCard variant="hoverable" padding="none" className="transition-notion">
       <div className="p-6 pb-0">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-2xl font-bold text-mint-text-primary flex items-center gap-3">
-              <TrendingUp className="h-8 w-8 text-primary" />
+            <h2 className="text-notion-h2 text-notion-gray-900 flex items-center gap-3">
+              <TrendingUp className="h-7 w-7 text-notion-blue" />
               Projeção de Fluxo de Caixa
-            </CardTitle>
-            <p className="text-mint-text-secondary mt-1">
+            </h2>
+            <p className="text-notion-caption text-notion-gray-600 mt-1">
               Visualize o futuro das suas finanças e tome decisões mais conscientes
             </p>
           </div>
@@ -186,12 +186,12 @@ export function CashFlowHero({ selectedAccountIds }: CashFlowHeroProps) {
           <div className="flex items-center gap-2">
             {/* Mode Toggle */}
             <Tabs value={mode} onValueChange={(v) => setMode(v as 'calm' | 'analytical')}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="calm" className="text-xs">
+              <TabsList className="bg-notion-gray-100">
+                <TabsTrigger value="calm" className="text-xs data-[state=active]:bg-white">
                   <Eye className="h-3 w-3 mr-1" />
                   Calmo
                 </TabsTrigger>
-                <TabsTrigger value="analytical" className="text-xs">
+                <TabsTrigger value="analytical" className="text-xs data-[state=active]:bg-white">
                   <BarChart3 className="h-3 w-3 mr-1" />
                   Analítico
                 </TabsTrigger>
@@ -203,27 +203,27 @@ export function CashFlowHero({ selectedAccountIds }: CashFlowHeroProps) {
               onScenarioChange={setScenarioAdjustments}
               simulationResult={simulationResult}
             >
-              <Button variant="outline" size="sm" className="gap-2">
+              <NotionButton variant="outline" size="sm">
                 <Lightbulb className="h-4 w-4" />
                 E se eu...?
-              </Button>
+              </NotionButton>
             </CashFlowScenarioPanel>
           </div>
         </div>
 
         {/* Horizon Selector */}
         <div className="flex items-center gap-2 mt-4">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground mr-2">Período:</span>
+          <Calendar className="h-4 w-4 text-notion-gray-600" />
+          <span className="text-notion-body-sm text-notion-gray-600 mr-2">Período:</span>
           {(['30d', '90d', '180d', '12m'] as const).map((h) => (
-            <Button
+            <NotionButton
               key={h}
-              variant={horizon === h ? 'default' : 'outline'}
+              variant={horizon === h ? 'secondary' : 'ghost'}
               size="sm"
               onClick={() => setHorizon(h)}
             >
               {getHorizonLabel(h)}
-            </Button>
+            </NotionButton>
           ))}
         </div>
       </div>
@@ -231,75 +231,77 @@ export function CashFlowHero({ selectedAccountIds }: CashFlowHeroProps) {
       <div className="p-6 space-y-6">
         {/* Key Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="liquid-glass-success rounded-xl p-4 hover-scale origin-transition">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-1">Liquidez Atual</p>
-              <p className={`text-xl font-bold ${
-                completedBalance >= 0 ? 'text-green-600' : 'text-destructive'
+          <NotionCard variant="muted" padding="sm">
+            <div className="text-center p-2">
+              <p className="text-notion-caption text-notion-gray-600 mb-1">Liquidez Atual</p>
+              <p className={`text-notion-value tabular-nums ${
+                completedBalance >= 0 ? 'text-notion-success' : 'text-notion-danger'
               }`}>
                 {formatCurrency(completedBalance)}
               </p>
             </div>
-          </div>
+          </NotionCard>
 
-          <div className="liquid-glass-danger rounded-xl p-4 hover-scale origin-transition">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-1">Pior Momento</p>
-              <p className={`text-xl font-bold ${
-                metrics.worstDayBalance >= 0 ? 'text-green-600' : 'text-destructive'
+          <NotionCard variant="muted" padding="sm">
+            <div className="text-center p-2">
+              <p className="text-notion-caption text-notion-gray-600 mb-1">Pior Momento</p>
+              <p className={`text-notion-value tabular-nums ${
+                metrics.worstDayBalance >= 0 ? 'text-notion-success' : 'text-notion-danger'
               }`}>
                 {formatCurrency(metrics.worstDayBalance)}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-notion-gray-600">
                 {safeFormatDate(metrics.worstDayDate, 'dd/MM')}
               </p>
             </div>
-          </div>
+          </NotionCard>
 
-          <div className="liquid-glass-primary rounded-xl p-4 hover-scale origin-transition">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-1">Saldo Final</p>
-              <p className={`text-xl font-bold ${
-                metrics.projectedEndBalance >= 0 ? 'text-green-600' : 'text-destructive'
+          <NotionCard variant="muted" padding="sm">
+            <div className="text-center p-2">
+              <p className="text-notion-caption text-notion-gray-600 mb-1">Saldo Final</p>
+              <p className={`text-notion-value tabular-nums ${
+                metrics.projectedEndBalance >= 0 ? 'text-notion-success' : 'text-notion-danger'
               }`}>
                 {formatCurrency(metrics.projectedEndBalance)}
               </p>
             </div>
-          </div>
+          </NotionCard>
 
-          <div className="liquid-glass-warning rounded-xl p-4 hover-scale origin-transition">
-            <div className="text-center flex flex-col items-center">
-              <p className="text-sm text-muted-foreground mb-1">Risco</p>
+          <NotionCard variant="muted" padding="sm">
+            <div className="text-center flex flex-col items-center p-2">
+              <p className="text-notion-caption text-notion-gray-600 mb-1">Risco</p>
               <div className="flex items-center gap-2">
                 {(() => {
                   const RiskIcon = getRiskIcon(metrics.riskScore);
                   return <RiskIcon className={`h-5 w-5 ${getRiskColor(metrics.riskScore)}`} />;
                 })()}
-                <Badge variant={metrics.riskScore === 'high' ? 'destructive' : 'outline'}>
+                <Badge variant={metrics.riskScore === 'high' ? 'destructive' : 'outline'} className="text-xs">
                   {metrics.riskScore === 'high' ? 'Alto' : 
                    metrics.riskScore === 'medium' ? 'Médio' : 'Baixo'}
                 </Badge>
               </div>
             </div>
-          </div>
+          </NotionCard>
         </div>
 
         {/* Chart */}
-        <div className="h-96">
-          {isLoading ? (
-            <div className="h-full flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <CashFlowChartBase
-              data={dataPoints}
-              scenarioData={simulationResult?.scenarioDataPoints}
-              showScenario={scenarioAdjustments.length > 0}
-              height={384}
-              chartConfig={chartConfig}
-            />
-          )}
-        </div>
+        <NotionCard variant="default" padding="sm">
+          <div className="h-96">
+            {isLoading ? (
+              <div className="h-full flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-notion-blue"></div>
+              </div>
+            ) : (
+              <CashFlowChartBase
+                data={dataPoints}
+                scenarioData={simulationResult?.scenarioDataPoints}
+                showScenario={scenarioAdjustments.length > 0}
+                height={384}
+                chartConfig={chartConfig}
+              />
+            )}
+          </div>
+        </NotionCard>
 
         {/* Risk Alerts */}
         {mode === 'analytical' && (
@@ -308,34 +310,32 @@ export function CashFlowHero({ selectedAccountIds }: CashFlowHeroProps) {
 
         {/* Pending Transactions Summary */}
         {(pendingIncome > 0 || pendingExpense > 0) && (
-          <div className="liquid-glass-subtle rounded-xl p-6">
-            <div>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-sm text-muted-foreground">Receitas Pendentes</p>
-                  <p className="text-lg font-semibold text-green-600">
-                    {formatCurrency(pendingIncome)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Despesas Pendentes</p>
-                  <p className="text-lg font-semibold text-destructive">
-                    {formatCurrency(pendingExpense)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Provisões Líquidas</p>
-                  <p className={`text-lg font-semibold ${
-                    provisionsAmount >= 0 ? 'text-green-600' : 'text-destructive'  
-                  }`}>
-                    {formatCurrency(provisionsAmount)}
-                  </p>
-                </div>
+          <NotionCard variant="muted" padding="md">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="text-notion-caption text-notion-gray-600">Receitas Pendentes</p>
+                <p className="text-notion-body font-semibold text-notion-success">
+                  {formatCurrency(pendingIncome)}
+                </p>
+              </div>
+              <div>
+                <p className="text-notion-caption text-notion-gray-600">Despesas Pendentes</p>
+                <p className="text-notion-body font-semibold text-notion-danger">
+                  {formatCurrency(pendingExpense)}
+                </p>
+              </div>
+              <div>
+                <p className="text-notion-caption text-notion-gray-600">Provisões Líquidas</p>
+                <p className={`text-notion-body font-semibold ${
+                  provisionsAmount >= 0 ? 'text-notion-success' : 'text-notion-danger'  
+                }`}>
+                  {formatCurrency(provisionsAmount)}
+                </p>
               </div>
             </div>
-          </div>
+          </NotionCard>
         )}
       </div>
-    </div>
+    </NotionCard>
   );
 }

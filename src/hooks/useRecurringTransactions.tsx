@@ -261,11 +261,12 @@ export function useRecurringTransactionMutations() {
         amount: recurringTransaction.type === 'despesa' ? -Math.abs(amount) : Math.abs(amount),
         type: recurringTransaction.type,
         event_date: event_date,
-        status: 'concluido' as const,
         category_id: recurringTransaction.category_id,
         account_id: recurringTransaction.account_id,
         counterparty_id: recurringTransaction.counterparty_id,
         notes: `Gerado automaticamente de: ${recurringTransaction.template_name}`,
+        input_source: 'recurring' as const,
+        is_reviewed: false,
         user_id: user.id
       };
 

@@ -67,7 +67,7 @@ export function AccountBalancesContainer({
   }
 
   return (
-    <div className="liquid-glass-primary rounded-2xl shadow-origin hover-lift-origin origin-transition animate-fade-in">
+    <div className="bg-muted/30 rounded-2xl border border-border transition-all duration-200 hover:shadow-md">
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
@@ -99,7 +99,7 @@ export function AccountBalancesContainer({
               return (
                 <div
                   key={account.id}
-                  className={`cursor-pointer liquid-glass-subtle rounded-xl p-4 hover-scale origin-transition border-l-4 ${
+                  className={`cursor-pointer bg-background/50 rounded-xl p-4 transition-all duration-200 hover:shadow-md border-l-4 ${
                     isSelected 
                       ? 'ring-2 ring-primary shadow-md border-l-primary' 
                       : `${balanceColors.borderColor}`

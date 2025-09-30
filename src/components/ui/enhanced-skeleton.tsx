@@ -17,7 +17,7 @@ function EnhancedSkeleton({
 
 function TransactionRowSkeleton() {
   return (
-    <div className="flex items-center space-x-4 p-4 border-b animate-fade-in">
+    <div className="flex items-center space-x-4 p-4 border-b">
       <EnhancedSkeleton className="h-4 w-4 rounded" />
       <div className="flex-1 space-y-2">
         <EnhancedSkeleton className="h-4 w-3/4" />
@@ -34,7 +34,7 @@ function TransactionRowSkeleton() {
 
 function BalanceCardSkeleton() {
   return (
-    <div className="p-6 space-y-6 animate-fade-in">
+    <div className="p-6 space-y-6">
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <EnhancedSkeleton className="h-4 w-32" />
@@ -54,7 +54,7 @@ function BalanceCardSkeleton() {
 
 function AccountListSkeleton() {
   return (
-    <div className="space-y-3 animate-fade-in">
+    <div className="space-y-3">
       {[...Array(5)].map((_, i) => (
         <div key={i} className="flex items-center gap-3 p-3 rounded-lg">
           <EnhancedSkeleton className="h-4 w-4 rounded" />

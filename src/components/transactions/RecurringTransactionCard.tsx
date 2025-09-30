@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { format, parseISO } from 'date-fns';
-import { OriginCard, OriginCardHeader, OriginCardContent } from "@/components/ui/origin-card";
+import { NotionCard, NotionCardHeader, NotionCardContent } from "@/components/ui/notion-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
@@ -136,13 +136,9 @@ export function RecurringTransactionCard({
   const IconComponent = theme.icon;
 
   return (
-    <OriginCard 
-      glass 
-      hover
-      className={`
-        group relative animate-fade-in
-        ${theme.isRevenue ? 'liquid-glass-success' : 'liquid-glass-danger'}
-      `}
+    <NotionCard 
+      variant="muted"
+      className="group relative transition-all duration-200 hover:shadow-md"
     >
       {/* Gradient Overlay on Hover */}
       <div className={`
@@ -159,7 +155,7 @@ export function RecurringTransactionCard({
         <IconComponent className={`h-5 w-5 ${theme.textColor}`} />
       </div>
       
-      <OriginCardHeader className="pb-3 relative z-10 pr-16">
+      <NotionCardHeader className="pb-3 relative z-10 pr-16">
         <div className="space-y-2">
           {/* Header with Type Badge */}
           <div className="flex items-center gap-2 mb-1">
@@ -245,9 +241,9 @@ export function RecurringTransactionCard({
             </DropdownMenu>
           </div>
         </div>
-      </OriginCardHeader>
+      </NotionCardHeader>
 
-      <OriginCardContent className="space-y-4 relative z-10">
+      <NotionCardContent className="space-y-4 relative z-10">
         {/* Financial Information - Enhanced Design */}
         <div className="grid grid-cols-2 gap-4">
           <div className={`
@@ -331,13 +327,13 @@ export function RecurringTransactionCard({
             <span className="font-semibold text-foreground truncate">{transaction.account_name}</span>
           </div>
         </div>
-      </OriginCardContent>
+      </NotionCardContent>
 
       <MarkAsPaidModal
         open={showMarkAsPaidModal}
         onOpenChange={setShowMarkAsPaidModal}
         transaction={transaction}
       />
-    </OriginCard>
+    </NotionCard>
   );
 }

@@ -215,7 +215,7 @@ export const FinancialSankeyChart: React.FC<FinancialSankeyChartProps> = ({
   }
 
   return (
-    <div className="w-full liquid-glass-primary rounded-2xl shadow-origin hover-lift-origin origin-transition">
+    <div className="w-full bg-muted/30 rounded-2xl border border-border transition-all duration-200 hover:shadow-md">
       <div className="p-6 pb-4">
         <h3 className="text-origin-title mb-2">Fluxo de Recursos por Categoria</h3>
         <p className="text-sm text-muted-foreground">

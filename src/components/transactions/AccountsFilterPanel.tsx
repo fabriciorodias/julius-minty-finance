@@ -373,7 +373,7 @@ export function AccountsFilterPanel({
 
           {/* Multi-selection hint */}
           {hasMultipleSelected && (
-            <div className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-2 border border-border/50 animate-fade-in">
+            <div className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-2 border border-border/50">
               <div className="flex items-center gap-2">
                 <Info className="h-3 w-3" />
                 <span><strong>Dica:</strong> Use Cmd/Ctrl + clique para multisseleção</span>

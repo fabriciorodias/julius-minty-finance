@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { format, parseISO } from 'date-fns';
-import { OriginCard, OriginCardContent } from "@/components/ui/origin-card";
+import { NotionCard, NotionCardContent } from "@/components/ui/notion-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
@@ -97,15 +97,11 @@ export function RecurringTransactionCardCompact({
   const hasVariance = transaction.variance_percentage > 20;
 
   return (
-    <OriginCard 
-      glass
-      hover
-      className={`
-        group relative animate-fade-in
-        ${isRevenue ? 'liquid-glass-success' : 'liquid-glass-danger'}
-      `}
+    <NotionCard 
+      variant="muted"
+      className="group relative transition-all duration-200 hover:shadow-md"
     >
-      <OriginCardContent className="p-4">
+      <NotionCardContent className="p-4">
         <div className="flex items-start justify-between gap-3">
           {/* Left: Icon + Content */}
           <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -226,13 +222,13 @@ export function RecurringTransactionCardCompact({
             </DropdownMenu>
           </div>
         </div>
-      </OriginCardContent>
+      </NotionCardContent>
 
       <MarkAsPaidModal
         open={showMarkAsPaidModal}
         onOpenChange={setShowMarkAsPaidModal}
         transaction={transaction}
       />
-    </OriginCard>
+    </NotionCard>
   );
 }

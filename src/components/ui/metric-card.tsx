@@ -1,7 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
-import { OriginCard, OriginCardContent, OriginCardLabel, OriginCardValue } from "./origin-card";
+import { NotionCard, NotionCardContent } from "./notion-card";
 
 export interface MetricCardProps extends React.HTMLAttributes<HTMLDivElement> {
   label: string;
@@ -13,8 +13,6 @@ export interface MetricCardProps extends React.HTMLAttributes<HTMLDivElement> {
     isPositive: boolean;
   };
   description?: string;
-  glass?: boolean;
-  textured?: "blue-gray" | "earth" | "ocean" | "mint";
 }
 
 const MetricCard = React.forwardRef<HTMLDivElement, MetricCardProps>(
@@ -26,40 +24,33 @@ const MetricCard = React.forwardRef<HTMLDivElement, MetricCardProps>(
     iconColor = "text-primary",
     trend,
     description,
-    glass,
-    textured,
     ...props 
   }, ref) => {
     return (
-      <OriginCard
+      <NotionCard
         ref={ref}
-        glass={glass}
-        textured={textured}
-        className={cn("hover-lift-origin", className)}
+        variant="muted"
+        className={cn("transition-all duration-200 hover:shadow-md", className)}
         {...props}
       >
-        <OriginCardContent className="p-6">
+        <NotionCardContent className="p-6">
           <div className="flex items-start justify-between">
             <div className="space-y-2 flex-1">
-              <OriginCardLabel className={textured ? "text-white/80" : ""}>
+              <p className="text-sm text-muted-foreground font-medium">
                 {label}
-              </OriginCardLabel>
-              <OriginCardValue className={textured ? "text-white" : ""}>
+              </p>
+              <p className="text-2xl font-bold tracking-tight text-foreground">
                 {value}
-              </OriginCardValue>
+              </p>
               {description && (
-                <p className={cn(
-                  "text-sm",
-                  textured ? "text-white/70" : "text-muted-foreground"
-                )}>
+                <p className="text-sm text-muted-foreground">
                   {description}
                 </p>
               )}
               {trend && (
                 <div className={cn(
                   "flex items-center gap-1 text-sm font-medium",
-                  trend.isPositive ? "text-green-600" : "text-red-600",
-                  textured && "text-white"
+                  trend.isPositive ? "text-green-600" : "text-red-600"
                 )}>
                   <span>{trend.isPositive ? "↑" : "↓"}</span>
                   <span>{Math.abs(trend.value)}%</span>
@@ -67,19 +58,13 @@ const MetricCard = React.forwardRef<HTMLDivElement, MetricCardProps>(
               )}
             </div>
             {Icon && (
-              <div className={cn(
-                "rounded-xl p-3",
-                textured ? "bg-white/20" : "bg-primary/10"
-              )}>
-                <Icon className={cn(
-                  "h-6 w-6",
-                  textured ? "text-white" : iconColor
-                )} />
+              <div className="rounded-xl p-3 bg-primary/10">
+                <Icon className={cn("h-6 w-6", iconColor)} />
               </div>
             )}
           </div>
-        </OriginCardContent>
-      </OriginCard>
+        </NotionCardContent>
+      </NotionCard>
     );
   }
 );

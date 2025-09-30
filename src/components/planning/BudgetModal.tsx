@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { NotionCard, NotionCardContent, NotionCardHeader, NotionCardTitle } from '@/components/ui/notion-card';
 import { Category } from '@/hooks/useCategories';
 
 interface BudgetModalProps {
@@ -75,7 +75,7 @@ export function BudgetModal({ isOpen, onClose, onSubmit, category, isLoading, in
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto liquid-glass-subtle backdrop-blur-xl animate-scale-in">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             Definir Orçamento - {category.name}
@@ -128,11 +128,11 @@ export function BudgetModal({ isOpen, onClose, onSubmit, category, isLoading, in
 
           {/* Planejamento Variável */}
           {budgetType === 'variable' && (
-            <Card className="glass-card-origin origin-transition">
-              <CardHeader>
-                <CardTitle className="text-base">Valores por Mês</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <NotionCard variant="muted">
+              <NotionCardHeader>
+                <NotionCardTitle className="text-base">Valores por Mês</NotionCardTitle>
+              </NotionCardHeader>
+              <NotionCardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {monthNames.map((month, index) => (
                     <div key={month} className="space-y-1">
@@ -152,21 +152,21 @@ export function BudgetModal({ isOpen, onClose, onSubmit, category, isLoading, in
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </NotionCardContent>
+            </NotionCard>
           )}
 
           {/* Seção de Referência Histórica - Por enquanto placeholder */}
-          <Card className="glass-card-origin origin-transition bg-muted/30">
-            <CardHeader>
-              <CardTitle className="text-base">Referência Histórica</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm opacity-90">
+          <NotionCard variant="muted" className="bg-notion-gray-50">
+            <NotionCardHeader>
+              <NotionCardTitle className="text-base">Referência Histórica</NotionCardTitle>
+            </NotionCardHeader>
+            <NotionCardContent>
+              <p className="text-sm text-notion-gray-600">
                 Dados históricos serão exibidos aqui quando o módulo de lançamentos estiver implementado.
               </p>
-            </CardContent>
-          </Card>
+            </NotionCardContent>
+          </NotionCard>
 
           <div className="flex justify-end space-x-2 pt-4 border-t">
             <Button type="button" variant="outline" onClick={onClose}>

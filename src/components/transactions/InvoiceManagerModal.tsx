@@ -3,7 +3,7 @@ import { format, parseISO } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { OriginCard, OriginCardContent, OriginCardHeader, OriginCardTitle } from '@/components/ui/origin-card';
+import { NotionCard, NotionCardContent, NotionCardHeader, NotionCardTitle } from '@/components/ui/notion-card';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useInstitutions } from '@/hooks/useInstitutions';
 import { useTransactions, Transaction } from '@/hooks/useTransactions';
@@ -72,7 +72,7 @@ export function InvoiceManagerModal({ isOpen, onClose }: InvoiceManagerModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto glass-card-origin backdrop-blur-xl animate-scale-in">
+      <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
@@ -104,14 +104,14 @@ export function InvoiceManagerModal({ isOpen, onClose }: InvoiceManagerModalProp
               if (!account) return null;
 
               return (
-                <OriginCard key={accountId} glass className="liquid-glass-primary animate-fade-in hover-scale">
-                  <OriginCardHeader>
-                    <OriginCardTitle className="flex items-center gap-2">
+                <NotionCard key={accountId} variant="muted">
+                  <NotionCardHeader>
+                    <NotionCardTitle className="flex items-center gap-2">
                       <CreditCard className="h-5 w-5" />
                       {institutionMap[account.institution_id]} - {account.name}
-                    </OriginCardTitle>
-                  </OriginCardHeader>
-                  <OriginCardContent>
+                    </NotionCardTitle>
+                  </NotionCardHeader>
+                  <NotionCardContent>
                     <div className="space-y-3">
                       {Object.entries(months)
                         .sort(([a], [b]) => b.localeCompare(a)) // Sort by month descending
@@ -162,8 +162,8 @@ export function InvoiceManagerModal({ isOpen, onClose }: InvoiceManagerModalProp
                           );
                         })}
                     </div>
-                  </OriginCardContent>
-                </OriginCard>
+                  </NotionCardContent>
+                </NotionCard>
               );
             })
           )}

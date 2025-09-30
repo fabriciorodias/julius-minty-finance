@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { OriginCard, OriginCardContent, OriginCardHeader, OriginCardTitle } from '@/components/ui/origin-card';
+import { NotionCard, NotionCardContent, NotionCardHeader, NotionCardTitle } from '@/components/ui/notion-card';
 import { Badge } from '@/components/ui/badge';
 import {
   Select,
@@ -363,7 +363,7 @@ export function TransactionModal({
   return (
     <TooltipProvider>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[540px] max-h-[95vh] overflow-y-auto p-0 glass-card-origin backdrop-blur-xl animate-scale-in">
+        <DialogContent className="sm:max-w-[540px] max-h-[95vh] overflow-y-auto p-0">
           <DialogHeader className="px-6 pt-6 pb-4">
             <DialogTitle className="text-xl font-semibold flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
@@ -374,15 +374,15 @@ export function TransactionModal({
           <Form {...form}>
             <form className="px-6 pb-6 space-y-6">
               {/* LANÇAMENTO RÁPIDO - Main Card */}
-              <OriginCard glass className="liquid-glass-primary animate-fade-in">
-                <OriginCardHeader>
-                  <OriginCardTitle className="flex items-center gap-2">
-                    <div className="h-2 w-2 bg-primary rounded-full"></div>
+              <NotionCard variant="muted">
+                <NotionCardHeader>
+                  <NotionCardTitle className="flex items-center gap-2">
+                    <div className="h-2 w-2 bg-notion-blue rounded-full"></div>
                     Lançamento Rápido
                     <Badge variant="secondary" className="text-xs">Essencial</Badge>
-                  </OriginCardTitle>
-                </OriginCardHeader>
-                <OriginCardContent className="space-y-4">
+                  </NotionCardTitle>
+                </NotionCardHeader>
+                <NotionCardContent className="space-y-4">
                   {/* Transaction Type - Enhanced Buttons */}
                   <FormField
                     control={form.control}
@@ -590,28 +590,28 @@ export function TransactionModal({
                       </FormItem>
                     )}
                   />
-                </OriginCardContent>
-              </OriginCard>
+                </NotionCardContent>
+              </NotionCard>
 
               {/* DETALHES ADICIONAIS - Collapsible Card */}
               <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
                 <CollapsibleTrigger asChild>
-                  <OriginCard glass className="cursor-pointer hover:bg-muted/50 transition-colors liquid-glass-subtle">
-                    <OriginCardHeader>
-                      <OriginCardTitle className="flex items-center justify-between">
+                  <NotionCard variant="muted" className="cursor-pointer hover:bg-notion-gray-100 transition-colors">
+                    <NotionCardHeader>
+                      <NotionCardTitle className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Plus className={cn("h-4 w-4 transition-transform", detailsOpen && "rotate-45")} />
                           Detalhes Adicionais
                           <Badge variant="outline" className="text-xs">Opcional</Badge>
                         </div>
                         <ChevronDown className={cn("h-4 w-4 transition-transform", detailsOpen && "rotate-180")} />
-                      </OriginCardTitle>
-                    </OriginCardHeader>
-                  </OriginCard>
+                      </NotionCardTitle>
+                    </NotionCardHeader>
+                  </NotionCard>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <OriginCard glass className="mt-3 liquid-glass-subtle animate-fade-in">
-                    <OriginCardContent className="space-y-4">
+                  <NotionCard variant="muted" className="mt-3">
+                    <NotionCardContent className="space-y-4">
                       {/* Category */}
                       <FormField
                         control={form.control}
@@ -684,8 +684,8 @@ export function TransactionModal({
                         )}
                       />
 
-                    </OriginCardContent>
-                  </OriginCard>
+                    </NotionCardContent>
+                  </NotionCard>
                 </CollapsibleContent>
               </Collapsible>
 

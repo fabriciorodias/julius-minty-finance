@@ -1,8 +1,7 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { OriginCard, OriginCardHeader, OriginCardTitle, OriginCardContent } from '@/components/ui/origin-card';
-import { MetricCard } from '@/components/ui/metric-card';
+import { NotionButton } from '@/components/ui/notion-button';
+import { NotionCard, NotionCardContent } from '@/components/ui/notion-card';
 import { Plus, TrendingUp, Target, CheckCircle } from 'lucide-react';
 import { usePlans, PlanWithInstallments } from '@/hooks/usePlans';
 import { PlanCard } from '@/components/plans/PlanCard';
@@ -100,15 +99,15 @@ const Planos = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-mint-text-primary">Meus Planos</h1>
-            <p className="text-mint-text-secondary mt-1">
+            <h1 className="text-notion-h1 text-notion-gray-900">Meus Planos</h1>
+            <p className="text-notion-caption text-notion-gray-600 mt-1">
               Gerencie seus objetivos financeiros
             </p>
           </div>
         </div>
         
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-mint-primary"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-notion-blue"></div>
         </div>
       </div>
     );
@@ -118,68 +117,92 @@ const Planos = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-mint-text-primary">Meus Planos</h1>
-          <p className="text-mint-text-secondary mt-1">
+          <h1 className="text-notion-h1 text-notion-gray-900">Meus Planos</h1>
+          <p className="text-notion-caption text-notion-gray-600 mt-1">
             Gerencie seus objetivos financeiros
           </p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2">
+        <NotionButton onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Criar Novo Plano
-        </Button>
+        </NotionButton>
       </div>
 
       {/* Monthly Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in">
-        <MetricCard
-          glass
-          label="Parcelas dos Planos"
-          value={formatCurrency(monthlyPlanAmount)}
-          icon={TrendingUp}
-          className="liquid-glass-primary"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <NotionCard variant="hoverable" className="transition-notion">
+          <div className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-notion-caption text-notion-gray-600">Parcelas dos Planos</p>
+                <p className="text-notion-value tabular-nums text-notion-gray-900">
+                  {formatCurrency(monthlyPlanAmount)}
+                </p>
+              </div>
+              <div className="bg-notion-gray-100 rounded-md p-2">
+                <TrendingUp className="h-6 w-6 text-notion-gray-700" />
+              </div>
+            </div>
+          </div>
+        </NotionCard>
         
-        <MetricCard
-          glass
-          label="Total de Planos"
-          value={plans.length.toString()}
-          icon={Target}
-          className="liquid-glass-info"
-        />
+        <NotionCard variant="hoverable" className="transition-notion">
+          <div className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-notion-caption text-notion-gray-600">Total de Planos</p>
+                <p className="text-notion-value tabular-nums text-notion-gray-900">
+                  {plans.length}
+                </p>
+              </div>
+              <div className="bg-notion-gray-100 rounded-md p-2">
+                <Target className="h-6 w-6 text-notion-gray-700" />
+              </div>
+            </div>
+          </div>
+        </NotionCard>
         
-        <MetricCard
-          glass
-          label="Planos Ativos"
-          value={plans.filter(plan => 
-            plan.installments.some(inst => inst.status === 'pendente')
-          ).length.toString()}
-          icon={CheckCircle}
-          className="liquid-glass-success"
-        />
+        <NotionCard variant="hoverable" className="transition-notion">
+          <div className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-notion-caption text-notion-gray-600">Planos Ativos</p>
+                <p className="text-notion-value tabular-nums text-notion-gray-900">
+                  {plans.filter(plan => 
+                    plan.installments.some(inst => inst.status === 'pendente')
+                  ).length}
+                </p>
+              </div>
+              <div className="bg-notion-gray-100 rounded-md p-2">
+                <CheckCircle className="h-6 w-6 text-notion-gray-700" />
+              </div>
+            </div>
+          </div>
+        </NotionCard>
       </div>
 
       {/* Plans Grid */}
       {plans.length === 0 ? (
-        <OriginCard glass className="liquid-glass-subtle animate-fade-in">
-          <OriginCardContent className="py-12 text-center">
-            <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="material-icons text-white text-2xl">
+        <NotionCard variant="muted" padding="md">
+          <div className="text-center py-12">
+            <div className="bg-notion-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+              <span className="material-icons text-notion-gray-600 text-2xl">
                 flag
               </span>
             </div>
-            <h3 className="text-lg font-semibold mb-2">
+            <h3 className="text-notion-h3 text-notion-gray-900 mb-2">
               Nenhum plano criado ainda
             </h3>
-            <p className="opacity-90 mb-6 max-w-md mx-auto">
+            <p className="text-notion-body-sm text-notion-gray-600 mb-6 max-w-md mx-auto">
               Comece criando seu primeiro plano financeiro. Defina suas metas de poupança 
               ou organize o pagamento de dívidas e financiamentos.
             </p>
-            <Button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2 hover-scale">
+            <NotionButton onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Criar Primeiro Plano
-            </Button>
-          </OriginCardContent>
-        </OriginCard>
+            </NotionButton>
+          </div>
+        </NotionCard>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {plans.map((plan) => (

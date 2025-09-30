@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { OriginCard, OriginCardContent, OriginCardHeader, OriginCardTitle } from "@/components/ui/origin-card";
-import { MetricCard } from "@/components/ui/metric-card";
+import { NotionCard, NotionCardContent } from "@/components/ui/notion-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { NotionButton } from "@/components/ui/notion-button";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { PlusCircle, Edit2, ChevronDown, ChevronRight, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
@@ -304,10 +303,10 @@ const Planejamento = () => {
             <td className="py-4 px-2">
               <Collapsible open={isExpanded} onOpenChange={() => toggleCategoryExpansion(category.id)}>
                 <CollapsibleTrigger asChild>
-                  <Button 
+                  <NotionButton 
                     variant="ghost" 
                     size="sm" 
-                    className="flex items-center gap-2 p-0 h-auto font-semibold text-mint-text-primary hover:bg-transparent"
+                    className="flex items-center gap-2 p-0 h-auto font-semibold text-notion-gray-900 hover:bg-transparent"
                   >
                     {isExpanded ? 
                       <ChevronDown className="w-4 h-4" /> : 
@@ -317,17 +316,17 @@ const Planejamento = () => {
                     <Badge variant="outline" className="text-xs ml-2">
                       {category.subcategories?.length} subcategorias
                     </Badge>
-                  </Button>
+                  </NotionButton>
                 </CollapsibleTrigger>
               </Collapsible>
             </td>
             <td className="py-4 px-2 text-center">
-              <span className="text-mint-text-primary font-bold text-base">
+              <span className="text-notion-gray-900 font-bold text-base">
                 {formatCurrency(budgeted)}
               </span>
             </td>
             <td className={`py-4 px-2 text-center font-bold text-base ${
-              hasExceeded ? 'text-red-600' : 'text-mint-text-primary'
+              hasExceeded ? 'text-notion-danger' : 'text-notion-gray-900'
             }`}>
               <RealizedTransactionsHover
                 categoryIds={categoryIds}
@@ -337,16 +336,16 @@ const Planejamento = () => {
               </RealizedTransactionsHover>
             </td>
             <td className={`py-4 px-2 text-center font-bold text-base ${
-              hasExceeded ? 'text-red-600' : 
-              difference > 0 ? 'text-green-600' : 
-              difference < 0 ? 'text-red-600' : 'text-mint-text-secondary'
+              hasExceeded ? 'text-notion-danger' : 
+              difference > 0 ? 'text-notion-success' : 
+              difference < 0 ? 'text-notion-danger' : 'text-notion-gray-600'
             }`}>
               {formatCurrency(Math.abs(difference))}
               {difference > 0 && <span className="text-xs ml-1">↑</span>}
               {difference < 0 && <span className="text-xs ml-1">↓</span>}
             </td>
             <td className="py-4 px-2 text-center">
-              <span className="text-mint-text-secondary text-sm">-</span>
+              <span className="text-notion-gray-600 text-sm">-</span>
             </td>
           </tr>
           
@@ -355,7 +354,7 @@ const Planejamento = () => {
             <td colSpan={5} className="p-0">
               <Collapsible open={isExpanded} onOpenChange={() => toggleCategoryExpansion(category.id)}>
                 <CollapsibleContent>
-                  <div className="bg-mint-hover/10">
+                  <div className="bg-notion-gray-50/50">
                     {category.subcategories?.map((subcategory, index) => (
                       <SubcategoryRow 
                         key={subcategory.id} 
@@ -374,24 +373,24 @@ const Planejamento = () => {
     } else {
       // Categoria sem subcategorias (categoria independente)
       return (
-        <tr className="border-b border-mint-border/50 hover:bg-mint-hover">
+        <tr className="border-b border-notion-gray-200 hover:bg-notion-gray-50 transition-notion">
           <td className="py-3 px-2">
-            <span className="font-medium text-mint-text-primary text-base">
+            <span className="font-medium text-notion-gray-900 text-base">
               {category.name}
             </span>
           </td>
           <td className="py-3 px-2 text-center">
-            <Button
+            <NotionButton
               variant="ghost"
               size="sm"
               onClick={() => handleEditBudget(category)}
-              className="text-mint-text-primary hover:bg-mint-hover"
+              className="text-notion-gray-900 hover:bg-notion-gray-100"
             >
               {budgeted > 0 ? formatCurrency(budgeted) : 'Definir'}
-            </Button>
+            </NotionButton>
           </td>
           <td className={`py-3 px-2 text-center font-medium ${
-            hasExceeded ? 'text-red-600' : 'text-mint-text-primary'
+            hasExceeded ? 'text-notion-danger' : 'text-notion-gray-900'
           }`}>
             <RealizedTransactionsHover
               categoryIds={categoryIds}
@@ -401,23 +400,23 @@ const Planejamento = () => {
             </RealizedTransactionsHover>
           </td>
           <td className={`py-3 px-2 text-center font-medium ${
-            hasExceeded ? 'text-red-600' : 
-            difference > 0 ? 'text-green-600' : 
-            difference < 0 ? 'text-red-600' : 'text-mint-text-secondary'
+            hasExceeded ? 'text-notion-danger' : 
+            difference > 0 ? 'text-notion-success' : 
+            difference < 0 ? 'text-notion-danger' : 'text-notion-gray-600'
           }`}>
             {formatCurrency(Math.abs(difference))}
             {difference > 0 && <span className="text-xs ml-1">↑</span>}
             {difference < 0 && <span className="text-xs ml-1">↓</span>}
           </td>
           <td className="py-3 px-2 text-center">
-            <Button
+            <NotionButton
               variant="ghost"
               size="sm"
               onClick={() => handleEditBudget(category)}
-              className="text-mint-text-secondary hover:text-mint-text-primary hover:bg-mint-hover"
+              className="text-notion-gray-600 hover:text-notion-gray-900 hover:bg-notion-gray-100"
             >
               <Edit2 className="w-4 h-4" />
-            </Button>
+            </NotionButton>
           </td>
         </tr>
       );
@@ -440,27 +439,27 @@ const Planejamento = () => {
     const categoryIds = getCategoryIds(category);
 
     return (
-      <tr className={`hover:bg-mint-hover/50 ${!isLast ? 'border-b border-mint-border/20' : ''}`}>
+      <tr className={`hover:bg-notion-gray-50 transition-notion ${!isLast ? 'border-b border-notion-gray-200' : ''}`}>
         <td className="py-3 px-2 pl-8">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-px bg-mint-border"></div>
-            <span className="font-medium text-mint-text-secondary text-sm">
+            <div className="w-4 h-px bg-notion-gray-300"></div>
+            <span className="font-medium text-notion-gray-600 text-sm">
               {category.name}
             </span>
           </div>
         </td>
         <td className="py-3 px-2 text-center">
-          <Button
+          <NotionButton
             variant="ghost"
             size="sm"
             onClick={() => handleEditBudget(category)}
-            className="text-mint-text-primary hover:bg-mint-hover text-sm"
+            className="text-notion-gray-900 hover:bg-notion-gray-100 text-sm"
           >
             {budgeted > 0 ? formatCurrency(budgeted) : 'Definir'}
-          </Button>
+          </NotionButton>
         </td>
         <td className={`py-3 px-2 text-center font-medium text-sm ${
-          hasExceeded ? 'text-red-600' : 'text-mint-text-primary'
+          hasExceeded ? 'text-notion-danger' : 'text-notion-gray-900'
         }`}>
           <RealizedTransactionsHover
             categoryIds={categoryIds}
@@ -470,23 +469,23 @@ const Planejamento = () => {
           </RealizedTransactionsHover>
         </td>
         <td className={`py-3 px-2 text-center font-medium text-sm ${
-          hasExceeded ? 'text-red-600' : 
-          difference > 0 ? 'text-green-600' : 
-          difference < 0 ? 'text-red-600' : 'text-mint-text-secondary'
+          hasExceeded ? 'text-notion-danger' : 
+          difference > 0 ? 'text-notion-success' : 
+          difference < 0 ? 'text-notion-danger' : 'text-notion-gray-600'
         }`}>
           {formatCurrency(Math.abs(difference))}
           {difference > 0 && <span className="text-xs ml-1">↑</span>}
           {difference < 0 && <span className="text-xs ml-1">↓</span>}
         </td>
         <td className="py-3 px-2 text-center">
-          <Button
+          <NotionButton
             variant="ghost"
             size="sm"
             onClick={() => handleEditBudget(category)}
-            className="text-mint-text-secondary hover:text-mint-text-primary hover:bg-mint-hover"
+            className="text-notion-gray-600 hover:text-notion-gray-900 hover:bg-notion-gray-100"
           >
             <Edit2 className="w-3 h-3" />
-          </Button>
+          </NotionButton>
         </td>
       </tr>
     );
@@ -521,74 +520,82 @@ const Planejamento = () => {
     const allLeafCategoryIds = getAllLeafCategoryIds(categoriesList);
 
     return (
-      <OriginCard glass className={`liquid-glass-${type === 'receita' ? 'success' : 'danger'} animate-fade-in`}>
-        <OriginCardHeader>
+      <NotionCard>
+        <div className="p-6 space-y-6">
           <div className="flex items-center justify-between">
-            <OriginCardTitle className="flex items-center">
-              <Icon className={`mr-2 h-5 w-5`} />
-              {title}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  const allCategoryIds = new Set(categoriesList
-                    .filter(cat => cat.subcategories && cat.subcategories.length > 0)
-                    .map(cat => cat.id)
-                  );
-                  setExpandedCategories(
-                    expandedCategories.size === allCategoryIds.size ? 
-                    new Set() : 
-                    allCategoryIds
-                  );
-                }}
-                className="ml-auto text-xs opacity-75 hover:opacity-100 hover-scale"
-              >
-                {expandedCategories.size > 0 ? 'Recolher Todas' : 'Expandir Todas'}
-              </Button>
-            </OriginCardTitle>
+            <div className="flex items-center gap-3">
+              <div className="bg-notion-gray-100 rounded-md p-2">
+                <Icon className="h-5 w-5 text-notion-gray-700" />
+              </div>
+              <h3 className="text-notion-h3 text-notion-gray-900">{title}</h3>
+            </div>
+            <NotionButton
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const allCategoryIds = new Set(categoriesList
+                  .filter(cat => cat.subcategories && cat.subcategories.length > 0)
+                  .map(cat => cat.id)
+                );
+                setExpandedCategories(
+                  expandedCategories.size === allCategoryIds.size ? 
+                  new Set() : 
+                  allCategoryIds
+                );
+              }}
+              className="text-xs text-notion-gray-600 hover:text-notion-gray-900"
+            >
+              {expandedCategories.size > 0 ? 'Recolher Todas' : 'Expandir Todas'}
+            </NotionButton>
           </div>
           
           {/* Totalizador */}
-          <div className="mt-4 grid grid-cols-3 gap-3">
-            <MetricCard
-              glass
-              label="Total Planejado"
-              value={formatCurrency(totalPlanned)}
-              icon={DollarSign}
-              className="liquid-glass-info"
-            />
+          <div className="grid grid-cols-3 gap-4">
+            <NotionCard variant="muted">
+              <div className="p-4">
+                <p className="text-notion-caption text-notion-gray-600">Total Planejado</p>
+                <p className="text-notion-value tabular-nums text-notion-gray-900 mt-1">
+                  {formatCurrency(totalPlanned)}
+                </p>
+              </div>
+            </NotionCard>
             
-            <MetricCard
-              glass
-              label="Total Realizado"
-              value={formatCurrency(totalRealized)}
-              icon={type === 'receita' ? TrendingUp : TrendingDown}
-              className={type === 'receita' ? 'liquid-glass-success' : 'liquid-glass-warning'}
-            />
+            <NotionCard variant="muted">
+              <div className="p-4">
+                <p className="text-notion-caption text-notion-gray-600">Total Realizado</p>
+                <p className={`text-notion-value tabular-nums mt-1 ${
+                  type === 'receita' ? 'text-notion-success' : 'text-notion-warning'
+                }`}>
+                  {formatCurrency(totalRealized)}
+                </p>
+              </div>
+            </NotionCard>
             
-            <MetricCard
-              glass
-              label="Diferença"
-              value={formatCurrency(Math.abs(totalDifference))}
-              icon={totalDifference > 0 ? TrendingUp : TrendingDown}
-              trend={totalDifference !== 0 ? {
-                value: Math.abs(totalDifference),
-                isPositive: totalDifference > 0
-              } : undefined}
-              className={totalDifference > 0 ? 'liquid-glass-success' : totalDifference < 0 ? 'liquid-glass-danger' : 'liquid-glass-subtle'}
-            />
+            <NotionCard variant="muted">
+              <div className="p-4">
+                <p className="text-notion-caption text-notion-gray-600">Diferença</p>
+                <p className={`text-notion-value tabular-nums mt-1 ${
+                  totalDifference > 0 ? 'text-notion-success' : 
+                  totalDifference < 0 ? 'text-notion-danger' : 
+                  'text-notion-gray-900'
+                }`}>
+                  {formatCurrency(Math.abs(totalDifference))}
+                  {totalDifference > 0 && <span className="text-xs ml-1">↑</span>}
+                  {totalDifference < 0 && <span className="text-xs ml-1">↓</span>}
+                </p>
+              </div>
+            </NotionCard>
           </div>
-        </OriginCardHeader>
-        <OriginCardContent>
+
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b border-mint-border">
-                  <th className="text-left py-3 px-2 text-mint-text-secondary font-medium">Categoria</th>
-                  <th className="text-center py-3 px-2 text-mint-text-secondary font-medium">Planejado</th>
-                  <th className="text-center py-3 px-2 text-mint-text-secondary font-medium">Realizado</th>
-                  <th className="text-center py-3 px-2 text-mint-text-secondary font-medium">Diferença</th>
-                  <th className="text-center py-3 px-2 text-mint-text-secondary font-medium">Ações</th>
+              <thead className="bg-notion-gray-50">
+                <tr className="border-b border-notion-gray-200">
+                  <th className="text-left py-3 px-2 text-notion-caption font-semibold text-notion-gray-700">Categoria</th>
+                  <th className="text-center py-3 px-2 text-notion-caption font-semibold text-notion-gray-700">Planejado</th>
+                  <th className="text-center py-3 px-2 text-notion-caption font-semibold text-notion-gray-700">Realizado</th>
+                  <th className="text-center py-3 px-2 text-notion-caption font-semibold text-notion-gray-700">Diferença</th>
+                  <th className="text-center py-3 px-2 text-notion-caption font-semibold text-notion-gray-700">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -598,8 +605,8 @@ const Planejamento = () => {
               </tbody>
             </table>
           </div>
-        </OriginCardContent>
-      </OriginCard>
+        </div>
+      </NotionCard>
     );
   };
 
@@ -608,14 +615,14 @@ const Planejamento = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-mint-text-primary">Planejamento e Controle</h1>
-            <p className="text-mint-text-secondary mt-1 font-normal">
+            <h1 className="text-notion-h1 text-notion-gray-900">Planejamento e Controle</h1>
+            <p className="text-notion-caption text-notion-gray-600 mt-1">
               Organize e controle seu orçamento
             </p>
           </div>
         </div>
         <div className="text-center py-8">
-          <p className="text-mint-text-secondary">Carregando dados...</p>
+          <p className="text-notion-caption text-notion-gray-600">Carregando dados...</p>
         </div>
       </div>
     );
@@ -625,13 +632,13 @@ const Planejamento = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-mint-text-primary">Planejamento e Controle</h1>
-          <p className="text-mint-text-secondary mt-1 font-normal">
+          <h1 className="text-notion-h1 text-notion-gray-900">Planejamento e Controle</h1>
+          <p className="text-notion-caption text-notion-gray-600 mt-1">
             Organize e controle seu orçamento mensal
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <p className="text-sm text-mint-text-secondary">Período de Referência</p>
+          <p className="text-notion-caption text-notion-gray-600">Período de Referência</p>
           <MonthSelector 
             selectedMonth={currentMonth}
             onMonthChange={setCurrentMonth}
@@ -649,25 +656,24 @@ const Planejamento = () => {
         )}
 
         {receitas.length === 0 && despesas.length === 0 && (
-          <OriginCard glass className="liquid-glass-subtle animate-fade-in">
-            <OriginCardContent className="text-center py-8">
-              <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
-                <PlusCircle className="h-8 w-8" />
+          <NotionCard variant="muted" padding="md">
+            <div className="text-center py-8">
+              <div className="bg-notion-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <PlusCircle className="h-8 w-8 text-notion-gray-600" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">
+              <h3 className="text-notion-h3 text-notion-gray-900 mb-2">
                 Nenhuma categoria encontrada
               </h3>
-              <p className="opacity-90 mb-4">
+              <p className="text-notion-body-sm text-notion-gray-600 mb-4">
                 Você precisa criar categorias antes de poder definir orçamentos.
               </p>
-              <Button 
-                onClick={() => window.location.href = '/entidades'} 
-                className="hover-scale"
+              <NotionButton 
+                onClick={() => window.location.href = '/entidades'}
               >
                 Gerenciar Categorias
-              </Button>
-            </OriginCardContent>
-          </OriginCard>
+              </NotionButton>
+            </div>
+          </NotionCard>
         )}
       </div>
 

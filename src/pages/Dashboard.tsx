@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
-import { OriginCard, OriginCardHeader, OriginCardTitle, OriginCardContent } from "@/components/ui/origin-card";
-import { MetricCard } from "@/components/ui/metric-card";
-import { Button } from "@/components/ui/button";
+import { NotionCard, NotionCardHeader, NotionCardTitle, NotionCardContent } from "@/components/ui/notion-card";
+import { NotionButton } from "@/components/ui/notion-button";
 import { BalanceSummary } from "@/components/dashboards/BalanceSummary";
 import { ExpenseDistributionPie } from "@/components/dashboards/ExpenseDistributionPie";
 import { CashFlowHero } from "@/components/dashboards/CashFlowHero";
@@ -70,23 +69,23 @@ const Dashboard = () => {
   const netWorth = assetTotal - liabilityTotal;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
       {/* Hero Section */}
-      <OriginCard glass className="overflow-hidden">
-        <OriginCardContent className="p-8">
+      <NotionCard variant="hoverable" className="overflow-hidden">
+        <NotionCardContent>
           <div className="flex items-center justify-between">
             <div className="space-y-2">
               <div className="flex items-center gap-3">
-                <Sparkles className="h-8 w-8 text-primary" />
-                <h1 className="text-4xl font-bold text-foreground">Dashboard Financeiro</h1>
+                <Sparkles className="h-8 w-8 text-notion-blue" />
+                <h1 className="text-notion-h1 text-notion-gray-900">Dashboard Financeiro</h1>
               </div>
-              <p className="text-muted-foreground text-lg">
+              <p className="text-notion-caption text-notion-gray-600">
                 Visão geral completa das suas finanças
               </p>
             </div>
             <div className="text-right space-y-1">
-              <p className="text-sm text-muted-foreground">Patrimônio Líquido</p>
-              <p className={`text-3xl font-bold ${netWorth >= 0 ? 'text-green-600' : 'text-destructive'}`}>
+              <p className="text-notion-caption text-notion-gray-600">Patrimônio Líquido</p>
+              <p className={`text-notion-value tabular-nums ${netWorth >= 0 ? 'text-notion-success' : 'text-notion-danger'}`}>
                 {new Intl.NumberFormat('pt-BR', { 
                   style: 'currency', 
                   currency: 'BRL' 
@@ -94,56 +93,74 @@ const Dashboard = () => {
               </p>
             </div>
           </div>
-        </OriginCardContent>
-      </OriginCard>
+        </NotionCardContent>
+      </NotionCard>
 
       {/* Main Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <MetricCard
-          label="Total em Ativos"
-          value={new Intl.NumberFormat('pt-BR', { 
-            style: 'currency', 
-            currency: 'BRL' 
-          }).format(assetTotal)}
-          icon={Wallet}
-          glass
-          className="hover-scale"
-        />
+        <NotionCard variant="hoverable" className="transition-notion">
+          <div className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-notion-caption text-notion-gray-600">Total em Ativos</p>
+                <p className="text-notion-value tabular-nums text-notion-gray-900">
+                  {new Intl.NumberFormat('pt-BR', { 
+                    style: 'currency', 
+                    currency: 'BRL' 
+                  }).format(assetTotal)}
+                </p>
+              </div>
+              <div className="bg-notion-gray-100 rounded-md p-2">
+                <Wallet className="h-6 w-6 text-notion-gray-700" />
+              </div>
+            </div>
+          </div>
+        </NotionCard>
         
-        <MetricCard
-          label="Total em Passivos"
-          value={new Intl.NumberFormat('pt-BR', { 
-            style: 'currency', 
-            currency: 'BRL' 
-          }).format(liabilityTotal)}
-          icon={CreditCard}
-          glass
-          className="hover-scale"
-        />
+        <NotionCard variant="hoverable" className="transition-notion">
+          <div className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-notion-caption text-notion-gray-600">Total em Passivos</p>
+                <p className="text-notion-value tabular-nums text-notion-gray-900">
+                  {new Intl.NumberFormat('pt-BR', { 
+                    style: 'currency', 
+                    currency: 'BRL' 
+                  }).format(liabilityTotal)}
+                </p>
+              </div>
+              <div className="bg-notion-gray-100 rounded-md p-2">
+                <CreditCard className="h-6 w-6 text-notion-gray-700" />
+              </div>
+            </div>
+          </div>
+        </NotionCard>
         
-        <MetricCard
-          label="Saldo do Mês"
-          value={new Intl.NumberFormat('pt-BR', { 
-            style: 'currency', 
-            currency: 'BRL' 
-          }).format(monthlyBalance?.balance || 0)}
-          icon={TrendingUp}
-          trend={
-            monthlyBalance?.balance && Math.abs(monthlyBalance.balance) > 0
-              ? {
-                  value: Math.abs(monthlyBalance.balance),
-                  isPositive: monthlyBalance.balance >= 0
-                }
-              : undefined
-          }
-          glass
-          className="hover-scale"
-        />
+        <NotionCard variant="hoverable" className="transition-notion">
+          <div className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2 flex-1">
+                <p className="text-notion-caption text-notion-gray-600">Saldo do Mês</p>
+                <p className={`text-notion-value tabular-nums ${
+                  (monthlyBalance?.balance || 0) >= 0 ? 'text-notion-success' : 'text-notion-danger'
+                }`}>
+                  {new Intl.NumberFormat('pt-BR', { 
+                    style: 'currency', 
+                    currency: 'BRL' 
+                  }).format(monthlyBalance?.balance || 0)}
+                </p>
+              </div>
+              <div className="bg-notion-gray-100 rounded-md p-2">
+                <TrendingUp className="h-6 w-6 text-notion-gray-700" />
+              </div>
+            </div>
+          </div>
+        </NotionCard>
       </div>
 
       {/* Balance Summary */}
       <div>
-        <h2 className="text-2xl font-bold text-foreground mb-4">Resumo do Mês</h2>
+        <h2 className="text-notion-h2 text-notion-gray-900 mb-4">Resumo do Mês</h2>
         <BalanceSummary
           totalIncome={monthlyBalance?.totalIncome || 0}
           totalExpenses={monthlyBalance?.totalExpenses || 0}
@@ -161,7 +178,7 @@ const Dashboard = () => {
       {/* Investments Summary */}
       {investmentsData && (
         <div>
-          <h2 className="text-2xl font-bold text-foreground mb-4">Investimentos</h2>
+          <h2 className="text-notion-h2 text-notion-gray-900 mb-4">Investimentos</h2>
           <InvestmentsSummary
             totalPortfolio={investmentsData.totalPortfolio}
             monthlyReturn={investmentsData.monthlyReturn}
@@ -183,37 +200,37 @@ const Dashboard = () => {
       {/* Cash Flow Projection */}
       {assetAccountIds.length > 0 && (
         <div>
-          <h2 className="text-2xl font-bold text-foreground mb-4">Projeção de Fluxo de Caixa</h2>
+          <h2 className="text-notion-h2 text-notion-gray-900 mb-4">Projeção de Fluxo de Caixa</h2>
           <CashFlowHero selectedAccountIds={assetAccountIds} />
         </div>
       )}
 
       {/* Quick Actions */}
-      <OriginCard glass className="hover-scale">
-        <OriginCardHeader>
-          <OriginCardTitle>Ações Rápidas</OriginCardTitle>
-        </OriginCardHeader>
-        <OriginCardContent>
+      <NotionCard>
+        <NotionCardHeader>
+          <NotionCardTitle>Ações Rápidas</NotionCardTitle>
+        </NotionCardHeader>
+        <NotionCardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-20 flex-col gap-2">
+            <NotionButton variant="outline" className="h-20 flex-col gap-2">
               <PlusCircle className="h-6 w-6" />
               <span>Nova Transação</span>
-            </Button>
-            <Button variant="outline" className="h-20 flex-col gap-2">
+            </NotionButton>
+            <NotionButton variant="outline" className="h-20 flex-col gap-2">
               <Wallet className="h-6 w-6" />
               <span>Ver Contas</span>
-            </Button>
-            <Button variant="outline" className="h-20 flex-col gap-2">
+            </NotionButton>
+            <NotionButton variant="outline" className="h-20 flex-col gap-2">
               <TrendingUp className="h-6 w-6" />
               <span>Investimentos</span>
-            </Button>
-            <Button variant="outline" className="h-20 flex-col gap-2">
+            </NotionButton>
+            <NotionButton variant="outline" className="h-20 flex-col gap-2">
               <ArrowUpRight className="h-6 w-6" />
               <span>Relatórios</span>
-            </Button>
+            </NotionButton>
           </div>
-        </OriginCardContent>
-      </OriginCard>
+        </NotionCardContent>
+      </NotionCard>
     </div>
   );
 };

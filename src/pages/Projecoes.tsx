@@ -135,9 +135,9 @@ export default function Projecoes() {
   };
 
   return (
-    <div className="space-y-4 p-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-notion-h1 text-notion-gray-900">Projeções de Fluxo de Caixa</h1>
           <p className="text-notion-body text-notion-gray-600">
@@ -147,34 +147,30 @@ export default function Projecoes() {
         
         <div className="flex flex-wrap items-center gap-2">
           <NotionButton
-            variant="filter"
+            variant={dateFilters.endDate === format(addDays(new Date(), 30), 'yyyy-MM-dd') ? "primary" : "outline"}
             size="sm"
             onClick={() => handleDatePeriodChange(30)}
-            data-active={dateFilters.endDate === format(addDays(new Date(), 30), 'yyyy-MM-dd')}
           >
             30 dias
           </NotionButton>
           <NotionButton
-            variant="filter"
+            variant={dateFilters.endDate === format(addDays(new Date(), 90), 'yyyy-MM-dd') ? "primary" : "outline"}
             size="sm"
             onClick={() => handleDatePeriodChange(90)}
-            data-active={dateFilters.endDate === format(addDays(new Date(), 90), 'yyyy-MM-dd')}
           >
             90 dias
           </NotionButton>
           <NotionButton
-            variant="filter"
+            variant={dateFilters.endDate === format(addDays(new Date(), 180), 'yyyy-MM-dd') ? "primary" : "outline"}
             size="sm"
             onClick={() => handleDatePeriodChange(180)}
-            data-active={dateFilters.endDate === format(addDays(new Date(), 180), 'yyyy-MM-dd')}
           >
             6 meses
           </NotionButton>
           <NotionButton
-            variant="filter"
+            variant={dateFilters.endDate === format(addDays(new Date(), 365), 'yyyy-MM-dd') ? "primary" : "outline"}
             size="sm"
             onClick={() => handleDatePeriodChange(365)}
-            data-active={dateFilters.endDate === format(addDays(new Date(), 365), 'yyyy-MM-dd')}
           >
             1 ano
           </NotionButton>
@@ -182,9 +178,9 @@ export default function Projecoes() {
       </div>
 
       {/* Quick Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <NotionCard variant="hoverable" className="transition-notion border-l-4 border-l-financial-success">
-          <NotionCardContent className="p-3">
+          <NotionCardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-notion-caption text-notion-gray-600">Liquidez Atual</p>
@@ -198,7 +194,7 @@ export default function Projecoes() {
         </NotionCard>
 
         <NotionCard variant="hoverable" className="transition-notion border-l-4 border-l-financial-expense">
-          <NotionCardContent className="p-3">
+          <NotionCardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-notion-caption text-notion-gray-600">Pior Dia</p>
@@ -219,7 +215,7 @@ export default function Projecoes() {
           metrics.riskScore === 'medium' ? 'border-l-financial-warning' :
           'border-l-financial-expense'
         }`}>
-          <NotionCardContent className="p-3">
+          <NotionCardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-notion-caption text-notion-gray-600">Nível de Risco</p>
@@ -241,7 +237,7 @@ export default function Projecoes() {
         </NotionCard>
 
         <NotionCard variant="hoverable" className="transition-notion border-l-4 border-l-notion-blue">
-          <NotionCardContent className="p-3">
+          <NotionCardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-notion-caption text-notion-gray-600">Saldo Final</p>
@@ -268,7 +264,7 @@ export default function Projecoes() {
       {/* Main Chart */}
       <NotionCard variant="default">
         <NotionCardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <NotionCardTitle>Projeção de Fluxo de Caixa</NotionCardTitle>
               <p className="text-notion-body-sm text-notion-gray-600">

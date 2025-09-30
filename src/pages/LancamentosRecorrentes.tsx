@@ -369,8 +369,6 @@ export default function LancamentosRecorrentes() {
                         {receitas.map((transaction, index) => (
                           <div 
                             key={transaction.id}
-                            className="animate-fade-in"
-                            style={{ animationDelay: `${index * 50}ms` }}
                           >
                             {viewMode === 'compact' ? (
                               <RecurringTransactionCardCompact
@@ -415,8 +413,6 @@ export default function LancamentosRecorrentes() {
                         {despesas.map((transaction, index) => (
                           <div 
                             key={transaction.id}
-                            className="animate-fade-in"
-                            style={{ animationDelay: `${index * 50}ms` }}
                           >
                             {viewMode === 'compact' ? (
                               <RecurringTransactionCardCompact

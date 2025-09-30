@@ -63,6 +63,17 @@ const config: Config = {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Origin Theme Colors
+        origin: {
+          "blue-gray": "hsl(var(--origin-blue-gray))",
+          "blue-gray-dark": "hsl(var(--origin-blue-gray-dark))",
+          earth: "hsl(var(--origin-earth))",
+          "earth-dark": "hsl(var(--origin-earth-dark))",
+          ocean: "hsl(var(--origin-ocean))",
+          "ocean-dark": "hsl(var(--origin-ocean-dark))",
+          mint: "hsl(var(--origin-mint))",
+          "mint-dark": "hsl(var(--origin-mint-dark))",
+        },
         // Expanded Mint.com inspired colors
         mint: {
           primary: "hsl(174, 100%, 33%)", // #00A693 - Verde principal mais fiel ao Mint
@@ -117,6 +128,19 @@ const config: Config = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "calc(var(--radius) + 4px)",
+        "2xl": "calc(var(--radius) + 8px)",
+      },
+      fontFamily: {
+        sans: ['Plus Jakarta Sans', 'system-ui', '-apple-system', 'sans-serif'],
+      },
+      letterSpacing: {
+        tighter: '-0.05em',
+        tight: '-0.025em',
+        normal: '0',
+        wide: '0.025em',
+        wider: '0.05em',
+        widest: '0.1em',
       },
       backdropBlur: {
         xs: '2px',

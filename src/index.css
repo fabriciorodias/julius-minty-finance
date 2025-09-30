@@ -1,5 +1,4 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 @tailwind base;
 @tailwind components;
@@ -7,27 +6,37 @@
 
 @layer base {
   :root {
-    --background: 0 0% 97%; /* #F7F7F7 - Fundo principal do Mint */
-    --foreground: 0 0% 13%; /* #222222 - Texto principal */
-    --card: 0 0% 100%; /* #FFFFFF - Fundo dos cards */
-    --card-foreground: 0 0% 13%; /* #222222 - Texto dos cards */
+    /* Base colors - Origin inspired */
+    --background: 220 15% 95%; /* Fundo principal cinza-azulado claro */
+    --foreground: 220 20% 10%; /* Texto principal escuro */
+    --card: 0 0% 100%; /* Cards brancos */
+    --card-foreground: 220 20% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 13%;
-    --primary: 174 100% 33%; /* #00A693 - Verde principal mais fiel ao Mint */
+    --popover-foreground: 220 20% 10%;
+    --primary: 220 70% 50%; /* Azul principal Origin */
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 13%;
-    --muted: 0 0% 94%;
-    --muted-foreground: 0 0% 42%; /* #6A6A6A - Texto secundário */
-    --accent: 174 100% 33%; /* #00A693 - Verde principal */
+    --secondary: 220 10% 90%;
+    --secondary-foreground: 220 20% 10%;
+    --muted: 220 10% 92%;
+    --muted-foreground: 220 10% 45%;
+    --accent: 200 90% 45%; /* Azul vibrante para acentos */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 174 100% 33%; /* #00A693 - Verde principal */
-    --radius: 0.5rem;
-    --orange: 25 95% 53%; /* #F97316 - Laranja para lançamentos recorrentes */
+    --border: 220 13% 85%;
+    --input: 220 13% 85%;
+    --ring: 220 70% 50%;
+    --radius: 1rem; /* Border radius maior para Origin style */
+
+    /* Origin Theme Colors - Textured backgrounds */
+    --origin-blue-gray: 210 25% 60%; /* Azul-acinzentado para gastos */
+    --origin-blue-gray-dark: 210 30% 40%;
+    --origin-earth: 25 35% 55%; /* Tom terra/marrom para orçamento */
+    --origin-earth-dark: 25 40% 35%;
+    --origin-ocean: 200 50% 40%; /* Azul-petróleo escuro para projeções */
+    --origin-ocean-dark: 200 60% 25%;
+    --origin-mint: 165 55% 50%; /* Verde-menta para investimentos */
+    --origin-mint-dark: 165 60% 35%;
 
     /* Balance Colors - Asset Positive (Green progression) */
     --balance-asset-positive-1: 142 76% 36%;   /* Dark green */
@@ -183,7 +192,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     font-feature-settings: 'cv01', 'cv02', 'cv03', 'cv04';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -290,78 +299,108 @@
 .border-balance-liability-9 { border-color: hsl(var(--balance-liability-9)); }
 .border-balance-liability-10 { border-color: hsl(var(--balance-liability-10)); }
 
-/* Mint.com inspired utility classes */
+/* Origin inspired utility classes */
 @layer utilities {
-  .mint-transition {
-    @apply transition-all duration-200 ease-in-out;
+  /* Transitions */
+  .origin-transition {
+    @apply transition-all duration-300 ease-out;
   }
   
-  .mint-transition-slow {
-    @apply transition-all duration-300 ease-in-out;
-  }
-  
-  .mint-card {
-    @apply bg-card border-0 rounded-lg shadow-sm backdrop-blur-sm;
-  }
-  
-  .mint-hover-lift {
-    @apply mint-transition hover:shadow-lg hover:-translate-y-0.5;
+  .origin-transition-fast {
+    @apply transition-all duration-150 ease-out;
   }
 
-  .mint-gradient-green {
-    background: linear-gradient(135deg, hsl(174, 100%, 33%) 0%, hsl(174, 100%, 36%) 100%);
+  /* Textured Backgrounds - Origin Style */
+  .bg-texture-blue-gray {
+    background: 
+      linear-gradient(135deg, hsl(var(--origin-blue-gray)) 0%, hsl(var(--origin-blue-gray-dark)) 100%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='grain' width='60' height='60' patternUnits='userSpaceOnUse'%3E%3Crect width='60' height='60' fill='%23000000' fill-opacity='0.03'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='60' height='60' fill='url(%23grain)'/%3E%3C/svg%3E");
+    background-blend-mode: overlay;
   }
 
-  .mint-gradient-enhanced {
-    background: linear-gradient(135deg, 
-      hsl(174, 100%, 33%) 0%, 
-      hsl(174, 100%, 35%) 50%, 
-      hsl(174, 100%, 31%) 100%);
+  .bg-texture-earth {
+    background: 
+      linear-gradient(135deg, hsl(var(--origin-earth)) 0%, hsl(var(--origin-earth-dark)) 100%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='grain' width='60' height='60' patternUnits='userSpaceOnUse'%3E%3Crect width='60' height='60' fill='%23000000' fill-opacity='0.03'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='60' height='60' fill='url(%23grain)'/%3E%3C/svg%3E");
+    background-blend-mode: overlay;
   }
 
-  .mint-gradient-light {
-    background: linear-gradient(135deg, hsl(174, 42%, 94%) 0%, hsl(0, 0%, 100%) 100%);
+  .bg-texture-ocean {
+    background: 
+      linear-gradient(135deg, hsl(var(--origin-ocean)) 0%, hsl(var(--origin-ocean-dark)) 100%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='grain' width='60' height='60' patternUnits='userSpaceOnUse'%3E%3Crect width='60' height='60' fill='%23000000' fill-opacity='0.03'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='60' height='60' fill='url(%23grain)'/%3E%3C/svg%3E");
+    background-blend-mode: overlay;
   }
 
-  /* Glass morphism utilities */
-  .glass-effect {
-    @apply backdrop-blur-md bg-white/10 border border-white/20;
+  .bg-texture-mint {
+    background: 
+      linear-gradient(135deg, hsl(var(--origin-mint)) 0%, hsl(var(--origin-mint-dark)) 100%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='grain' width='60' height='60' patternUnits='userSpaceOnUse'%3E%3Crect width='60' height='60' fill='%23000000' fill-opacity='0.03'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='60' height='60' fill='url(%23grain)'/%3E%3C/svg%3E");
+    background-blend-mode: overlay;
   }
 
-  .glass-effect-strong {
-    @apply backdrop-blur-lg bg-white/20 border border-white/30;
+  /* Glassmorphism - Origin Style */
+  .glass-origin {
+    @apply backdrop-blur-xl bg-white/70 border border-white/40 shadow-xl;
   }
 
-  .glass-card {
-    @apply backdrop-blur-sm bg-white/5 border border-white/10 rounded-xl;
+  .glass-origin-dark {
+    @apply backdrop-blur-xl bg-white/50 border border-white/30 shadow-lg;
   }
 
-  /* Typography improvements */
-  .heading-gradient {
-    background: linear-gradient(135deg, hsl(174, 100%, 33%) 0%, hsl(174, 100%, 25%) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .glass-card-origin {
+    @apply backdrop-blur-lg bg-white/80 border border-white/50 rounded-2xl shadow-2xl;
   }
 
-  /* Improved shadows */
-  .shadow-mint {
-    box-shadow: 0 4px 6px -1px rgba(0, 166, 147, 0.1), 0 2px 4px -1px rgba(0, 166, 147, 0.06);
+  /* Typography - Origin Style */
+  .text-origin-label {
+    @apply text-xs font-semibold uppercase tracking-wider text-muted-foreground;
   }
 
-  .shadow-mint-lg {
-    box-shadow: 0 10px 15px -3px rgba(0, 166, 147, 0.1), 0 4px 6px -2px rgba(0, 166, 147, 0.05);
+  .text-origin-value {
+    @apply text-3xl font-bold tracking-tight;
+  }
+
+  .text-origin-title {
+    @apply text-2xl font-bold tracking-tight;
+  }
+
+  /* Shadows - Deeper and more pronounced */
+  .shadow-origin {
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.2);
+  }
+
+  .shadow-origin-lg {
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.25);
+  }
+
+  .shadow-origin-xl {
+    box-shadow: 0 25px 50px -20px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Hover effects */
+  .hover-lift-origin {
+    @apply origin-transition hover:shadow-origin-lg hover:-translate-y-1;
   }
 
   /* Loading states */
-  .loading-shimmer {
-    background: linear-gradient(90deg, transparent, rgba(0, 166, 147, 0.1), transparent);
+  .loading-shimmer-origin {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
     background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
+    animation: shimmer-origin 1.5s infinite;
   }
 
-  @keyframes shimmer {
+  @keyframes shimmer-origin {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
+  }
+
+  /* Card styles */
+  .card-origin {
+    @apply bg-card rounded-2xl shadow-origin border-0 origin-transition;
+  }
+
+  .card-origin-hover {
+    @apply card-origin hover-lift-origin cursor-pointer;
   }
 }

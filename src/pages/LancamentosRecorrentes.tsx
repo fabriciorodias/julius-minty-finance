@@ -10,7 +10,8 @@ import { RecurringTransactionsTimeline } from "@/components/transactions/Recurri
 import { RecurringSankeyChart } from "@/components/transactions/RecurringSankeyChart";
 import { useRecurringSankey } from "@/hooks/useRecurringSankey";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { OriginCard } from "@/components/ui/origin-card";
+import { MetricCard } from "@/components/ui/metric-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Calendar, BarChart3, Settings, ArrowLeft, TrendingUp, TrendingDown, Clock, AlertTriangle, GitBranch } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -107,16 +108,16 @@ export default function LancamentosRecorrentes() {
             </div>
           </div>
           
-          <Card>
-            <CardContent className="p-6">
+          <OriginCard glass className="liquid-glass-danger">
+            <div className="p-6">
               <div className="text-center">
                 <p className="text-destructive">Erro ao carregar lançamentos recorrentes</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Tente recarregar a página
                 </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </OriginCard>
         </div>
       </AppLayout>
     );
@@ -157,90 +158,53 @@ export default function LancamentosRecorrentes() {
         {/* Enhanced Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Receitas Stats */}
-          <Card className="border-l-4 border-l-revenue bg-gradient-to-r from-revenue-lighter to-white hover:shadow-lg transition-all duration-300">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold text-revenue flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Receitas Ativas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-revenue">
-                {isLoading ? <Skeleton className="h-8 w-12" /> : (
-                  recurringTransactions.filter(t => t.type === 'receita' && t.status === 'active').length
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {isLoading ? '-' : (
-                  `R$ ${recurringTransactions
-                    .filter(t => t.type === 'receita' && t.status === 'active')
-                    .reduce((sum, t) => sum + (t.expected_amount || 0), 0)
-                    .toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`
-                )} / mês
-              </p>
-            </CardContent>
-          </Card>
+          <MetricCard
+            glass
+            label="Receitas Ativas"
+            value={isLoading ? '-' : recurringTransactions.filter(t => t.type === 'receita' && t.status === 'active').length.toString()}
+            description={isLoading ? '-' : `R$ ${recurringTransactions
+              .filter(t => t.type === 'receita' && t.status === 'active')
+              .reduce((sum, t) => sum + (t.expected_amount || 0), 0)
+              .toLocaleString('pt-BR', { maximumFractionDigits: 0 })} / mês`}
+            icon={TrendingUp}
+            className="liquid-glass-success animate-fade-in hover-scale"
+          />
 
           {/* Despesas Stats */}
-          <Card className="border-l-4 border-l-expense bg-gradient-to-r from-expense-lighter to-white hover:shadow-lg transition-all duration-300">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold text-expense flex items-center gap-2">
-                <TrendingDown className="h-4 w-4" />
-                Despesas Ativas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-expense">
-                {isLoading ? <Skeleton className="h-8 w-12" /> : (
-                  recurringTransactions.filter(t => t.type === 'despesa' && t.status === 'active').length
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {isLoading ? '-' : (
-                  `R$ ${recurringTransactions
-                    .filter(t => t.type === 'despesa' && t.status === 'active')
-                    .reduce((sum, t) => sum + (t.expected_amount || 0), 0)
-                    .toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`
-                )} / mês
-              </p>
-            </CardContent>
-          </Card>
+          <MetricCard
+            glass
+            label="Despesas Ativas"
+            value={isLoading ? '-' : recurringTransactions.filter(t => t.type === 'despesa' && t.status === 'active').length.toString()}
+            description={isLoading ? '-' : `R$ ${recurringTransactions
+              .filter(t => t.type === 'despesa' && t.status === 'active')
+              .reduce((sum, t) => sum + (t.expected_amount || 0), 0)
+              .toLocaleString('pt-BR', { maximumFractionDigits: 0 })} / mês`}
+            icon={TrendingDown}
+            className="liquid-glass-danger animate-fade-in hover-scale"
+            style={{ animationDelay: '50ms' }}
+          />
 
           {/* Upcoming Stats */}
-          <Card className="border-l-4 border-l-status-upcoming bg-gradient-to-r from-status-upcoming-bg to-white hover:shadow-lg transition-all duration-300">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold text-status-upcoming flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Vencendo em 7 dias
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-status-upcoming">
-                {isLoading ? <Skeleton className="h-8 w-12" /> : stats.upcoming.length}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Requer atenção
-              </p>
-            </CardContent>
-          </Card>
+          <MetricCard
+            glass
+            label="Vencendo em 7 dias"
+            value={isLoading ? '-' : stats.upcoming.length.toString()}
+            description="Requer atenção"
+            icon={Clock}
+            className="liquid-glass-warning animate-fade-in hover-scale"
+            style={{ animationDelay: '100ms' }}
+          />
 
           {/* Overdue Stats */}
-          <Card className="border-l-4 border-l-status-overdue bg-gradient-to-r from-status-overdue-bg to-white hover:shadow-lg transition-all duration-300">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold text-status-overdue flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                Em Atraso
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-status-overdue">
-                {isLoading ? <Skeleton className="h-8 w-12" /> : stats.overdue.length}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stats.overdue.length > 0 ? 'Ação necessária' : 'Tudo em dia'}
-              </p>
-            </CardContent>
-          </Card>
+          <MetricCard
+            glass
+            label="Em Atraso"
+            value={isLoading ? '-' : stats.overdue.length.toString()}
+            description={stats.overdue.length > 0 ? 'Ação necessária' : 'Tudo em dia'}
+            icon={AlertTriangle}
+            className="liquid-glass-danger animate-fade-in hover-scale"
+            style={{ animationDelay: '150ms' }}
+          />
         </div>
 
         {/* Main Content */}
@@ -301,8 +265,8 @@ export default function LancamentosRecorrentes() {
               </div>
             ) : filteredTransactions.length === 0 ? (
               searchTerm || typeFilter !== 'all' || statusFilter !== 'all' || dueDateFilter !== 'all' ? (
-                <Card>
-                  <CardContent className="p-12">
+                <OriginCard glass className="liquid-glass-subtle animate-fade-in">
+                  <div className="p-12">
                     <div className="text-center">
                       <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-semibold text-foreground mb-2">
@@ -323,11 +287,11 @@ export default function LancamentosRecorrentes() {
                         Limpar filtros
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </OriginCard>
               ) : (
-                <Card>
-                  <CardContent className="p-12">
+                <OriginCard glass className="liquid-glass-subtle animate-fade-in">
+                  <div className="p-12">
                     <div className="text-center">
                       <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-lg font-semibold text-foreground mb-2">
@@ -341,8 +305,8 @@ export default function LancamentosRecorrentes() {
                         Criar primeiro lançamento
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </OriginCard>
               )
             ) : (
               <div className="space-y-8">
@@ -454,13 +418,13 @@ export default function LancamentosRecorrentes() {
           {/* Flow View */}
           <TabsContent value="flow">
             {isSankeyLoading ? (
-              <Card>
-                <CardContent className="p-6">
+              <OriginCard glass className="liquid-glass-subtle">
+                <div className="p-6">
                   <div className="text-center">
                     <p>Carregando fluxo de recursos...</p>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </OriginCard>
             ) : (
               <RecurringSankeyChart data={sankeyData || { nodes: [], links: [] }} />
             )}
@@ -468,11 +432,9 @@ export default function LancamentosRecorrentes() {
 
           {/* Analytics View */}
           <TabsContent value="analytics" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Análises Detalhadas</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <OriginCard glass className="liquid-glass-subtle animate-fade-in">
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-4">Análises Detalhadas</h2>
                 <div className="text-center p-8">
                   <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">Analytics Avançado</h3>
@@ -480,8 +442,8 @@ export default function LancamentosRecorrentes() {
                     Análises detalhadas de variações, tendências e otimizações em breve
                   </p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </OriginCard>
           </TabsContent>
         </Tabs>
 

@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { OriginCard, OriginCardHeader, OriginCardTitle, OriginCardContent } from '@/components/ui/origin-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus } from 'lucide-react';
 import { AccountsList } from '@/components/entities/AccountsList';
@@ -103,17 +103,23 @@ export default function Contas() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {activeInstitutions.map((institution) => (
-              <Card key={institution.id} className="group hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <CardTitle className="text-lg">{institution.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
+            {activeInstitutions.map((institution, index) => (
+              <OriginCard 
+                key={institution.id} 
+                glass 
+                hover
+                className="liquid-glass-primary animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <OriginCardHeader>
+                  <OriginCardTitle>{institution.name}</OriginCardTitle>
+                </OriginCardHeader>
+                <OriginCardContent>
                   <div className="text-sm text-muted-foreground">
                     {accounts.filter(acc => acc.institution_id === institution.id).length} contas
                   </div>
-                </CardContent>
-              </Card>
+                </OriginCardContent>
+              </OriginCard>
             ))}
           </div>
         </TabsContent>

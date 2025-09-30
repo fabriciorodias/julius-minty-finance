@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { format, parseISO } from 'date-fns';
-import { Card, CardContent } from "@/components/ui/card";
+import { OriginCard, OriginCardContent } from "@/components/ui/origin-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
@@ -97,11 +97,15 @@ export function RecurringTransactionCardCompact({
   const hasVariance = transaction.variance_percentage > 20;
 
   return (
-    <Card className={`
-      group relative overflow-hidden border-l-4 ${theme.borderColor}
-      hover:shadow-md hover:-translate-y-0.5 transition-all duration-200
-    `}>
-      <CardContent className="p-4">
+    <OriginCard 
+      glass
+      hover
+      className={`
+        group relative animate-fade-in
+        ${isRevenue ? 'liquid-glass-success' : 'liquid-glass-danger'}
+      `}
+    >
+      <OriginCardContent className="p-4">
         <div className="flex items-start justify-between gap-3">
           {/* Left: Icon + Content */}
           <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -222,13 +226,13 @@ export function RecurringTransactionCardCompact({
             </DropdownMenu>
           </div>
         </div>
-      </CardContent>
+      </OriginCardContent>
 
       <MarkAsPaidModal
         open={showMarkAsPaidModal}
         onOpenChange={setShowMarkAsPaidModal}
         transaction={transaction}
       />
-    </Card>
+    </OriginCard>
   );
 }

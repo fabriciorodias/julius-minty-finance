@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { format, parseISO } from 'date-fns';
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { OriginCard, OriginCardHeader, OriginCardContent } from "@/components/ui/origin-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
@@ -136,16 +136,18 @@ export function RecurringTransactionCard({
   const IconComponent = theme.icon;
 
   return (
-    <Card className={`
-      group relative overflow-hidden transition-all duration-300 ease-out
-      border-l-4 ${theme.borderColor} ${theme.bgGradient}
-      hover:shadow-lg hover:shadow-current/5 hover:-translate-y-1
-      animate-fade-in
-    `}>
+    <OriginCard 
+      glass 
+      hover
+      className={`
+        group relative animate-fade-in
+        ${theme.isRevenue ? 'liquid-glass-success' : 'liquid-glass-danger'}
+      `}
+    >
       {/* Gradient Overlay on Hover */}
       <div className={`
         absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300
-        bg-gradient-to-r ${theme.isRevenue ? 'from-revenue/5' : 'from-expense/5'} to-transparent
+        bg-gradient-to-r ${theme.isRevenue ? 'from-revenue/5' : 'from-expense/5'} to-transparent pointer-events-none
       `} />
       
       {/* Type Icon with Glow Effect */}
@@ -157,7 +159,7 @@ export function RecurringTransactionCard({
         <IconComponent className={`h-5 w-5 ${theme.textColor}`} />
       </div>
       
-      <CardHeader className="pb-3 relative z-10 pr-16">
+      <OriginCardHeader className="pb-3 relative z-10 pr-16">
         <div className="space-y-2">
           {/* Header with Type Badge */}
           <div className="flex items-center gap-2 mb-1">
@@ -243,9 +245,9 @@ export function RecurringTransactionCard({
             </DropdownMenu>
           </div>
         </div>
-      </CardHeader>
+      </OriginCardHeader>
 
-      <CardContent className="space-y-4 relative z-10">
+      <OriginCardContent className="space-y-4 relative z-10">
         {/* Financial Information - Enhanced Design */}
         <div className="grid grid-cols-2 gap-4">
           <div className={`
@@ -329,13 +331,13 @@ export function RecurringTransactionCard({
             <span className="font-semibold text-foreground truncate">{transaction.account_name}</span>
           </div>
         </div>
-      </CardContent>
+      </OriginCardContent>
 
       <MarkAsPaidModal
         open={showMarkAsPaidModal}
         onOpenChange={setShowMarkAsPaidModal}
         transaction={transaction}
       />
-    </Card>
+    </OriginCard>
   );
 }

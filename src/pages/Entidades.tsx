@@ -1,9 +1,10 @@
-
 import { useState } from 'react';
 import { useInstitutions } from '@/hooks/useInstitutions';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useAccountBalances } from '@/hooks/useAccountBalances';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { OriginCard } from '@/components/ui/origin-card';
+import { Button } from '@/components/ui/button';
 import { AccountsList } from '@/components/entities/AccountsList';
 import { AccountsSummary } from '@/components/entities/AccountsSummary';
 import { InstitutionModal } from '@/components/entities/InstitutionModal';
@@ -111,40 +112,46 @@ const Entidades = () => {
                 Adicione e gerencie as instituições financeiras
               </p>
             </div>
-            <button
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
-              onClick={() => setShowInstitutionModal(true)}
-            >
+            <Button onClick={() => setShowInstitutionModal(true)}>
               Nova Instituição
-            </button>
+            </Button>
           </div>
 
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {institutions.map((institution) => (
-              <div key={institution.id} className="bg-white rounded shadow p-4">
-                <h3 className="font-semibold text-lg">{institution.name}</h3>
-                <p className="text-sm text-gray-500">
-                  Criado em:{' '}
-                  {new Date(institution.created_at).toLocaleDateString()}
-                </p>
-                <div className="mt-2 flex justify-end space-x-2">
-                  <button
-                    className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                    onClick={() => {
-                      setSelectedInstitution(institution);
-                      setShowInstitutionModal(true);
-                    }}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-700"
-                    onClick={() => deleteInstitution(institution.id)}
-                  >
-                    Excluir
-                  </button>
+            {institutions.map((institution, index) => (
+              <OriginCard 
+                key={institution.id} 
+                glass 
+                hover
+                className="liquid-glass-primary animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="p-6">
+                  <h3 className="font-semibold text-lg mb-2">{institution.name}</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Criado em: {new Date(institution.created_at).toLocaleDateString()}
+                  </p>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedInstitution(institution);
+                        setShowInstitutionModal(true);
+                      }}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteInstitution(institution.id)}
+                    >
+                      Excluir
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              </OriginCard>
             ))}
           </div>
         </TabsContent>

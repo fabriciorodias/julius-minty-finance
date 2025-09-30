@@ -88,10 +88,10 @@ export function AppSidebar() {
         <NavLink
           to={item.url}
           className={({ isActive }) =>
-            `flex items-start w-full px-3 py-3 rounded-xl mint-transition min-h-[48px] relative overflow-hidden ${
+            `flex items-start w-full px-3 py-3 rounded-xl transition-all duration-300 min-h-[48px] relative overflow-hidden hover-scale ${
               isActive
-                ? "bg-white/25 text-white shadow-lg font-medium border border-white/20 backdrop-blur-sm"
-                : "text-white/90 hover:bg-white/15 hover:text-white hover:shadow-md hover:backdrop-blur-sm"
+                ? "liquid-glass-primary text-white shadow-xl font-semibold border border-white/30 backdrop-blur-md"
+                : "text-white/90 hover:bg-white/20 hover:text-white hover:shadow-lg hover:backdrop-blur-md"
             }`
           }
         >
@@ -109,12 +109,12 @@ export function AppSidebar() {
   );
 
   return (
-    <Sidebar collapsible="icon" className="border-r-0 mint-gradient-enhanced">
+    <Sidebar collapsible="icon" className="border-r-0 glass-origin backdrop-blur-2xl">
       {/* Enhanced gradient overlay for depth */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/8 via-transparent to-black/15 pointer-events-none z-0" />
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none z-0" />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-primary/5 to-black/20 pointer-events-none z-0" />
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/8 to-transparent pointer-events-none z-0" />
       
-      <SidebarHeader className="p-6 border-b border-white/20 relative z-10 backdrop-blur-sm">
+      <SidebarHeader className="p-6 border-b border-white/30 relative z-10 backdrop-blur-lg shadow-lg">
         <BrandLogo collapsed={isCollapsed} />
       </SidebarHeader>
 
@@ -122,17 +122,25 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
-              {mainMenuItems.map(renderMenuItem)}
+              {mainMenuItems.map((item, index) => (
+                <div key={item.title} className="animate-fade-in" style={{ animationDelay: `${index * 30}ms` }}>
+                  {renderMenuItem(item)}
+                </div>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <Separator className="my-6 bg-white/20" />
+        <Separator className="my-6 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
 
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
-              {settingsMenuItems.map(renderMenuItem)}
+              {settingsMenuItems.map((item, index) => (
+                <div key={item.title} className="animate-fade-in" style={{ animationDelay: `${(mainMenuItems.length + index) * 30}ms` }}>
+                  {renderMenuItem(item)}
+                </div>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

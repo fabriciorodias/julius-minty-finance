@@ -22,13 +22,13 @@ export function AppHeader() {
   const currentTitle = pageTitle[location.pathname] || "Julius";
 
   return (
-    <header className="h-16 border-b border-sidebar-border/50 bg-gradient-to-r from-primary via-primary to-primary/95 backdrop-blur-md relative overflow-hidden">
+    <header className="h-16 border-b border-white/30 glass-origin backdrop-blur-2xl relative overflow-hidden shadow-lg">
       {/* Subtle background pattern */}
-      <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-transparent to-white/5 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-primary/20 to-white/10 pointer-events-none" />
       
       <div className="relative z-10 h-full flex items-center justify-between px-6">
         <div className="flex items-center gap-4">
-          <SidebarTrigger className="p-2 hover:bg-white/10 hover:backdrop-blur-sm rounded-lg mint-transition text-primary-foreground border-0 shadow-none" />
+          <SidebarTrigger className="p-2 hover:bg-white/20 hover:backdrop-blur-md rounded-lg transition-all duration-300 text-primary-foreground border-0 shadow-none hover-scale" />
           
           {/* Logo for mobile/collapsed state */}
           <div className="md:hidden">
@@ -37,8 +37,8 @@ export function AppHeader() {
           
           {/* Page title */}
           <div className="flex items-center gap-3">
-            <div className="w-px h-6 bg-white/20 hidden md:block" />
-            <h2 className="text-xl font-semibold text-primary-foreground tracking-tight">
+            <div className="w-px h-6 bg-gradient-to-b from-transparent via-white/40 to-transparent hidden md:block" />
+            <h2 className="text-xl font-semibold text-primary-foreground tracking-tight animate-fade-in drop-shadow-sm">
               {currentTitle}
             </h2>
           </div>
@@ -48,7 +48,7 @@ export function AppHeader() {
       </div>
       
       {/* Bottom glow effect */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-white/30 to-transparent shadow-sm" />
     </header>
   );
 }

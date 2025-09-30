@@ -179,7 +179,7 @@ export default function Projecoes() {
 
       {/* Quick Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-l-4 border-l-financial-success">
+        <Card className="border-l-4 border-l-financial-success liquid-glass-success origin-transition hover-lift-origin">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -193,7 +193,7 @@ export default function Projecoes() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-financial-expense">
+        <Card className="border-l-4 border-l-financial-expense liquid-glass-danger origin-transition hover-lift-origin">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -210,10 +210,10 @@ export default function Projecoes() {
           </CardContent>
         </Card>
 
-        <Card className={`border-l-4 ${
-          metrics.riskScore === 'low' ? 'border-l-financial-success' :
-          metrics.riskScore === 'medium' ? 'border-l-financial-warning' :
-          'border-l-financial-expense'
+        <Card className={`border-l-4 origin-transition hover-lift-origin ${
+          metrics.riskScore === 'low' ? 'border-l-financial-success liquid-glass-success' :
+          metrics.riskScore === 'medium' ? 'border-l-financial-warning liquid-glass-warning' :
+          'border-l-financial-expense liquid-glass-danger'
         }`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -236,7 +236,7 @@ export default function Projecoes() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-primary">
+        <Card className="border-l-4 border-l-primary liquid-glass-primary origin-transition hover-lift-origin">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -262,7 +262,7 @@ export default function Projecoes() {
       </div>
 
       {/* Main Chart */}
-      <Card>
+      <Card className="liquid-glass-strong">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -476,7 +476,7 @@ export default function Projecoes() {
 
       {/* Sankey Chart */}
       {sankeyLoading ? (
-        <Card>
+        <Card className="liquid-glass-subtle">
           <CardHeader>
             <CardTitle>Fluxo de Recursos por Categoria</CardTitle>
           </CardHeader>
@@ -490,7 +490,7 @@ export default function Projecoes() {
 
       {/* Insights Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="liquid-glass-subtle origin-transition hover-lift-origin">
           <CardHeader>
             <CardTitle className="text-lg">Insights Financeiros</CardTitle>
           </CardHeader>
@@ -534,7 +534,7 @@ export default function Projecoes() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="liquid-glass-subtle origin-transition hover-lift-origin">
           <CardHeader>
             <CardTitle className="text-lg">Recomendações</CardTitle>
           </CardHeader>

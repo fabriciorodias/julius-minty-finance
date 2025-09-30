@@ -1,4 +1,4 @@
-import { OriginCard, OriginCardHeader, OriginCardTitle, OriginCardContent } from "@/components/ui/origin-card";
+import { NotionCard, NotionCardHeader, NotionCardTitle, NotionCardContent } from "@/components/ui/notion-card";
 import { CompoundInterestSimulator } from "@/components/tools/CompoundInterestSimulator";
 import { TrendingUp } from "lucide-react";
 
@@ -6,27 +6,27 @@ export default function Ferramentas() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Ferramentas e Simuladores</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-notion-h1 text-notion-gray-900">Ferramentas e Simuladores</h1>
+        <p className="text-notion-body text-notion-gray-600 mt-2">
           Utilize nossas ferramentas para fazer simulações e tomar decisões financeiras mais informadas.
         </p>
       </div>
 
       <div className="grid gap-6">
-        <OriginCard glass textured="mint" className="liquid-glass-primary animate-fade-in">
-          <OriginCardHeader>
-            <OriginCardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6" />
+        <NotionCard variant="hoverable" className="transition-notion">
+          <NotionCardHeader>
+            <NotionCardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-notion-blue" />
               Simulador de Juros Compostos
-            </OriginCardTitle>
-            <p className="text-sm text-muted-foreground mt-2">
+            </NotionCardTitle>
+            <p className="text-notion-body-sm text-notion-gray-600 mt-2">
               Descubra o poder dos juros compostos e projete o crescimento dos seus investimentos ao longo do tempo.
             </p>
-          </OriginCardHeader>
-          <OriginCardContent>
+          </NotionCardHeader>
+          <NotionCardContent>
             <CompoundInterestSimulator />
-          </OriginCardContent>
-        </OriginCard>
+          </NotionCardContent>
+        </NotionCard>
       </div>
     </div>
   );

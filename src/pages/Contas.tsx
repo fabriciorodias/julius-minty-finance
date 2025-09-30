@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { OriginCard, OriginCardHeader, OriginCardTitle, OriginCardContent } from '@/components/ui/origin-card';
+import { NotionButton } from '@/components/ui/notion-button';
+import { NotionCard, NotionCardHeader, NotionCardTitle, NotionCardContent } from '@/components/ui/notion-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus } from 'lucide-react';
 import { AccountsList } from '@/components/entities/AccountsList';
@@ -51,8 +51,8 @@ export default function Contas() {
     <div className="container mx-auto p-6 space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Contas</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-notion-h1 text-notion-gray-900">Contas</h1>
+          <p className="text-notion-body text-notion-gray-600">
             Gerencie suas contas financeiras e instituições
           </p>
         </div>
@@ -91,35 +91,33 @@ export default function Contas() {
         <TabsContent value="institutions" className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold">Instituições</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-notion-h2 text-notion-gray-900">Instituições</h2>
+              <p className="text-notion-body text-notion-gray-600">
                 Gerencie as instituições financeiras onde você possui contas
               </p>
             </div>
-            <Button onClick={() => setShowInstitutionModal(true)}>
+            <NotionButton onClick={() => setShowInstitutionModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Nova Instituição
-            </Button>
+            </NotionButton>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {activeInstitutions.map((institution, index) => (
-              <OriginCard 
+            {activeInstitutions.map((institution) => (
+              <NotionCard 
                 key={institution.id} 
-                glass 
-                hover
-                className="liquid-glass-primary animate-fade-in"
-                style={{ animationDelay: `${index * 50}ms` }}
+                variant="hoverable"
+                className="transition-notion"
               >
-                <OriginCardHeader>
-                  <OriginCardTitle>{institution.name}</OriginCardTitle>
-                </OriginCardHeader>
-                <OriginCardContent>
-                  <div className="text-sm text-muted-foreground">
+                <NotionCardHeader>
+                  <NotionCardTitle>{institution.name}</NotionCardTitle>
+                </NotionCardHeader>
+                <NotionCardContent>
+                  <div className="text-notion-body-sm text-notion-gray-600">
                     {accounts.filter(acc => acc.institution_id === institution.id).length} contas
                   </div>
-                </OriginCardContent>
-              </OriginCard>
+                </NotionCardContent>
+              </NotionCard>
             ))}
           </div>
         </TabsContent>

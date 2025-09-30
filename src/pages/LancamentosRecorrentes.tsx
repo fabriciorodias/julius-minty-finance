@@ -9,9 +9,8 @@ import { RecurringTransactionsDashboard } from "@/components/transactions/Recurr
 import { RecurringTransactionsTimeline } from "@/components/transactions/RecurringTransactionsTimeline";
 import { RecurringSankeyChart } from "@/components/transactions/RecurringSankeyChart";
 import { useRecurringSankey } from "@/hooks/useRecurringSankey";
-import { Button } from "@/components/ui/button";
-import { OriginCard } from "@/components/ui/origin-card";
-import { MetricCard } from "@/components/ui/metric-card";
+import { NotionButton } from "@/components/ui/notion-button";
+import { NotionCard, NotionCardContent } from "@/components/ui/notion-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Calendar, BarChart3, Settings, ArrowLeft, TrendingUp, TrendingDown, Clock, AlertTriangle, GitBranch } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -103,21 +102,21 @@ export default function LancamentosRecorrentes() {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Lançamentos Recorrentes</h1>
-              <p className="text-muted-foreground mt-1">Gerencie seus lançamentos fixos mensais</p>
+              <h1 className="text-notion-h1 text-notion-gray-900">Lançamentos Recorrentes</h1>
+              <p className="text-notion-body text-notion-gray-600 mt-1">Gerencie seus lançamentos fixos mensais</p>
             </div>
           </div>
           
-          <OriginCard glass className="liquid-glass-danger">
-            <div className="p-6">
+          <NotionCard variant="muted" className="border-notion-danger/20">
+            <NotionCardContent className="p-6">
               <div className="text-center">
-                <p className="text-destructive">Erro ao carregar lançamentos recorrentes</p>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-notion-danger">Erro ao carregar lançamentos recorrentes</p>
+                <p className="text-notion-body-sm text-notion-gray-600 mt-1">
                   Tente recarregar a página
                 </p>
               </div>
-            </div>
-          </OriginCard>
+            </NotionCardContent>
+          </NotionCard>
         </div>
       </AppLayout>
     );
@@ -129,82 +128,117 @@ export default function LancamentosRecorrentes() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <Button 
+            <NotionButton 
               variant="ghost" 
               size="sm" 
               onClick={() => window.location.href = '/lancamentos'}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
               Lançamentos
-            </Button>
+            </NotionButton>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Lançamentos Recorrentes</h1>
-              <p className="text-muted-foreground mt-1">
+              <h1 className="text-notion-h1 text-notion-gray-900">Lançamentos Recorrentes</h1>
+              <p className="text-notion-body text-notion-gray-600 mt-1">
                 Gerencie seus lançamentos fixos mensais de forma inteligente
               </p>
             </div>
           </div>
           
-          <Button 
+          <NotionButton 
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
             Novo Lançamento Recorrente
-          </Button>
+          </NotionButton>
         </div>
 
         {/* Enhanced Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Receitas Stats */}
-          <MetricCard
-            glass
-            label="Receitas Ativas"
-            value={isLoading ? '-' : recurringTransactions.filter(t => t.type === 'receita' && t.status === 'active').length.toString()}
-            description={isLoading ? '-' : `R$ ${recurringTransactions
-              .filter(t => t.type === 'receita' && t.status === 'active')
-              .reduce((sum, t) => sum + (t.expected_amount || 0), 0)
-              .toLocaleString('pt-BR', { maximumFractionDigits: 0 })} / mês`}
-            icon={TrendingUp}
-            className="liquid-glass-success animate-fade-in hover-scale"
-          />
+          <NotionCard variant="hoverable" className="transition-notion">
+            <div className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <p className="text-notion-caption text-notion-gray-600">Receitas Ativas</p>
+                  <p className="text-notion-value tabular-nums text-notion-gray-900">
+                    {isLoading ? '-' : recurringTransactions.filter(t => t.type === 'receita' && t.status === 'active').length}
+                  </p>
+                  <p className="text-notion-body-sm text-notion-gray-600">
+                    {isLoading ? '-' : `R$ ${recurringTransactions
+                      .filter(t => t.type === 'receita' && t.status === 'active')
+                      .reduce((sum, t) => sum + (t.expected_amount || 0), 0)
+                      .toLocaleString('pt-BR', { maximumFractionDigits: 0 })} / mês`}
+                  </p>
+                </div>
+                <div className="bg-notion-success/10 rounded-md p-2">
+                  <TrendingUp className="h-6 w-6 text-notion-success" />
+                </div>
+              </div>
+            </div>
+          </NotionCard>
 
           {/* Despesas Stats */}
-          <MetricCard
-            glass
-            label="Despesas Ativas"
-            value={isLoading ? '-' : recurringTransactions.filter(t => t.type === 'despesa' && t.status === 'active').length.toString()}
-            description={isLoading ? '-' : `R$ ${recurringTransactions
-              .filter(t => t.type === 'despesa' && t.status === 'active')
-              .reduce((sum, t) => sum + (t.expected_amount || 0), 0)
-              .toLocaleString('pt-BR', { maximumFractionDigits: 0 })} / mês`}
-            icon={TrendingDown}
-            className="liquid-glass-danger animate-fade-in hover-scale"
-            style={{ animationDelay: '50ms' }}
-          />
+          <NotionCard variant="hoverable" className="transition-notion">
+            <div className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <p className="text-notion-caption text-notion-gray-600">Despesas Ativas</p>
+                  <p className="text-notion-value tabular-nums text-notion-gray-900">
+                    {isLoading ? '-' : recurringTransactions.filter(t => t.type === 'despesa' && t.status === 'active').length}
+                  </p>
+                  <p className="text-notion-body-sm text-notion-gray-600">
+                    {isLoading ? '-' : `R$ ${recurringTransactions
+                      .filter(t => t.type === 'despesa' && t.status === 'active')
+                      .reduce((sum, t) => sum + (t.expected_amount || 0), 0)
+                      .toLocaleString('pt-BR', { maximumFractionDigits: 0 })} / mês`}
+                  </p>
+                </div>
+                <div className="bg-notion-danger/10 rounded-md p-2">
+                  <TrendingDown className="h-6 w-6 text-notion-danger" />
+                </div>
+              </div>
+            </div>
+          </NotionCard>
 
           {/* Upcoming Stats */}
-          <MetricCard
-            glass
-            label="Vencendo em 7 dias"
-            value={isLoading ? '-' : stats.upcoming.length.toString()}
-            description="Requer atenção"
-            icon={Clock}
-            className="liquid-glass-warning animate-fade-in hover-scale"
-            style={{ animationDelay: '100ms' }}
-          />
+          <NotionCard variant="hoverable" className="transition-notion">
+            <div className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <p className="text-notion-caption text-notion-gray-600">Vencendo em 7 dias</p>
+                  <p className="text-notion-value tabular-nums text-notion-gray-900">
+                    {isLoading ? '-' : stats.upcoming.length}
+                  </p>
+                  <p className="text-notion-body-sm text-notion-gray-600">Requer atenção</p>
+                </div>
+                <div className="bg-notion-warning/10 rounded-md p-2">
+                  <Clock className="h-6 w-6 text-notion-warning" />
+                </div>
+              </div>
+            </div>
+          </NotionCard>
 
           {/* Overdue Stats */}
-          <MetricCard
-            glass
-            label="Em Atraso"
-            value={isLoading ? '-' : stats.overdue.length.toString()}
-            description={stats.overdue.length > 0 ? 'Ação necessária' : 'Tudo em dia'}
-            icon={AlertTriangle}
-            className="liquid-glass-danger animate-fade-in hover-scale"
-            style={{ animationDelay: '150ms' }}
-          />
+          <NotionCard variant="hoverable" className="transition-notion">
+            <div className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <p className="text-notion-caption text-notion-gray-600">Em Atraso</p>
+                  <p className="text-notion-value tabular-nums text-notion-gray-900">
+                    {isLoading ? '-' : stats.overdue.length}
+                  </p>
+                  <p className="text-notion-body-sm text-notion-gray-600">
+                    {stats.overdue.length > 0 ? 'Ação necessária' : 'Tudo em dia'}
+                  </p>
+                </div>
+                <div className="bg-notion-danger/10 rounded-md p-2">
+                  <AlertTriangle className="h-6 w-6 text-notion-danger" />
+                </div>
+              </div>
+            </div>
+          </NotionCard>
         </div>
 
         {/* Main Content */}
@@ -265,17 +299,17 @@ export default function LancamentosRecorrentes() {
               </div>
             ) : filteredTransactions.length === 0 ? (
               searchTerm || typeFilter !== 'all' || statusFilter !== 'all' || dueDateFilter !== 'all' ? (
-                <OriginCard glass className="liquid-glass-subtle animate-fade-in">
+                <NotionCard variant="muted" className="transition-notion">
                   <div className="p-12">
                     <div className="text-center">
-                      <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                      <Calendar className="h-12 w-12 text-notion-gray-400 mx-auto mb-4" />
+                      <h3 className="text-notion-h3 text-notion-gray-900 mb-2">
                         Nenhum lançamento encontrado
                       </h3>
-                      <p className="text-muted-foreground mb-4">
+                      <p className="text-notion-body text-notion-gray-600 mb-4">
                         Tente ajustar os filtros de busca
                       </p>
-                      <Button 
+                      <NotionButton 
                         variant="outline"
                         onClick={() => {
                           setSearchTerm('');
@@ -285,28 +319,28 @@ export default function LancamentosRecorrentes() {
                         }}
                       >
                         Limpar filtros
-                      </Button>
+                      </NotionButton>
                     </div>
                   </div>
-                </OriginCard>
+                </NotionCard>
               ) : (
-                <OriginCard glass className="liquid-glass-subtle animate-fade-in">
+                <NotionCard variant="muted" className="transition-notion">
                   <div className="p-12">
                     <div className="text-center">
-                      <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                      <Calendar className="h-12 w-12 text-notion-gray-400 mx-auto mb-4" />
+                      <h3 className="text-notion-h3 text-notion-gray-900 mb-2">
                         Nenhum lançamento recorrente
                       </h3>
-                      <p className="text-muted-foreground mb-4">
+                      <p className="text-notion-body text-notion-gray-600 mb-4">
                         Comece criando seu primeiro lançamento recorrente para organizar melhor suas finanças
                       </p>
-                      <Button onClick={() => setShowCreateModal(true)}>
+                      <NotionButton onClick={() => setShowCreateModal(true)}>
                         <Plus className="h-4 w-4 mr-2" />
                         Criar primeiro lançamento
-                      </Button>
+                      </NotionButton>
                     </div>
                   </div>
-                </OriginCard>
+                </NotionCard>
               )
             ) : (
               <div className="space-y-8">
@@ -418,13 +452,13 @@ export default function LancamentosRecorrentes() {
           {/* Flow View */}
           <TabsContent value="flow">
             {isSankeyLoading ? (
-              <OriginCard glass className="liquid-glass-subtle">
-                <div className="p-6">
+              <NotionCard variant="muted">
+                <NotionCardContent className="p-6">
                   <div className="text-center">
-                    <p>Carregando fluxo de recursos...</p>
+                    <p className="text-notion-body text-notion-gray-600">Carregando fluxo de recursos...</p>
                   </div>
-                </div>
-              </OriginCard>
+                </NotionCardContent>
+              </NotionCard>
             ) : (
               <RecurringSankeyChart data={sankeyData || { nodes: [], links: [] }} />
             )}
@@ -432,18 +466,18 @@ export default function LancamentosRecorrentes() {
 
           {/* Analytics View */}
           <TabsContent value="analytics" className="space-y-4">
-            <OriginCard glass className="liquid-glass-subtle animate-fade-in">
-              <div className="p-6">
-                <h2 className="text-2xl font-bold mb-4">Análises Detalhadas</h2>
+            <NotionCard variant="muted" className="transition-notion">
+              <NotionCardContent className="p-6">
+                <h2 className="text-notion-h2 text-notion-gray-900 mb-4">Análises Detalhadas</h2>
                 <div className="text-center p-8">
-                  <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Analytics Avançado</h3>
-                  <p className="text-muted-foreground">
+                  <BarChart3 className="h-12 w-12 text-notion-gray-400 mx-auto mb-4" />
+                  <h3 className="text-notion-h3 text-notion-gray-900 mb-2">Analytics Avançado</h3>
+                  <p className="text-notion-body text-notion-gray-600">
                     Análises detalhadas de variações, tendências e otimizações em breve
                   </p>
                 </div>
-              </div>
-            </OriginCard>
+              </NotionCardContent>
+            </NotionCard>
           </TabsContent>
         </Tabs>
 

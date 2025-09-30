@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { NotionCard, NotionCardContent, NotionCardHeader, NotionCardTitle } from "@/components/ui/notion-card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { NotionButton } from "@/components/ui/notion-button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CashFlowChartBase } from "@/components/dashboards/CashFlowChartBase";
 import { FinancialSankeyChart } from "@/components/dashboards/FinancialSankeyChart";
@@ -139,109 +139,109 @@ export default function Projecoes() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Projeções de Fluxo de Caixa</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-notion-h1 text-notion-gray-900">Projeções de Fluxo de Caixa</h1>
+          <p className="text-notion-body text-notion-gray-600">
             Visualize como seu dinheiro se comportará no futuro com base nas decisões de hoje
           </p>
         </div>
         
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant={dateFilters.endDate === format(addDays(new Date(), 30), 'yyyy-MM-dd') ? "default" : "outline"}
+          <NotionButton
+            variant={dateFilters.endDate === format(addDays(new Date(), 30), 'yyyy-MM-dd') ? "primary" : "outline"}
             size="sm"
             onClick={() => handleDatePeriodChange(30)}
           >
             30 dias
-          </Button>
-          <Button
-            variant={dateFilters.endDate === format(addDays(new Date(), 90), 'yyyy-MM-dd') ? "default" : "outline"}
+          </NotionButton>
+          <NotionButton
+            variant={dateFilters.endDate === format(addDays(new Date(), 90), 'yyyy-MM-dd') ? "primary" : "outline"}
             size="sm"
             onClick={() => handleDatePeriodChange(90)}
           >
             90 dias
-          </Button>
-          <Button
-            variant={dateFilters.endDate === format(addDays(new Date(), 180), 'yyyy-MM-dd') ? "default" : "outline"}
+          </NotionButton>
+          <NotionButton
+            variant={dateFilters.endDate === format(addDays(new Date(), 180), 'yyyy-MM-dd') ? "primary" : "outline"}
             size="sm"
             onClick={() => handleDatePeriodChange(180)}
           >
             6 meses
-          </Button>
-          <Button
-            variant={dateFilters.endDate === format(addDays(new Date(), 365), 'yyyy-MM-dd') ? "default" : "outline"}
+          </NotionButton>
+          <NotionButton
+            variant={dateFilters.endDate === format(addDays(new Date(), 365), 'yyyy-MM-dd') ? "primary" : "outline"}
             size="sm"
             onClick={() => handleDatePeriodChange(365)}
           >
             1 ano
-          </Button>
+          </NotionButton>
         </div>
       </div>
 
       {/* Quick Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-l-4 border-l-financial-success liquid-glass-success origin-transition hover-lift-origin">
-          <CardContent className="p-4">
+        <NotionCard variant="hoverable" className="transition-notion border-l-4 border-l-financial-success">
+          <NotionCardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Liquidez Atual</p>
-                <p className="text-2xl font-bold text-financial-success">
+                <p className="text-notion-caption text-notion-gray-600">Liquidez Atual</p>
+                <p className="text-notion-value tabular-nums text-financial-success">
                   {formatCurrency(metrics.liquidityNow)}
                 </p>
               </div>
-              <TrendingUp className="h-6 w-6 text-financial-success-light" />
+              <TrendingUp className="h-6 w-6 text-financial-success" />
             </div>
-          </CardContent>
-        </Card>
+          </NotionCardContent>
+        </NotionCard>
 
-        <Card className="border-l-4 border-l-financial-expense liquid-glass-danger origin-transition hover-lift-origin">
-          <CardContent className="p-4">
+        <NotionCard variant="hoverable" className="transition-notion border-l-4 border-l-financial-expense">
+          <NotionCardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Pior Dia</p>
-                <p className="text-xl font-bold text-financial-expense">
+                <p className="text-notion-caption text-notion-gray-600">Pior Dia</p>
+                <p className="text-notion-h3 text-financial-expense">
                   {formatCurrency(metrics.worstDayBalance)}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-notion-body-sm text-notion-gray-600">
                   {metrics.worstDayDate && format(parseISO(metrics.worstDayDate), 'dd/MM', { locale: ptBR })}
                 </p>
               </div>
-              <TrendingDown className="h-6 w-6 text-financial-expense-light" />
+              <TrendingDown className="h-6 w-6 text-financial-expense" />
             </div>
-          </CardContent>
-        </Card>
+          </NotionCardContent>
+        </NotionCard>
 
-        <Card className={`border-l-4 origin-transition hover-lift-origin ${
-          metrics.riskScore === 'low' ? 'border-l-financial-success liquid-glass-success' :
-          metrics.riskScore === 'medium' ? 'border-l-financial-warning liquid-glass-warning' :
-          'border-l-financial-expense liquid-glass-danger'
+        <NotionCard variant="hoverable" className={`transition-notion border-l-4 ${
+          metrics.riskScore === 'low' ? 'border-l-financial-success' :
+          metrics.riskScore === 'medium' ? 'border-l-financial-warning' :
+          'border-l-financial-expense'
         }`}>
-          <CardContent className="p-4">
+          <NotionCardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Nível de Risco</p>
+                <p className="text-notion-caption text-notion-gray-600">Nível de Risco</p>
                 <div className="flex items-center gap-2">
-                  <span className={`text-lg font-bold ${getRiskColor(metrics.riskScore)}`}>
+                  <span className={`text-notion-h3 ${getRiskColor(metrics.riskScore)}`}>
                     {metrics.riskScore === 'low' ? 'Baixo' : 
                      metrics.riskScore === 'medium' ? 'Médio' : 'Alto'}
                   </span>
                   {getRiskIcon(metrics.riskScore)}
                 </div>
                 {metrics.daysBelowZero > 0 && (
-                  <p className="text-xs text-financial-expense">
+                  <p className="text-notion-body-sm text-financial-expense">
                     {metrics.daysBelowZero} dias negativos
                   </p>
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </NotionCardContent>
+        </NotionCard>
 
-        <Card className="border-l-4 border-l-primary liquid-glass-primary origin-transition hover-lift-origin">
-          <CardContent className="p-4">
+        <NotionCard variant="hoverable" className="transition-notion border-l-4 border-l-notion-blue">
+          <NotionCardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Saldo Final</p>
-                <p className={`text-2xl font-bold ${
+                <p className="text-notion-caption text-notion-gray-600">Saldo Final</p>
+                <p className={`text-notion-value tabular-nums ${
                   metrics.projectedEndBalance >= 0 ? 'text-financial-success' : 'text-financial-expense'
                 }`}>
                   {formatCurrency(metrics.projectedEndBalance)}
@@ -249,25 +249,25 @@ export default function Projecoes() {
                 <div className="flex items-center gap-1 mt-1">
                   {metrics.trendDirection === 'up' && <TrendingUp className="h-3 w-3 text-financial-success" />}
                   {metrics.trendDirection === 'down' && <TrendingDown className="h-3 w-3 text-financial-expense" />}
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-notion-body-sm text-notion-gray-600">
                     Tendência {metrics.trendDirection === 'up' ? 'crescente' : 
                               metrics.trendDirection === 'down' ? 'decrescente' : 'estável'}
                   </span>
                 </div>
               </div>
-              <Calendar className="h-6 w-6 text-primary" />
+              <Calendar className="h-6 w-6 text-notion-blue" />
             </div>
-          </CardContent>
-        </Card>
+          </NotionCardContent>
+        </NotionCard>
       </div>
 
       {/* Main Chart */}
-      <Card className="liquid-glass-strong">
-        <CardHeader>
+      <NotionCard variant="default">
+        <NotionCardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle className="text-xl">Projeção de Fluxo de Caixa</CardTitle>
-              <p className="text-sm text-muted-foreground">
+              <NotionCardTitle>Projeção de Fluxo de Caixa</NotionCardTitle>
+              <p className="text-notion-body-sm text-notion-gray-600">
                 Evolução do saldo ao longo do tempo
               </p>
             </div>
@@ -374,15 +374,15 @@ export default function Projecoes() {
           {includePlans && (
             <div className="mt-4 p-4 border rounded-lg bg-muted/20">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-medium text-muted-foreground">Simular Impacto dos Planos:</h4>
-                <Button 
+                <h4 className="text-notion-body-sm text-notion-gray-600">Simular Impacto dos Planos:</h4>
+                <NotionButton 
                   variant="ghost" 
                   size="sm" 
                   onClick={clearAllPlans}
                   className="text-xs"
                 >
                   Limpar Todos
-                </Button>
+                </NotionButton>
               </div>
               
               <div className="flex flex-wrap gap-2">
@@ -413,9 +413,9 @@ export default function Projecoes() {
               )}
             </div>
           )}
-        </CardHeader>
+        </NotionCardHeader>
 
-        <CardContent>
+        <NotionCardContent>
           {isLoading ? (
             <div className="space-y-4">
               <Skeleton className="h-8 w-full" />
@@ -471,36 +471,36 @@ export default function Projecoes() {
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </NotionCardContent>
+      </NotionCard>
 
       {/* Sankey Chart */}
       {sankeyLoading ? (
-        <Card className="liquid-glass-subtle">
-          <CardHeader>
-            <CardTitle>Fluxo de Recursos por Categoria</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <NotionCard variant="muted">
+          <NotionCardHeader>
+            <NotionCardTitle>Fluxo de Recursos por Categoria</NotionCardTitle>
+          </NotionCardHeader>
+          <NotionCardContent>
             <Skeleton className="h-96 w-full" />
-          </CardContent>
-        </Card>
+          </NotionCardContent>
+        </NotionCard>
       ) : (
         <FinancialSankeyChart data={sankeyData} height={400} />
       )}
 
       {/* Insights Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="liquid-glass-subtle origin-transition hover-lift-origin">
-          <CardHeader>
-            <CardTitle className="text-lg">Insights Financeiros</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <NotionCard variant="hoverable" className="transition-notion">
+          <NotionCardHeader>
+            <NotionCardTitle>Insights Financeiros</NotionCardTitle>
+          </NotionCardHeader>
+          <NotionCardContent className="space-y-4">
             {metrics.daysBelowZero === 0 ? (
               <div className="flex items-center gap-3 p-3 bg-financial-success/10 rounded-lg">
                 <Shield className="h-5 w-5 text-financial-success" />
                 <div>
-                  <p className="font-medium text-financial-success">Excelente!</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-notion-body font-medium text-financial-success">Excelente!</p>
+                  <p className="text-notion-body-sm text-notion-gray-600">
                     Seu saldo permanece positivo durante todo o período
                   </p>
                 </div>
@@ -509,8 +509,8 @@ export default function Projecoes() {
               <div className="flex items-center gap-3 p-3 bg-financial-expense/10 rounded-lg">
                 <AlertTriangle className="h-5 w-5 text-financial-expense" />
                 <div>
-                  <p className="font-medium text-financial-expense">Atenção necessária</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-notion-body font-medium text-financial-expense">Atenção necessária</p>
+                  <p className="text-notion-body-sm text-notion-gray-600">
                     Seu saldo ficará negativo por {metrics.daysBelowZero} dias
                   </p>
                 </div>
@@ -518,31 +518,31 @@ export default function Projecoes() {
             )}
 
             <div className="space-y-2">
-              <p className="text-sm font-medium">Saldo médio do período:</p>
-              <p className="text-lg font-semibold">{formatCurrency(metrics.averageBalance)}</p>
+              <p className="text-notion-body-sm font-medium text-notion-gray-700">Saldo médio do período:</p>
+              <p className="text-notion-h3 text-notion-gray-900">{formatCurrency(metrics.averageBalance)}</p>
             </div>
 
             {metrics.worstDayBalance < 0 && (
               <div className="space-y-2">
-                <p className="text-sm font-medium text-financial-expense">Menor saldo:</p>
-                <p className="text-lg font-semibold text-financial-expense">
+                <p className="text-notion-body-sm font-medium text-financial-expense">Menor saldo:</p>
+                <p className="text-notion-h3 text-financial-expense">
                   {formatCurrency(metrics.worstDayBalance)} em {" "}
                   {format(parseISO(metrics.worstDayDate), 'dd/MM/yyyy', { locale: ptBR })}
                 </p>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </NotionCardContent>
+        </NotionCard>
 
-        <Card className="liquid-glass-subtle origin-transition hover-lift-origin">
-          <CardHeader>
-            <CardTitle className="text-lg">Recomendações</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <NotionCard variant="hoverable" className="transition-notion">
+          <NotionCardHeader>
+            <NotionCardTitle>Recomendações</NotionCardTitle>
+          </NotionCardHeader>
+          <NotionCardContent className="space-y-4">
             {metrics.riskScore === 'high' && (
               <div className="p-3 bg-financial-warning/10 rounded-lg">
-                <p className="font-medium text-financial-warning mb-2">Revisar orçamento</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-notion-body font-medium text-financial-warning mb-2">Revisar orçamento</p>
+                <p className="text-notion-body-sm text-notion-gray-600">
                   Considere reduzir gastos ou aumentar receitas para evitar saldo negativo
                 </p>
               </div>
@@ -550,8 +550,8 @@ export default function Projecoes() {
 
             {metrics.trendDirection === 'up' && metrics.riskScore === 'low' && (
               <div className="p-3 bg-financial-success/10 rounded-lg">
-                <p className="font-medium text-financial-success mb-2">Oportunidade de investimento</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-notion-body font-medium text-financial-success mb-2">Oportunidade de investimento</p>
+                <p className="text-notion-body-sm text-notion-gray-600">
                   Seu saldo está crescendo. Consider alocar excedentes em investimentos
                 </p>
               </div>
@@ -559,14 +559,14 @@ export default function Projecoes() {
 
             {metrics.averageBalance > metrics.liquidityNow * 1.5 && (
               <div className="p-3 bg-blue-50 rounded-lg">
-                <p className="font-medium text-blue-700 mb-2">Reserva de emergência</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-notion-body font-medium text-notion-blue mb-2">Reserva de emergência</p>
+                <p className="text-notion-body-sm text-notion-gray-600">
                   Considere manter pelo menos 3-6 meses de gastos como reserva
                 </p>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </NotionCardContent>
+        </NotionCard>
       </div>
     </div>
   );

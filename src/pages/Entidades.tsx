@@ -3,8 +3,8 @@ import { useInstitutions } from '@/hooks/useInstitutions';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useAccountBalances } from '@/hooks/useAccountBalances';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { OriginCard } from '@/components/ui/origin-card';
-import { Button } from '@/components/ui/button';
+import { NotionCard } from '@/components/ui/notion-card';
+import { NotionButton } from '@/components/ui/notion-button';
 import { AccountsList } from '@/components/entities/AccountsList';
 import { AccountsSummary } from '@/components/entities/AccountsSummary';
 import { InstitutionModal } from '@/components/entities/InstitutionModal';
@@ -67,8 +67,8 @@ const Entidades = () => {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Entidades</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-notion-h1 text-notion-gray-900">Entidades</h1>
+        <p className="text-notion-body text-notion-gray-600 mt-2">
           Gerencie suas instituições, contas e categorias
         </p>
       </div>
@@ -107,32 +107,30 @@ const Entidades = () => {
         <TabsContent value="institutions" className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold">Instituições</h2>
-              <p className="text-muted-foreground">
+              <h2 className="text-notion-h2 text-notion-gray-900">Instituições</h2>
+              <p className="text-notion-body text-notion-gray-600">
                 Adicione e gerencie as instituições financeiras
               </p>
             </div>
-            <Button onClick={() => setShowInstitutionModal(true)}>
+            <NotionButton onClick={() => setShowInstitutionModal(true)}>
               Nova Instituição
-            </Button>
+            </NotionButton>
           </div>
 
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {institutions.map((institution, index) => (
-              <OriginCard 
+            {institutions.map((institution) => (
+              <NotionCard 
                 key={institution.id} 
-                glass 
-                hover
-                className="liquid-glass-primary animate-fade-in"
-                style={{ animationDelay: `${index * 50}ms` }}
+                variant="hoverable"
+                className="transition-notion"
               >
                 <div className="p-6">
-                  <h3 className="font-semibold text-lg mb-2">{institution.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <h3 className="text-notion-h3 text-notion-gray-900 mb-2">{institution.name}</h3>
+                  <p className="text-notion-body-sm text-notion-gray-600 mb-4">
                     Criado em: {new Date(institution.created_at).toLocaleDateString()}
                   </p>
                   <div className="flex justify-end gap-2">
-                    <Button
+                    <NotionButton
                       variant="outline"
                       size="sm"
                       onClick={() => {
@@ -141,17 +139,17 @@ const Entidades = () => {
                       }}
                     >
                       Editar
-                    </Button>
-                    <Button
-                      variant="destructive"
+                    </NotionButton>
+                    <NotionButton
+                      variant="danger"
                       size="sm"
                       onClick={() => deleteInstitution(institution.id)}
                     >
                       Excluir
-                    </Button>
+                    </NotionButton>
                   </div>
                 </div>
-              </OriginCard>
+              </NotionCard>
             ))}
           </div>
         </TabsContent>

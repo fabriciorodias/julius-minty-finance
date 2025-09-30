@@ -1,32 +1,31 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { NotionCard, NotionCardContent, NotionCardHeader, NotionCardTitle } from "@/components/ui/notion-card";
+import { Construction } from "lucide-react";
 
 const Tutoriais = () => {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-mint-text-primary">Tutoriais</h1>
-          <p className="text-mint-text-secondary mt-1 font-normal">
-            Aprenda a usar o Julius
-          </p>
-        </div>
+      <div>
+        <h1 className="text-notion-h1 text-notion-gray-900">Tutoriais</h1>
+        <p className="text-notion-body text-notion-gray-600 mt-2">
+          Aprenda a usar o Julius
+        </p>
       </div>
 
-      <Card className="mint-card mint-gradient-light">
-        <CardHeader>
-          <CardTitle className="text-mint-text-primary flex items-center font-bold">
-            <span className="material-icons text-primary mr-2">construction</span>
+      <NotionCard variant="muted">
+        <NotionCardHeader>
+          <NotionCardTitle className="flex items-center gap-2">
+            <Construction className="h-5 w-5 text-notion-blue" />
             Módulo em Desenvolvimento
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-mint-text-secondary font-normal">
+          </NotionCardTitle>
+        </NotionCardHeader>
+        <NotionCardContent>
+          <p className="text-notion-body text-notion-gray-600">
             A seção de Tutoriais está sendo desenvolvida. Aqui você encontrará guias completos 
             para aproveitar ao máximo todas as funcionalidades do Julius.
           </p>
-        </CardContent>
-      </Card>
+        </NotionCardContent>
+      </NotionCard>
     </div>
   );
 };

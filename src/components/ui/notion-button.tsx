@@ -8,7 +8,7 @@ const notionButtonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-notion-blue text-white hover:bg-notion-blue-hover shadow-notion-sm",
+        primary: "bg-blue-600 text-white hover:bg-blue-700 shadow-sm font-medium",
         secondary: "bg-notion-gray-100 text-notion-gray-900 hover:bg-notion-gray-200",
         ghost: "text-notion-gray-700 hover:bg-notion-gray-100",
         danger: "bg-notion-danger text-white hover:bg-notion-danger-hover shadow-notion-sm",

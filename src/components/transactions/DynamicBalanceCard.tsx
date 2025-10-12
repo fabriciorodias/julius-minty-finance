@@ -147,37 +147,36 @@ export function DynamicBalanceCard({
     <TooltipProvider>
       <Card className={`${getCardGradient()} transition-all duration-200 hover:shadow-md focus-within:ring-2 focus-within:ring-primary/20`}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground/90">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <CardTitle className="text-sm font-medium text-muted-foreground/90 truncate">
               {getCardTitle()}
             </CardTitle>
             <Tooltip>
               <TooltipTrigger>
-                <Info className="h-3 w-3 text-muted-foreground/60 hover:text-muted-foreground transition-colors" />
+                <Info className="h-3 w-3 text-muted-foreground/60 hover:text-muted-foreground transition-colors flex-shrink-0" />
               </TooltipTrigger>
-              <TooltipContent className="z-50 bg-popover">
-                <p className="text-xs max-w-xs">
-                  {getTooltipText()}
-                </p>
+              <TooltipContent className="z-50 bg-popover max-w-xs">
+                <p className="text-xs">{getCardTitle()}</p>
+                <p className="text-xs mt-1">{getTooltipText()}</p>
               </TooltipContent>
             </Tooltip>
           </div>
-          <div className="opacity-80">
+          <div className="opacity-80 flex-shrink-0">
             {getIcon()}
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 px-4 pb-4">
           {/* Saldo Principal */}
           {isLoadingProvisioned ? (
             <Skeleton className="h-8 w-40" />
           ) : (
-            <div className={`text-2xl font-bold tracking-tight ${getBalanceColor(completedBalance)}`}>
+            <div className={`text-2xl font-bold tracking-tight truncate ${getBalanceColor(completedBalance)}`}>
               {formatCurrency(completedBalance)}
             </div>
           )}
           
           {/* Saldo Projetado */}
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 text-xs flex-wrap">
             {isLoadingProvisioned ? (
               <Skeleton className="h-4 w-48" />
             ) : (
@@ -212,7 +211,7 @@ export function DynamicBalanceCard({
           {!isLoadingProvisioned && (pendingExpense > 0 || pendingIncome > 0) && (
             <div className="space-y-2">
               {pendingExpense > 0 && (
-                <div className="flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-2 text-xs flex-wrap">
                   <span className="text-muted-foreground/80">
                     Débitos a ocorrer:
                   </span>
@@ -233,7 +232,7 @@ export function DynamicBalanceCard({
               )}
               
               {pendingIncome > 0 && (
-                <div className="flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-2 text-xs flex-wrap">
                   <span className="text-muted-foreground/80">
                     Créditos previstos:
                   </span>
@@ -257,7 +256,7 @@ export function DynamicBalanceCard({
 
           {/* Mini informações em badges - mantidas para compatibilidade visual */}
           {!isLoadingProvisioned && (pendingIncome > 0 || pendingExpense > 0) && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 max-w-full">
               {pendingIncome > 0 && (
                 <Badge 
                   variant="outline" 

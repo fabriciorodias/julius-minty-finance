@@ -17,7 +17,6 @@ import { AccountsFilterPanel } from '@/components/transactions/AccountsFilterPan
 import { TagsFilter } from '@/components/transactions/TagsFilter';
 import { QuickDateFilters } from '@/components/transactions/QuickDateFilters';
 import { FiltersMobileDrawer } from '@/components/transactions/FiltersMobileDrawer';
-import { AnxiousBalancePanel } from '@/components/transactions/AnxiousBalancePanel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Upload, CreditCard, AlertTriangle, TrendingUp, Plus, MoreHorizontal, Filter, Repeat, ArrowRightLeft, Brain, Loader2 } from 'lucide-react';
@@ -277,15 +276,33 @@ export default function Lancamentos() {
               </p>
             </div>
             
-            <div className="flex items-center gap-3">
-              {/* Recurring Transactions Button */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Secondary Actions */}
               <NotionButton 
                 onClick={() => window.location.href = '/lancamentos/recorrentes'} 
                 variant="outline"
                 size="md"
               >
-                <Repeat className="h-4 w-4 mr-2" />
-                Contas Recorrentes
+                <Repeat className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">Recorrentes</span>
+              </NotionButton>
+              
+              <NotionButton 
+                onClick={() => window.location.href = '/importar'} 
+                variant="secondary"
+                size="md"
+              >
+                <Upload className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">Importar</span>
+              </NotionButton>
+              
+              <NotionButton 
+                onClick={() => setIsTransferModalOpen(true)} 
+                variant="secondary"
+                size="md"
+              >
+                <ArrowRightLeft className="h-4 w-4" />
+                <span className="hidden sm:inline ml-2">Transferência</span>
               </NotionButton>
               
               {/* Primary CTA */}
@@ -294,34 +311,26 @@ export default function Lancamentos() {
                 size="md"
                 variant="primary"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Lançamento
+                <Plus className="h-4 w-4" />
+                <span className="ml-2">Novo</span>
               </NotionButton>
               
-              {/* More Actions Menu */}
+              {/* More Actions Menu - Apenas opções menos usadas */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <NotionButton variant="outline" size="md">
-                    <MoreHorizontal className="h-4 w-4 mr-2" />
-                    Mais
+                    <MoreHorizontal className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-2">Mais</span>
                   </NotionButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 z-50 bg-white shadow-notion-lg border border-notion-gray-200">
-                  <DropdownMenuItem onClick={() => window.location.href = '/importar'} className="text-notion-body-sm">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Importar Extratos/Faturas
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setIsInvoiceModalOpen(true)} className="text-notion-body-sm">
                     <CreditCard className="h-4 w-4 mr-2" />
                     Gerenciar Faturas
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsTransferModalOpen(true)} className="text-notion-body-sm">
-                    <ArrowRightLeft className="h-4 w-4 mr-2" />
-                    Nova Transferência
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setIsInstallmentModalOpen(true)} className="text-notion-body-sm">
                     <TrendingUp className="h-4 w-4 mr-2" />
-                    Lançamento Parcelado/Recorrente
+                    Parcelado/Recorrente
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setIsCashFlowModalOpen(true)} className="text-notion-body-sm">
                     <TrendingUp className="h-4 w-4 mr-2" />
@@ -337,8 +346,7 @@ export default function Lancamentos() {
                   size="md"
                   onClick={() => setIsMobileFiltersOpen(true)}
                 >
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filtros
+                  <Filter className="h-4 w-4" />
                 </NotionButton>
               )}
             </div>
@@ -416,12 +424,6 @@ export default function Lancamentos() {
 
           {/* Right Panel - Main Content */}
           <div className={`${isMobile ? 'col-span-1' : 'lg:col-span-3'} space-y-6`}>
-            {/* New Anxious Balance Panel */}
-            <AnxiousBalancePanel
-              selectedAccountIds={selectedAccountIds}
-              dateFilters={dateFilters}
-            />
-
             {/* Transactions List */}
             <TransactionsList
               transactions={filteredTransactions}

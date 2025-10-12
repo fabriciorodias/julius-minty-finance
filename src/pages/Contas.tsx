@@ -7,6 +7,7 @@ import { Plus } from 'lucide-react';
 import { AccountsList } from '@/components/entities/AccountsList';
 import { AccountsSummary } from '@/components/entities/AccountsSummary';
 import { InstitutionModal } from '@/components/entities/InstitutionModal';
+import { AccountsQuickFilters, AccountFilter } from '@/components/entities/AccountsQuickFilters';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useInstitutions } from '@/hooks/useInstitutions';
 import { useAccountBalances } from '@/hooks/useAccountBalances';
@@ -14,6 +15,7 @@ import { useAccountBalances } from '@/hooks/useAccountBalances';
 export default function Contas() {
   console.log('Contas: Component rendering...');
   const [showInstitutionModal, setShowInstitutionModal] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<AccountFilter>('all');
   
   const { 
     accounts, 
@@ -71,7 +73,14 @@ export default function Contas() {
             isLoading={accountsLoading}
           />
           
+          <AccountsQuickFilters
+            accounts={accounts}
+            activeFilter={activeFilter}
+            onFilterChange={setActiveFilter}
+          />
+          
           <AccountsList
+            activeFilter={activeFilter}
             accounts={accounts}
             institutions={institutions}
             accountBalances={balances}

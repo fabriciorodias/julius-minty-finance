@@ -32,6 +32,7 @@ interface AccountsListProps {
   isUpdating?: boolean;
   isDeleting?: boolean;
   isReconciling?: boolean;
+  activeFilter?: string;
 }
 
 function AccountInitialBalanceInfo({ accountId }: { accountId: string }) {
@@ -167,7 +168,8 @@ export function AccountsList({
   isCreating,
   isUpdating,
   isDeleting,
-  isReconciling
+  isReconciling,
+  activeFilter = 'all'
 }: AccountsListProps) {
   const [showModal, setShowModal] = useState(false);
   const [showReconcileModal, setShowReconcileModal] = useState(false);
@@ -299,7 +301,39 @@ export function AccountsList({
     }
   };
 
-  const { assetGroups, liabilityGroups, assetAccounts, liabilityAccounts } = getAccountGroups(accounts);
+  // Apply active filter
+  const getHoursSinceReconciliation = (reconciledAt: string) => {
+    const reconciledDate = new Date(reconciledAt);
+    const now = new Date();
+    return Math.floor((now.getTime() - reconciledDate.getTime()) / (1000 * 60 * 60));
+  };
+
+  const filterAccount = (account: Account): boolean => {
+    switch (activeFilter) {
+      case 'all':
+        return account.is_active;
+      case 'recently_reconciled':
+        if (!account.last_reconciled_at) return false;
+        const hoursDiff = getHoursSinceReconciliation(account.last_reconciled_at);
+        return hoursDiff <= 72 && account.is_active; // 3 days = 72 hours
+      case 'stale_reconciliation':
+        if (!account.last_reconciled_at) return false;
+        const staleHoursDiff = getHoursSinceReconciliation(account.last_reconciled_at);
+        return staleHoursDiff > settings.alertThresholdHours && account.is_active;
+      case 'never_reconciled':
+        return !account.last_reconciled_at && account.is_active;
+      case 'credit_cards':
+        return account.subtype === 'credit_card' && account.is_active;
+      case 'inactive':
+        return !account.is_active;
+      default:
+        return true;
+    }
+  };
+
+  const filteredAccounts = accounts.filter(filterAccount);
+
+  const { assetGroups, liabilityGroups, assetAccounts, liabilityAccounts } = getAccountGroups(filteredAccounts);
 
   // Calcula as intensidades de cor para todos os saldos
   const balanceMap = accountBalances.reduce((acc, balance) => {

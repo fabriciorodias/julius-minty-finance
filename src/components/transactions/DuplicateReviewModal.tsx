@@ -36,22 +36,26 @@ export function DuplicateReviewModal({
   const [totalDeleted, setTotalDeleted] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
   const { deleteTransactions } = useDeleteTransactions();
 
   const currentGroup = duplicateGroups[currentGroupIndex];
 
-  // Reset state when modal closes
+  // Reset state when modal closes with delay to allow animation
   useEffect(() => {
-    if (!isOpen) {
-      setCurrentGroupIndex(0);
-      setSelectedIds(new Set());
-      setProcessedGroups(0);
-      setTotalDeleted(0);
-      setIsComplete(false);
-      setIsDeleting(false);
+    if (!isOpen && !isClosing) {
+      const timer = setTimeout(() => {
+        setCurrentGroupIndex(0);
+        setSelectedIds(new Set());
+        setProcessedGroups(0);
+        setTotalDeleted(0);
+        setIsComplete(false);
+        setIsDeleting(false);
+      }, 150);
+      return () => clearTimeout(timer);
     }
-  }, [isOpen]);
+  }, [isOpen, isClosing]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -113,9 +117,15 @@ export function DuplicateReviewModal({
     }
   };
 
+  const handleClose = () => {
+    setIsClosing(true);
+    onClose();
+    setTimeout(() => setIsClosing(false), 200);
+  };
+
   const handleFinish = () => {
     onComplete();
-    onClose();
+    handleClose();
     if (totalDeleted > 0) {
       toast({
         title: "Duplicatas removidas!",
@@ -130,172 +140,170 @@ export function DuplicateReviewModal({
     return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400';
   };
 
-  if (isComplete) {
-    return (
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Revisão Completa</DialogTitle>
-            <DialogDescription>
-              Resumo da análise de duplicatas
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col items-center gap-4 py-8">
-            <div className="p-4 bg-green-100 dark:bg-green-900/20 rounded-full">
-              <CheckCircle className="h-12 w-12 text-green-600 dark:text-green-400" />
-            </div>
-            <div className="text-center">
-              <h3 className="text-lg font-semibold mb-2">Tudo certo!</h3>
-              <p className="text-sm text-muted-foreground">
-                {processedGroups} grupo(s) revisado(s)
-              </p>
-              {totalDeleted > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  {totalDeleted} duplicata(s) excluída(s)
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex justify-end">
-            <NotionButton onClick={handleFinish}>
-              Concluir
-            </NotionButton>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  if (!currentGroup || !duplicateGroups.length) return null;
-
-  const canDelete = selectedIds.size > 0 && selectedIds.size < currentGroup.transactions.length;
+  const canDelete = currentGroup && selectedIds.size > 0 && selectedIds.size < currentGroup.transactions.length;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle>Revisar Duplicatas</DialogTitle>
-            <Badge variant="outline">
-              Grupo {currentGroupIndex + 1} de {duplicateGroups.length}
-            </Badge>
-          </div>
-          <DialogDescription>
-            Selecione os lançamentos duplicados para excluir
-          </DialogDescription>
-        </DialogHeader>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) handleClose();
+    }}>
+      <DialogContent className={isComplete ? "sm:max-w-md" : "sm:max-w-4xl max-h-[90vh] overflow-y-auto"}>
+        {isComplete ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Revisão Completa</DialogTitle>
+              <DialogDescription>
+                Resumo da análise de duplicatas
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col items-center gap-4 py-8">
+              <div className="p-4 bg-green-100 dark:bg-green-900/20 rounded-full">
+                <CheckCircle className="h-12 w-12 text-green-600 dark:text-green-400" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold mb-2">Tudo certo!</h3>
+                <p className="text-sm text-muted-foreground">
+                  {processedGroups} grupo(s) revisado(s)
+                </p>
+                {totalDeleted > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {totalDeleted} duplicata(s) excluída(s)
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <NotionButton onClick={handleFinish}>
+                Concluir
+              </NotionButton>
+            </div>
+          </>
+        ) : currentGroup ? (
+          <>
+            <DialogHeader>
+              <div className="flex items-center justify-between">
+                <DialogTitle>Revisar Duplicatas</DialogTitle>
+                <Badge variant="outline">
+                  Grupo {currentGroupIndex + 1} de {duplicateGroups.length}
+                </Badge>
+              </div>
+              <DialogDescription>
+                Selecione os lançamentos duplicados para excluir
+              </DialogDescription>
+            </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          {/* Informações do grupo */}
-          <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm">
-            <Badge variant="outline" className="flex items-center gap-1">
-              🏦 {currentGroup.account_name}
-            </Badge>
-            <Badge className={getConfidenceColor(currentGroup.confidence)}>
-              Confiança: {currentGroup.confidence}%
-            </Badge>
-            <Badge variant="outline">
-              {currentGroup.days_apart} dias de diferença
-            </Badge>
-          </div>
+            <div className="space-y-4 py-4">
+              {/* Informações do grupo */}
+              <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm">
+                <Badge variant="outline" className="flex items-center gap-1">
+                  🏦 {currentGroup.account_name}
+                </Badge>
+                <Badge className={getConfidenceColor(currentGroup.confidence)}>
+                  Confiança: {currentGroup.confidence}%
+                </Badge>
+                <Badge variant="outline">
+                  {currentGroup.days_apart} dias de diferença
+                </Badge>
+              </div>
 
-          {/* Lista de transações */}
-          <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
-            {currentGroup.transactions.map((tx) => (
-              <NotionCard
-                key={tx.id}
-                className={`cursor-pointer transition-all ${
-                  selectedIds.has(tx.id)
-                    ? 'border-destructive bg-destructive/5'
-                    : 'hover:border-border'
-                }`}
-                onClick={() => handleToggleTransaction(tx.id)}
+              {/* Lista de transações */}
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
+                {currentGroup.transactions.map((tx) => (
+                  <NotionCard
+                    key={tx.id}
+                    className={`cursor-pointer transition-all ${
+                      selectedIds.has(tx.id)
+                        ? 'border-destructive bg-destructive/5'
+                        : 'hover:border-border'
+                    }`}
+                    onClick={() => handleToggleTransaction(tx.id)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        checked={selectedIds.has(tx.id)}
+                        onCheckedChange={() => handleToggleTransaction(tx.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-4 mb-2">
+                          <div className="font-medium text-sm break-words flex-1">
+                            <span className="text-muted-foreground">
+                              {format(parseISO(tx.event_date), 'dd/MM/yyyy', { locale: ptBR })}
+                            </span>
+                            {' • '}
+                            <span>{tx.description}</span>
+                          </div>
+                          <div className="font-semibold text-sm whitespace-nowrap shrink-0">
+                            {formatCurrency(tx.amount)}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 text-xs text-muted-foreground flex-wrap">
+                          {tx.category_name && (
+                            <span>📂 {tx.category_name}</span>
+                          )}
+                          {tx.counterparty_name && (
+                            <span>👤 {tx.counterparty_name}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </NotionCard>
+                ))}
+              </div>
+
+              {/* Dica */}
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                <p className="text-sm text-muted-foreground">
+                  💡 <strong>Dica:</strong> Selecione os lançamentos duplicados que deseja excluir.
+                  Geralmente, o mais recente ou importado é o correto. Ao menos um lançamento deve permanecer.
+                </p>
+              </div>
+            </div>
+
+            {/* Ações */}
+            <div className="flex items-center justify-between pt-4 border-t">
+              <NotionButton
+                variant="ghost"
+                onClick={handleKeepAll}
               >
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    checked={selectedIds.has(tx.id)}
-                    onCheckedChange={() => handleToggleTransaction(tx.id)}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-4 mb-2">
-                      <div className="font-medium text-sm break-words flex-1">
-                        <span className="text-muted-foreground">
-                          {format(parseISO(tx.event_date), 'dd/MM/yyyy', { locale: ptBR })}
-                        </span>
-                        {' • '}
-                        <span>{tx.description}</span>
-                      </div>
-                      <div className="font-semibold text-sm whitespace-nowrap shrink-0">
-                        {formatCurrency(tx.amount)}
-                      </div>
-                    </div>
-                    <div className="flex gap-2 text-xs text-muted-foreground flex-wrap">
-                      {tx.category_name && (
-                        <span>📂 {tx.category_name}</span>
-                      )}
-                      {tx.counterparty_name && (
-                        <span>👤 {tx.counterparty_name}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </NotionCard>
-            ))}
-          </div>
+                Manter Todos
+              </NotionButton>
 
-          {/* Dica */}
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
-            <p className="text-sm text-muted-foreground">
-              💡 <strong>Dica:</strong> Selecione os lançamentos duplicados que deseja excluir.
-              Geralmente, o mais recente ou importado é o correto. Ao menos um lançamento deve permanecer.
-            </p>
-          </div>
-        </div>
+              <div className="flex items-center gap-2">
+                <NotionButton
+                  variant="outline"
+                  onClick={handlePrevious}
+                  disabled={currentGroupIndex === 0}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Anterior
+                </NotionButton>
 
-        {/* Ações */}
-        <div className="flex items-center justify-between pt-4 border-t">
-          <NotionButton
-            variant="ghost"
-            onClick={handleKeepAll}
-          >
-            Manter Todos
-          </NotionButton>
-
-          <div className="flex items-center gap-2">
-            <NotionButton
-              variant="outline"
-              onClick={handlePrevious}
-              disabled={currentGroupIndex === 0}
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Anterior
-            </NotionButton>
-
-            <NotionButton
-              onClick={handleNext}
-              disabled={!canDelete || isDeleting}
-              title={!canDelete && selectedIds.size > 0 ? 'Ao menos um lançamento deve permanecer' : ''}
-            >
-              {isDeleting ? (
-                <>
-                  <span className="animate-spin mr-2">⏳</span>
-                  Excluindo...
-                </>
-              ) : selectedIds.size > 0 ? (
-                <>
-                  Excluir ({selectedIds.size})
-                  {currentGroupIndex < duplicateGroups.length - 1 && <ChevronRight className="h-4 w-4 ml-1" />}
-                </>
-              ) : (
-                <>
-                  Próximo
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </>
-              )}
-            </NotionButton>
-          </div>
-        </div>
+                <NotionButton
+                  onClick={handleNext}
+                  disabled={!canDelete || isDeleting}
+                  title={!canDelete && selectedIds.size > 0 ? 'Ao menos um lançamento deve permanecer' : ''}
+                >
+                  {isDeleting ? (
+                    <>
+                      <span className="animate-spin mr-2">⏳</span>
+                      Excluindo...
+                    </>
+                  ) : selectedIds.size > 0 ? (
+                    <>
+                      Excluir ({selectedIds.size})
+                      {currentGroupIndex < duplicateGroups.length - 1 && <ChevronRight className="h-4 w-4 ml-1" />}
+                    </>
+                  ) : (
+                    <>
+                      Próximo
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </>
+                  )}
+                </NotionButton>
+              </div>
+            </div>
+          </>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

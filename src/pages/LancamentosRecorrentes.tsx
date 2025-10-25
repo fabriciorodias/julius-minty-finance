@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useRecurringTransactions } from "@/hooks/useRecurringTransactions";
+import { useAccounts } from "@/hooks/useAccounts";
 import { RecurringTransactionCard } from "@/components/transactions/RecurringTransactionCard";
 import { RecurringTransactionCardCompact } from "@/components/transactions/RecurringTransactionCardCompact";
 import { RecurringTransactionsFilters } from "@/components/transactions/RecurringTransactionsFilters";
@@ -24,10 +25,12 @@ export default function LancamentosRecorrentes() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dueDateFilter, setDueDateFilter] = useState('all');
+  const [accountFilter, setAccountFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('compact');
   
   const { data: recurringTransactions = [], isLoading, error } = useRecurringTransactions();
   const { data: sankeyData, isLoading: isSankeyLoading } = useRecurringSankey();
+  const { accounts = [] } = useAccounts();
 
   // Filtered transactions
   const filteredTransactions = useMemo(() => {
@@ -71,9 +74,14 @@ export default function LancamentosRecorrentes() {
         }
       }
 
+      // Account filter
+      if (accountFilter !== 'all' && transaction.account_id !== accountFilter) {
+        return false;
+      }
+
       return true;
     });
-  }, [recurringTransactions, searchTerm, typeFilter, statusFilter, dueDateFilter]);
+  }, [recurringTransactions, searchTerm, typeFilter, statusFilter, dueDateFilter, accountFilter]);
 
   // Statistics for filters and display
   const stats = useMemo(() => {
@@ -278,6 +286,9 @@ export default function LancamentosRecorrentes() {
               onStatusFilterChange={setStatusFilter}
               dueDateFilter={dueDateFilter}
               onDueDateFilterChange={setDueDateFilter}
+              accountFilter={accountFilter}
+              onAccountFilterChange={setAccountFilter}
+              accounts={accounts}
               viewMode={viewMode}
               onViewModeChange={setViewMode}
               totalCount={recurringTransactions.length}
@@ -298,7 +309,7 @@ export default function LancamentosRecorrentes() {
                 ))}
               </div>
             ) : filteredTransactions.length === 0 ? (
-              searchTerm || typeFilter !== 'all' || statusFilter !== 'all' || dueDateFilter !== 'all' ? (
+              searchTerm || typeFilter !== 'all' || statusFilter !== 'all' || dueDateFilter !== 'all' || accountFilter !== 'all' ? (
                 <NotionCard variant="muted" className="transition-notion">
                   <div className="p-12">
                     <div className="text-center">
@@ -316,6 +327,7 @@ export default function LancamentosRecorrentes() {
                           setTypeFilter('all');
                           setStatusFilter('all');
                           setDueDateFilter('all');
+                          setAccountFilter('all');
                         }}
                       >
                         Limpar filtros

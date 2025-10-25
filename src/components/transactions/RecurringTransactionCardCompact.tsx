@@ -134,8 +134,8 @@ export function RecurringTransactionCardCompact({
                 {transaction.template_name}
               </h3>
 
-              {/* Info Row: Amount + Due Date + Category */}
-              <div className="flex items-center gap-4 text-sm">
+              {/* Info Row: Amount + Due Date + Category + Account */}
+              <div className="flex items-center gap-4 text-sm flex-wrap">
                 <div className="flex items-center gap-1">
                   <span className="font-semibold text-foreground">
                     {formatCurrency(transaction.expected_amount)}
@@ -159,9 +159,17 @@ export function RecurringTransactionCardCompact({
                   </span>
                 </div>
 
-                <span className="text-muted-foreground text-xs truncate">
-                  {transaction.category_name}
-                </span>
+                {transaction.category_name && (
+                  <span className="text-muted-foreground text-xs truncate">
+                    📂 {transaction.category_name}
+                  </span>
+                )}
+
+                {transaction.account_name && (
+                  <span className="text-muted-foreground text-xs truncate">
+                    🏦 {transaction.account_name}
+                  </span>
+                )}
               </div>
 
               {/* Variance Badge (if significant) */}

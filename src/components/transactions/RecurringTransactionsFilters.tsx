@@ -20,6 +20,9 @@ interface RecurringTransactionsFiltersProps {
   onStatusFilterChange: (value: string) => void;
   dueDateFilter: string;
   onDueDateFilterChange: (value: string) => void;
+  accountFilter: string;
+  onAccountFilterChange: (value: string) => void;
+  accounts: Array<{ id: string; name: string }>;
   viewMode: 'compact' | 'detailed';
   onViewModeChange: (mode: 'compact' | 'detailed') => void;
   totalCount: number;
@@ -38,6 +41,9 @@ export function RecurringTransactionsFilters({
   onStatusFilterChange,
   dueDateFilter,
   onDueDateFilterChange,
+  accountFilter,
+  onAccountFilterChange,
+  accounts,
   viewMode,
   onViewModeChange,
   totalCount,
@@ -46,13 +52,14 @@ export function RecurringTransactionsFilters({
   expenseCount,
   overdueCount
 }: RecurringTransactionsFiltersProps) {
-  const hasActiveFilters = searchTerm || typeFilter !== 'all' || statusFilter !== 'all' || dueDateFilter !== 'all';
+  const hasActiveFilters = searchTerm || typeFilter !== 'all' || statusFilter !== 'all' || dueDateFilter !== 'all' || accountFilter !== 'all';
 
   const clearAllFilters = () => {
     onSearchChange('');
     onTypeFilterChange('all');
     onStatusFilterChange('all');
     onDueDateFilterChange('all');
+    onAccountFilterChange('all');
   };
 
   return (
@@ -134,6 +141,20 @@ export function RecurringTransactionsFilters({
             <SelectItem value="overdue">Em atraso</SelectItem>
             <SelectItem value="next-7">Próximos 7 dias</SelectItem>
             <SelectItem value="next-30">Próximos 30 dias</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={accountFilter} onValueChange={onAccountFilterChange}>
+          <SelectTrigger className="w-auto min-w-[160px]">
+            <SelectValue placeholder="Conta" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as contas</SelectItem>
+            {accounts.map(account => (
+              <SelectItem key={account.id} value={account.id}>
+                {account.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 

@@ -102,7 +102,7 @@ export function AccountModal({
     }
 
     // Tratar saldo inicial
-    if (formData.initial_balance_numeric) {
+    if (formData.initial_balance_numeric !== null && formData.initial_balance_numeric !== undefined) {
       const initialBalanceValue = formData.initial_balance_numeric;
       
       // Para passivos, garantir que o valor seja negativo

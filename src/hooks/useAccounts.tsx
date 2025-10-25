@@ -129,7 +129,7 @@ export function useAccounts(institutionId?: string) {
       console.log('Account created successfully:', newAccount);
 
       // If there's an initial balance, insert it into account_initial_balances
-      if (initial_balance && balance_date) {
+      if ((initial_balance !== null && initial_balance !== undefined) && balance_date) {
         // Convert Date object to YYYY-MM-DD format
         const formattedDate = balance_date instanceof Date 
           ? balance_date.toISOString().split('T')[0]
@@ -225,7 +225,7 @@ export function useAccounts(institutionId?: string) {
           ? balance_date.toISOString().split('T')[0]
           : balance_date;
 
-        if (initial_balance && formattedDate) {
+        if ((initial_balance !== null && initial_balance !== undefined) && formattedDate) {
           // Check if initial balance already exists
           console.log('Checking if initial balance exists for account:', id);
           const { data: existingBalance } = await supabase
@@ -283,8 +283,8 @@ export function useAccounts(institutionId?: string) {
 
             console.log('Initial balance inserted successfully');
           }
-        } else if (initial_balance === 0 || !initial_balance) {
-          // Remove initial balance if set to 0 or empty
+        } else if (initial_balance === null || initial_balance === undefined) {
+          // Remove initial balance if explicitly cleared
           console.log('Removing initial balance for account:', id);
 
           const { error: deleteError } = await supabase

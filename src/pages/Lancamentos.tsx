@@ -19,7 +19,10 @@ import { QuickDateFilters } from '@/components/transactions/QuickDateFilters';
 import { FiltersMobileDrawer } from '@/components/transactions/FiltersMobileDrawer';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Upload, CreditCard, AlertTriangle, TrendingUp, Plus, MoreHorizontal, Filter, Repeat, ArrowRightLeft, Brain, Loader2 } from 'lucide-react';
+import { Upload, CreditCard, AlertTriangle, TrendingUp, Plus, MoreHorizontal, Filter, Repeat, ArrowRightLeft, Brain, Loader2, Copy } from 'lucide-react';
+import { FindDuplicatesModal } from '@/components/transactions/FindDuplicatesModal';
+import { DuplicateReviewModal } from '@/components/transactions/DuplicateReviewModal';
+import { DuplicateGroup } from '@/hooks/useFindDuplicates';
 import { TransferModal } from '@/components/transactions/TransferModal';
 import { useTransfers, CreateTransferData } from '@/hooks/useTransfers';
 import { useQueryClient } from '@tanstack/react-query';
@@ -60,6 +63,11 @@ export default function Lancamentos() {
   const [isAICategorizeModalOpen, setIsAICategorizeModalOpen] = useState(false);
   const [uncategorizedTransactions, setUncategorizedTransactions] = useState<TransactionWithRelations[]>([]);
   const [isProcessingAI, setIsProcessingAI] = useState(false);
+
+  // Duplicate Detection state
+  const [isFindDuplicatesModalOpen, setIsFindDuplicatesModalOpen] = useState(false);
+  const [isDuplicateReviewModalOpen, setIsDuplicateReviewModalOpen] = useState(false);
+  const [duplicateGroups, setDuplicateGroups] = useState<DuplicateGroup[]>([]);
 
   const { categories } = useCategories();
   const { accounts } = useAccounts();
@@ -208,6 +216,19 @@ export default function Lancamentos() {
     }
   };
 
+  // Handle duplicate detection
+  const handleDuplicatesFound = (groups: DuplicateGroup[]) => {
+    setDuplicateGroups(groups);
+    setIsFindDuplicatesModalOpen(false);
+    setIsDuplicateReviewModalOpen(true);
+  };
+
+  const handleDuplicateReviewComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+    setIsDuplicateReviewModalOpen(false);
+    setDuplicateGroups([]);
+  };
+
   // Handle row click to open details
   const handleRowClick = (transaction: TransactionWithRelations) => {
     setDetailsTransaction(transaction);
@@ -324,6 +345,10 @@ export default function Lancamentos() {
                   </NotionButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 z-50 bg-white shadow-notion-lg border border-notion-gray-200">
+                  <DropdownMenuItem onClick={() => setIsFindDuplicatesModalOpen(true)} className="text-notion-body-sm">
+                    <Copy className="h-4 w-4 mr-2" />
+                    Encontrar Duplicatas
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setIsInvoiceModalOpen(true)} className="text-notion-body-sm">
                     <CreditCard className="h-4 w-4 mr-2" />
                     Gerenciar Faturas
@@ -527,6 +552,20 @@ export default function Lancamentos() {
         transactions={uncategorizedTransactions}
         categories={categories}
         onApplyCategorizations={handleApplyCategorizations}
+      />
+
+      {/* Duplicate Detection Modals */}
+      <FindDuplicatesModal
+        isOpen={isFindDuplicatesModalOpen}
+        onClose={() => setIsFindDuplicatesModalOpen(false)}
+        onDuplicatesFound={handleDuplicatesFound}
+      />
+
+      <DuplicateReviewModal
+        isOpen={isDuplicateReviewModalOpen}
+        onClose={() => setIsDuplicateReviewModalOpen(false)}
+        duplicateGroups={duplicateGroups}
+        onComplete={handleDuplicateReviewComplete}
       />
     </div>
   );

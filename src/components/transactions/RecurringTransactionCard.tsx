@@ -132,6 +132,12 @@ export function RecurringTransactionCard({
     }
   };
 
+  // Determinar se deve mostrar o botão de ação rápida "Pagar"
+  const shouldShowQuickPay = () => {
+    return transaction.status === 'active' && 
+           (transaction.days_until_due < 0 || transaction.days_until_due <= 7);
+  };
+
   const theme = getTransactionTheme(transaction.type);
   const IconComponent = theme.icon;
 
@@ -145,6 +151,28 @@ export function RecurringTransactionCard({
         absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-300
         bg-gradient-to-r ${theme.isRevenue ? 'from-revenue/5' : 'from-expense/5'} to-transparent pointer-events-none
       `} />
+      
+      {/* Quick Pay Button - Aparece para lançamentos próximos ao vencimento */}
+      {shouldShowQuickPay() && (
+        <Button
+          size="sm"
+          onClick={() => setShowMarkAsPaidModal(true)}
+          className={`
+            absolute top-4 left-4 z-20
+            ${theme.isRevenue 
+              ? 'bg-revenue hover:bg-revenue/90 text-white' 
+              : transaction.days_until_due < 0
+                ? 'bg-status-overdue hover:bg-status-overdue/90 text-white'
+                : 'bg-expense hover:bg-expense/90 text-white'
+            }
+            shadow-md hover:shadow-lg transition-all duration-200
+            flex items-center gap-2 font-medium
+          `}
+        >
+          <CheckCircle2 className="h-4 w-4" />
+          <span>Pagar</span>
+        </Button>
+      )}
       
       {/* Type Icon with Glow Effect */}
       <div className={`

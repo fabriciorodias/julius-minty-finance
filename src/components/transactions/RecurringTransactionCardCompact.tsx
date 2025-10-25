@@ -92,6 +92,12 @@ export function RecurringTransactionCardCompact({
     }
   };
 
+  // Determinar se deve mostrar o botão de ação rápida "Pagar"
+  const shouldShowQuickPay = () => {
+    return transaction.status === 'active' && 
+           (transaction.days_until_due < 0 || transaction.days_until_due <= 7);
+  };
+
   const IconComponent = theme.icon;
   const DaysIcon = getDaysUntilDueIcon(transaction.days_until_due);
   const hasVariance = transaction.variance_percentage > 20;
@@ -170,8 +176,30 @@ export function RecurringTransactionCardCompact({
             </div>
           </div>
 
-          {/* Right: Action Menu */}
-          <div className="flex-shrink-0">
+          {/* Right: Quick Pay + Action Menu */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {/* Quick Pay Button */}
+            {shouldShowQuickPay() && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMarkAsPaidModal(true);
+                }}
+                className={`
+                  h-8 w-8 p-0
+                  ${theme.textColor}
+                  hover:bg-current/10
+                  transition-all duration-200
+                `}
+                title="Marcar como pago"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+              </Button>
+            )}
+
+            {/* Action Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -35,10 +35,23 @@ export function DuplicateReviewModal({
   const [processedGroups, setProcessedGroups] = useState(0);
   const [totalDeleted, setTotalDeleted] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { deleteTransactions } = useDeleteTransactions();
 
   const currentGroup = duplicateGroups[currentGroupIndex];
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setCurrentGroupIndex(0);
+      setSelectedIds(new Set());
+      setProcessedGroups(0);
+      setTotalDeleted(0);
+      setIsComplete(false);
+      setIsDeleting(false);
+    }
+  }, [isOpen]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -58,22 +71,27 @@ export function DuplicateReviewModal({
   };
 
   const handleNext = async () => {
-    if (selectedIds.size > 0) {
-      // Excluir transações selecionadas
-      const result = await deleteTransactions(Array.from(selectedIds));
-      if (result.success) {
-        setTotalDeleted(prev => prev + selectedIds.size);
+    setIsDeleting(true);
+    try {
+      if (selectedIds.size > 0) {
+        // Excluir transações selecionadas
+        const result = await deleteTransactions(Array.from(selectedIds));
+        if (result.success) {
+          setTotalDeleted(prev => prev + selectedIds.size);
+        }
       }
-    }
 
-    setProcessedGroups(prev => prev + 1);
-    setSelectedIds(new Set());
+      setProcessedGroups(prev => prev + 1);
+      setSelectedIds(new Set());
 
-    if (currentGroupIndex < duplicateGroups.length - 1) {
-      setCurrentGroupIndex(prev => prev + 1);
-    } else {
-      // Completou a revisão
-      setIsComplete(true);
+      if (currentGroupIndex < duplicateGroups.length - 1) {
+        setCurrentGroupIndex(prev => prev + 1);
+      } else {
+        // Completou a revisão
+        setIsComplete(true);
+      }
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -114,7 +132,7 @@ export function DuplicateReviewModal({
 
   if (isComplete) {
     return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Revisão Completa</DialogTitle>
@@ -148,13 +166,13 @@ export function DuplicateReviewModal({
     );
   }
 
-  if (!currentGroup) return null;
+  if (!currentGroup || !duplicateGroups.length) return null;
 
-  const canDeleteAll = currentGroup.transactions.length > selectedIds.size + 1;
+  const canDelete = selectedIds.size > 0 && selectedIds.size < currentGroup.transactions.length;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>Revisar Duplicatas</DialogTitle>
@@ -169,7 +187,7 @@ export function DuplicateReviewModal({
 
         <div className="space-y-4 py-4">
           {/* Informações do grupo */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm">
             <Badge variant="outline" className="flex items-center gap-1">
               🏦 {currentGroup.account_name}
             </Badge>
@@ -182,7 +200,7 @@ export function DuplicateReviewModal({
           </div>
 
           {/* Lista de transações */}
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
             {currentGroup.transactions.map((tx) => (
               <NotionCard
                 key={tx.id}
@@ -200,11 +218,15 @@ export function DuplicateReviewModal({
                     onClick={(e) => e.stopPropagation()}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-2 gap-2">
-                      <div className="font-medium text-sm truncate">
-                        {format(parseISO(tx.event_date), 'dd/MM/yyyy', { locale: ptBR })} • {tx.description}
+                    <div className="flex items-start justify-between gap-4 mb-2">
+                      <div className="font-medium text-sm break-words flex-1">
+                        <span className="text-muted-foreground">
+                          {format(parseISO(tx.event_date), 'dd/MM/yyyy', { locale: ptBR })}
+                        </span>
+                        {' • '}
+                        <span>{tx.description}</span>
                       </div>
-                      <div className="font-semibold text-sm whitespace-nowrap">
+                      <div className="font-semibold text-sm whitespace-nowrap shrink-0">
                         {formatCurrency(tx.amount)}
                       </div>
                     </div>
@@ -252,10 +274,15 @@ export function DuplicateReviewModal({
 
             <NotionButton
               onClick={handleNext}
-              disabled={!canDeleteAll && selectedIds.size > 0}
-              title={!canDeleteAll && selectedIds.size > 0 ? 'Ao menos um lançamento deve permanecer' : ''}
+              disabled={!canDelete || isDeleting}
+              title={!canDelete && selectedIds.size > 0 ? 'Ao menos um lançamento deve permanecer' : ''}
             >
-              {selectedIds.size > 0 ? (
+              {isDeleting ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Excluindo...
+                </>
+              ) : selectedIds.size > 0 ? (
                 <>
                   Excluir ({selectedIds.size})
                   {currentGroupIndex < duplicateGroups.length - 1 && <ChevronRight className="h-4 w-4 ml-1" />}

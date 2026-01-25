@@ -10,6 +10,9 @@ export interface Institution {
   name: string;
   is_active: boolean;
   created_at: string;
+  logo_url?: string | null;
+  primary_color?: string | null;
+  secondary_color?: string | null;
 }
 
 export function useInstitutions() {

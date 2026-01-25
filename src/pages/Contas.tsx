@@ -3,18 +3,19 @@ import { useState } from 'react';
 import { NotionButton } from '@/components/ui/notion-button';
 import { NotionCard, NotionCardHeader, NotionCardTitle, NotionCardContent } from '@/components/ui/notion-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { AccountsList } from '@/components/entities/AccountsList';
 import { AccountsSummary } from '@/components/entities/AccountsSummary';
 import { InstitutionModal } from '@/components/entities/InstitutionModal';
 import { AccountsQuickFilters, AccountFilter } from '@/components/entities/AccountsQuickFilters';
 import { useAccounts } from '@/hooks/useAccounts';
-import { useInstitutions } from '@/hooks/useInstitutions';
+import { useInstitutions, Institution } from '@/hooks/useInstitutions';
 import { useAccountBalances } from '@/hooks/useAccountBalances';
 
 export default function Contas() {
   console.log('Contas: Component rendering...');
   const [showInstitutionModal, setShowInstitutionModal] = useState(false);
+  const [selectedInstitution, setSelectedInstitution] = useState<Institution | null>(null);
   const [activeFilter, setActiveFilter] = useState<AccountFilter>('all');
   
   const { 
@@ -45,6 +46,24 @@ export default function Contas() {
 
   const handleReconcileAccount = (accountId: string, reconciledAt: Date) => {
     reconcileAccount({ accountId, reconciledAt });
+  };
+
+  const handleInstitutionModalClose = () => {
+    setShowInstitutionModal(false);
+    setSelectedInstitution(null);
+  };
+
+  const handleInstitutionSubmit = (data: any) => {
+    if (selectedInstitution) {
+      updateInstitution({ id: selectedInstitution.id, ...data });
+    } else {
+      createInstitution(data);
+    }
+  };
+
+  const handleEditInstitution = (institution: Institution) => {
+    setSelectedInstitution(institution);
+    setShowInstitutionModal(true);
   };
 
   const activeInstitutions = institutions.filter(inst => inst.is_active);
@@ -117,13 +136,53 @@ export default function Contas() {
                 key={institution.id} 
                 variant="hoverable"
                 className="transition-notion"
+                style={{
+                  borderLeftWidth: '4px',
+                  borderLeftColor: institution.primary_color || undefined,
+                }}
               >
-                <NotionCardHeader>
-                  <NotionCardTitle>{institution.name}</NotionCardTitle>
+                <NotionCardHeader className="flex flex-row items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {institution.logo_url ? (
+                      <img 
+                        src={institution.logo_url} 
+                        alt={institution.name} 
+                        className="h-6 w-auto max-w-[60px] object-contain"
+                      />
+                    ) : institution.primary_color ? (
+                      <div 
+                        className="h-6 w-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                        style={{ backgroundColor: institution.primary_color }}
+                      >
+                        {institution.name.charAt(0).toUpperCase()}
+                      </div>
+                    ) : null}
+                    <NotionCardTitle>{institution.name}</NotionCardTitle>
+                  </div>
                 </NotionCardHeader>
                 <NotionCardContent>
-                  <div className="text-notion-body-sm text-notion-gray-600">
+                  <div className="text-notion-body-sm text-notion-gray-600 mb-4">
                     {accounts.filter(acc => acc.institution_id === institution.id).length} contas
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <NotionButton
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditInstitution(institution)}
+                    >
+                      <Pencil className="h-4 w-4 mr-1" />
+                      Editar
+                    </NotionButton>
+                    <NotionButton
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteInstitution(institution.id)}
+                      disabled={isDeletingInstitution}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Excluir
+                    </NotionButton>
                   </div>
                 </NotionCardContent>
               </NotionCard>
@@ -134,9 +193,10 @@ export default function Contas() {
 
       <InstitutionModal
         isOpen={showInstitutionModal}
-        onClose={() => setShowInstitutionModal(false)}
-        onSubmit={(data) => createInstitution(data)}
-        isLoading={isCreatingInstitution}
+        onClose={handleInstitutionModalClose}
+        onSubmit={handleInstitutionSubmit}
+        institution={selectedInstitution ?? undefined}
+        isLoading={isCreatingInstitution || isUpdatingInstitution}
       />
     </div>
   );

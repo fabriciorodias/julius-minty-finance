@@ -1,4 +1,3 @@
-import { NotionButton } from '@/components/ui/notion-button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, AlertTriangle, Clock, CreditCard, EyeOff, Layers } from 'lucide-react';
 import { Account } from '@/hooks/useAccounts';
@@ -26,7 +25,7 @@ export function AccountsQuickFilters({ accounts, activeFilter, onFilterChange }:
     recently_reconciled: accounts.filter(a => {
       if (!a.last_reconciled_at) return false;
       const hoursDiff = getHoursSinceReconciliation(a.last_reconciled_at);
-      return hoursDiff <= 72 && a.is_active; // 3 days = 72 hours
+      return hoursDiff <= 72 && a.is_active;
     }).length,
     stale_reconciliation: accounts.filter(a => {
       if (!a.last_reconciled_at) return false;
@@ -42,69 +41,78 @@ export function AccountsQuickFilters({ accounts, activeFilter, onFilterChange }:
     {
       id: 'all' as const,
       label: 'Todas',
-      icon: <Layers className="h-4 w-4" />,
+      icon: Layers,
       count: filterCounts.all,
     },
     {
       id: 'recently_reconciled' as const,
       label: 'Conciliadas (3 dias)',
-      icon: <CheckCircle className="h-4 w-4" />,
+      icon: CheckCircle,
       count: filterCounts.recently_reconciled,
     },
     {
       id: 'stale_reconciliation' as const,
       label: 'Conciliação Atrasada',
-      icon: <Clock className="h-4 w-4" />,
+      icon: Clock,
       count: filterCounts.stale_reconciliation,
     },
     {
       id: 'never_reconciled' as const,
       label: 'Nunca Conciliadas',
-      icon: <AlertTriangle className="h-4 w-4" />,
+      icon: AlertTriangle,
       count: filterCounts.never_reconciled,
     },
     {
       id: 'credit_cards' as const,
       label: 'Cartões de Crédito',
-      icon: <CreditCard className="h-4 w-4" />,
+      icon: CreditCard,
       count: filterCounts.credit_cards,
     },
     {
       id: 'inactive' as const,
       label: 'Inativas',
-      icon: <EyeOff className="h-4 w-4" />,
+      icon: EyeOff,
       count: filterCounts.inactive,
     },
   ];
 
   return (
-    <div className="flex flex-wrap gap-2 p-4 bg-notion-gray-50 rounded-lg border border-notion-gray-200">
-      {filters.map((filter) => (
-        <NotionButton
-          key={filter.id}
-          variant="ghost"
-          size="sm"
-          onClick={() => onFilterChange(filter.id)}
-          className={`gap-2 ${
-            activeFilter === filter.id
-              ? 'bg-notion-gray-900 text-white hover:bg-notion-gray-900'
-              : 'bg-white text-notion-gray-700 hover:bg-notion-gray-100'
-          }`}
-        >
-          {filter.icon}
-          <span>{filter.label}</span>
-          <Badge 
-            variant="secondary" 
-            className={`ml-1 ${
-              activeFilter === filter.id 
-                ? 'bg-white/20 text-white border-white/20' 
-                : 'bg-notion-gray-100 text-notion-gray-700 border-notion-gray-200'
-            }`}
+    <div 
+      className="flex flex-wrap gap-2 p-4 rounded-xl"
+      style={{ backgroundColor: '#1F2937' }}
+    >
+      {filters.map((filter) => {
+        const Icon = filter.icon;
+        const isActive = activeFilter === filter.id;
+        
+        return (
+          <button
+            key={filter.id}
+            onClick={() => onFilterChange(filter.id)}
+            className={`
+              inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
+              transition-all duration-200
+              ${isActive 
+                ? 'bg-white text-gray-900 shadow-md' 
+                : 'bg-white/10 text-white hover:bg-white/20'
+              }
+            `}
           >
-            {filter.count}
-          </Badge>
-        </NotionButton>
-      ))}
+            <Icon className="h-4 w-4" />
+            <span>{filter.label}</span>
+            <Badge 
+              variant="secondary" 
+              className={`ml-1 text-xs px-2 py-0.5 ${
+                isActive 
+                  ? 'bg-gray-200 text-gray-900 border-gray-300' 
+                  : 'bg-white/20 text-white border-white/20'
+              }`}
+            >
+              {filter.count}
+            </Badge>
+          </button>
+        );
+      })}
     </div>
   );
 }

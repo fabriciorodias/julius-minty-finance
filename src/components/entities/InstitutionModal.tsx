@@ -213,16 +213,16 @@ export function InstitutionModal({ isOpen, onClose, onSubmit, institution, isLoa
 
           {/* URL da Logo */}
           <div className="space-y-2">
-            <Label htmlFor="logo_url">URL da Logo (opcional)</Label>
+            <Label htmlFor="logo_url">URL ou caminho da Logo (opcional)</Label>
             <Input
               id="logo_url"
-              type="url"
+              type="text"
               value={formData.logo_url}
               onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-              placeholder="https://exemplo.com/logo.png"
+              placeholder="https://exemplo.com/logo.png ou /src/assets/..."
             />
             <p className="text-xs text-muted-foreground">
-              Cole a URL de uma imagem da logo do banco/instituição
+              Cole a URL de uma imagem ou use o caminho local (preenchido automaticamente para bancos conhecidos)
             </p>
           </div>
 

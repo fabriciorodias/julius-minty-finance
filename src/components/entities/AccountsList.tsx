@@ -402,66 +402,42 @@ export function AccountsList({
     
     return (
       <Card key={account.id} className={cardClasses} style={cardStyle}>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
-            <div className="space-y-2 flex-1">
-              <CardTitle className="text-base flex items-center gap-2">
-                {/* Logo da instituição ou ícone de fallback */}
-                {branding.logoUrl ? (
-                  <img 
-                    src={branding.logoUrl} 
-                    alt={institution?.name || ''} 
-                    className="h-5 w-auto max-w-[60px] object-contain"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                      // Mostra o ícone de fallback se a imagem falhar
-                      const sibling = (e.target as HTMLImageElement).nextElementSibling;
-                      if (sibling) (sibling as HTMLElement).style.display = 'flex';
-                    }}
-                  />
-                ) : null}
-                <span className={branding.logoUrl ? 'hidden' : ''}>
+            <div className="flex items-center gap-3">
+              {/* Logo da instituição ou ícone de fallback */}
+              {branding.logoUrl ? (
+                <img 
+                  src={branding.logoUrl} 
+                  alt={institution?.name || ''} 
+                  className="h-6 w-auto max-w-[48px] object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div 
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: branding.bgColor || 'hsl(var(--muted))' }}
+                >
                   {getSubtypeIcon(account.subtype, 'sm')}
-                </span>
-                {!account.is_active && <EyeOff className="h-4 w-4 text-muted-foreground" />}
-                {reconciliationStatus.isAlert && (
-                  <div className={`inline-flex items-center justify-center w-2 h-2 rounded-full ${reconciliationStatus.alertLevel === 'critical' ? 'bg-red-500' : 'bg-amber-500'} animate-pulse`} />
-                )}
-                 {account.name}
-                 {(isDefaultAccount(account.id, 'despesa') || isDefaultAccount(account.id, 'receita')) && (
-                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                 )}
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                {branding.hasCustomBranding && (
-                  <div 
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: branding.borderColor }}
-                  />
-                )}
-                <p className="text-sm text-muted-foreground font-medium">
-                  {getInstitutionName(account.institution_id)}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className={colorScheme.badge}>
-                  {SUBTYPE_LABELS[account.subtype]}
-                </Badge>
-              </div>
-              <AccountInitialBalanceInfo accountId={account.id} />
+                </div>
+              )}
               
-              {/* Reconciliation Status */}
-              <div className={`flex items-center gap-2 text-xs px-2 py-1 rounded-md border ${reconciliationStatus.bgColor} ${reconciliationStatus.borderColor} ${reconciliationStatus.color}`}>
-                {reconciliationStatus.icon}
-                <span className="font-medium">{reconciliationStatus.text}</span>
-                {reconciliationStatus.method && (
-                  <div className="flex items-center gap-1 ml-2">
-                    {reconciliationStatus.method.icon}
-                    <span>({reconciliationStatus.method.label})</span>
-                  </div>
-                )}
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  {account.name}
+                  {!account.is_active && <EyeOff className="h-4 w-4 text-muted-foreground" />}
+                  {reconciliationStatus.isAlert && (
+                    <div className={`w-2 h-2 rounded-full ${
+                      reconciliationStatus.alertLevel === 'critical' ? 'bg-red-500' : 'bg-amber-500'
+                    } animate-pulse`} />
+                  )}
+                </CardTitle>
               </div>
             </div>
+            
+            {/* Botões de ação - hover only */}
             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <Button
                 variant="ghost"
@@ -522,58 +498,15 @@ export function AccountsList({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {isCreditCard(account) ? (
-            <>
-              {/* Credit card specific content */}
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground font-medium">Utilizado</span>
-                  <span className="font-semibold">{formatCurrency(Math.abs(balance))}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground font-medium">Disponível</span>
-                  <span className="font-semibold text-green-600">
-                    {formatCurrency((account.credit_limit || 0) - Math.abs(balance))}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground font-medium">Limite</span>
-                  <span className="font-semibold">{formatCurrency(account.credit_limit || 0)}</span>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground font-medium">Utilização</span>
-                  <span className={`font-semibold ${getCreditUtilization(account) > 80 ? 'text-red-600' : getCreditUtilization(account) > 50 ? 'text-yellow-600' : 'text-green-600'}`}>
-                    {getCreditUtilization(account).toFixed(1)}%
-                  </span>
-                </div>
-                <Progress 
-                  value={getCreditUtilization(account)} 
-                  className="h-2"
-                />
-              </div>
-            </>
-          ) : (
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-muted-foreground">
-                  {account.kind === 'asset' ? 'Saldo Atual' : 'Valor Devido'}
-                </span>
-                <span className={`text-lg font-bold ${balanceColors.textColor}`}>
-                  {formatBalanceWithSign(balance, account.kind, balanceColors.showNegativeSign)}
-                </span>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {account.kind === 'asset' 
-                  ? balance >= 0 
-                    ? 'Ativo positivo' 
-                    : 'Ativo com saldo negativo' 
-                  : 'Passivo/Dívida'
-                }
-              </div>
+        <CardContent className="pt-0">
+          <div className={`text-2xl font-bold ${balanceColors.textColor}`}>
+            {formatBalanceWithSign(balance, account.kind, balanceColors.showNegativeSign)}
+          </div>
+          
+          {/* Apenas para cartões: linha simples de disponível */}
+          {isCreditCard(account) && account.credit_limit && (
+            <div className="text-sm text-muted-foreground mt-1">
+              Disponível: {formatCurrency((account.credit_limit || 0) - Math.abs(balance))}
             </div>
           )}
         </CardContent>

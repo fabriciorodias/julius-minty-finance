@@ -133,12 +133,12 @@ function getKindColorScheme(kind: Account['kind']) {
 
 // Helper function to get institution branding
 function getInstitutionBranding(institution: Institution | undefined, accountKind: Account['kind']) {
-  const defaultScheme = getKindColorScheme(accountKind);
-  
   if (!institution?.primary_color) {
     return {
       borderColor: undefined,
       bgColor: undefined,
+      borderTintColor: undefined,
+      textColor: undefined,
       logoUrl: institution?.logo_url || undefined,
       hasCustomBranding: false,
     };
@@ -146,7 +146,9 @@ function getInstitutionBranding(institution: Institution | undefined, accountKin
 
   return {
     borderColor: institution.primary_color,
-    bgColor: `${institution.primary_color}08`, // 3% opacity
+    bgColor: `${institution.primary_color}20`, // ~12% opacity - more visible fill
+    borderTintColor: `${institution.primary_color}30`, // ~19% opacity for subtle border
+    textColor: institution.primary_color,
     logoUrl: institution.logo_url || undefined,
     hasCustomBranding: true,
   };

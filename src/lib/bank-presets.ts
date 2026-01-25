@@ -1,5 +1,11 @@
 // Presets de bancos brasileiros com cores e logos
-// As logos são URLs externas de domínios públicos
+// Logos locais armazenadas em src/assets/logos/
+
+import nubankLogo from '@/assets/logos/nubank-logo.png';
+import interLogo from '@/assets/logos/banco-inter-logo.svg';
+import c6Logo from '@/assets/logos/c6-bank-logo.png';
+import mercadoPagoLogo from '@/assets/logos/mercado-pago-logo.png';
+import bnbLogo from '@/assets/logos/bnb-logo.svg';
 
 export interface BankPreset {
   name: string;
@@ -14,25 +20,25 @@ export const BANK_PRESETS: Record<string, BankPreset> = {
     name: 'Nubank',
     primaryColor: '#8A05BE',
     secondaryColor: '#BA4AE2',
-    logoUrl: 'https://logodownload.org/wp-content/uploads/2019/08/nubank-logo-1.png',
+    logoUrl: nubankLogo,
   },
   'Inter': {
     name: 'Inter',
     primaryColor: '#FF7A00',
     secondaryColor: '#FF9933',
-    logoUrl: 'https://logodownload.org/wp-content/uploads/2019/09/banco-inter-logo-1.png',
+    logoUrl: interLogo,
   },
   'C6': {
     name: 'C6 Bank',
     primaryColor: '#1A1A1A',
     secondaryColor: '#333333',
-    logoUrl: 'https://logodownload.org/wp-content/uploads/2020/02/c6-bank-logo-0.png',
+    logoUrl: c6Logo,
   },
   'C6 Bank': {
     name: 'C6 Bank',
     primaryColor: '#1A1A1A',
     secondaryColor: '#333333',
-    logoUrl: 'https://logodownload.org/wp-content/uploads/2020/02/c6-bank-logo-0.png',
+    logoUrl: c6Logo,
   },
   'Neon': {
     name: 'Neon',
@@ -62,7 +68,7 @@ export const BANK_PRESETS: Record<string, BankPreset> = {
     name: 'Mercado Pago',
     primaryColor: '#009EE3',
     secondaryColor: '#00B1FF',
-    logoUrl: 'https://logodownload.org/wp-content/uploads/2019/06/mercado-pago-logo-0.png',
+    logoUrl: mercadoPagoLogo,
   },
   'Next': {
     name: 'Next',
@@ -112,7 +118,7 @@ export const BANK_PRESETS: Record<string, BankPreset> = {
     name: 'Banco do Nordeste',
     primaryColor: '#E31837',
     secondaryColor: '#FFFFFF',
-    logoUrl: 'https://logodownload.org/wp-content/uploads/2017/10/banco-do-nordeste-logo-0.png',
+    logoUrl: bnbLogo,
   },
   'Banrisul': {
     name: 'Banrisul',

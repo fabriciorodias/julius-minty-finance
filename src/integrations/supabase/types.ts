@@ -848,10 +848,7 @@ export type Database = {
         }
         Returns: string
       }
-      cleanup_ocr_temp_files: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_ocr_temp_files: { Args: never; Returns: undefined }
       create_transfer: {
         Args: {
           p_amount: number

@@ -67,11 +67,14 @@ export default function Contas() {
   const activeInstitutions = institutions.filter(inst => inst.is_active);
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
+    <div 
+      className="min-h-screen -m-6 p-6 space-y-8"
+      style={{ backgroundColor: '#111827' }}
+    >
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Contas</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-3xl font-bold text-white">Contas</h1>
+          <p className="text-gray-400 mt-1">
             Gerencie suas contas financeiras e instituições
           </p>
         </div>
@@ -79,7 +82,7 @@ export default function Contas() {
 
       <Tabs defaultValue="accounts" className="space-y-6">
         <TabsList 
-          className="p-1 rounded-xl border-0"
+          className="p-1 rounded-xl border border-white/10"
           style={{ backgroundColor: '#1F2937' }}
         >
           <TabsTrigger 
@@ -130,14 +133,14 @@ export default function Contas() {
         <TabsContent value="institutions" className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Instituições</h2>
-              <p className="text-muted-foreground mt-1">
+              <h2 className="text-2xl font-bold text-white">Instituições</h2>
+              <p className="text-gray-400 mt-1">
                 Gerencie as instituições financeiras onde você possui contas
               </p>
             </div>
             <Button 
               onClick={() => setShowInstitutionModal(true)}
-              className="rounded-xl px-6"
+              className="rounded-xl px-6 border border-white/10 hover:bg-white/10"
               style={{ backgroundColor: '#1F2937' }}
             >
               <Plus className="h-4 w-4 mr-2" />

@@ -520,8 +520,7 @@ export function AccountsList({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-bold text-white">Contas</h2>
+      <div className="flex justify-end">
         <Button 
           onClick={() => setShowModal(true)}
           size="sm"

@@ -372,89 +372,89 @@ export function AccountsList({
     const branding = getInstitutionBranding(institution);
     const reconciliationStatus = getReconciliationStatus(account);
 
-    // Estilo sólido colorido (Julius/Nubank style)
     const cardStyle: React.CSSProperties = { 
       backgroundColor: branding.bgColor,
-      borderColor: branding.borderColor,
-      borderWidth: '3px',
     };
 
-    const cardClasses = `group rounded-xl overflow-hidden transition-all duration-200 ${
+    const cardClasses = `group rounded-lg overflow-hidden transition-all duration-150 cursor-pointer ${
       !account.is_active ? 'opacity-50' : ''
-    } hover:shadow-xl hover:scale-[1.02]`;
+    } hover:shadow-lg hover:scale-[1.01]`;
 
-    // Formata o status de atualização para o footer
     const getUpdateText = () => {
-      if (!account.last_reconciled_at) return 'Nunca atualizado';
+      if (!account.last_reconciled_at) return 'Nunca';
       const reconciledDate = new Date(account.last_reconciled_at);
       const now = new Date();
       const daysDiff = Math.floor((now.getTime() - reconciledDate.getTime()) / (1000 * 60 * 60 * 24));
       
-      if (daysDiff === 0) return 'Atualizado: Hoje';
-      if (daysDiff === 1) return 'Atualizado: Ontem';
-      return `Atualizado: há ${daysDiff} dias`;
+      if (daysDiff === 0) return 'Hoje';
+      if (daysDiff === 1) return 'Ontem';
+      return `${daysDiff}d`;
     };
     
     return (
-      <Card key={account.id} className={cardClasses} style={cardStyle}>
-        <CardHeader className="pb-3">
+      <div 
+        key={account.id} 
+        className={cardClasses} 
+        style={cardStyle}
+        onClick={() => handleReconcile(account)}
+      >
+        <div className="p-3 space-y-2">
+          {/* Header: Logo + Nome + Menu */}
           <div className="flex items-center justify-between">
-            {/* Logo + Nome da Instituição */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               {branding.logoUrl ? (
                 <img 
                   src={branding.logoUrl} 
                   alt={institution?.name || ''} 
-                  className="h-8 w-8 rounded-lg object-contain bg-white/20 p-1"
+                  className="h-6 w-6 rounded object-contain bg-white/20 p-0.5 flex-shrink-0"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}
                 />
               ) : (
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/20">
+                <div className="w-6 h-6 rounded flex items-center justify-center bg-white/20 flex-shrink-0">
                   {getSubtypeIcon(account.subtype, 'sm')}
                 </div>
               )}
-              <span className="text-white font-medium text-sm">
-                {institution?.name || account.name}
+              <span className="text-white font-medium text-xs truncate">
+                {account.name}
               </span>
-              {!account.is_active && <EyeOff className="h-4 w-4 text-white/60" />}
+              {!account.is_active && <EyeOff className="h-3 w-3 text-white/60 flex-shrink-0" />}
             </div>
             
-            {/* Menu sempre visível */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0 text-white/80 hover:text-white hover:bg-white/20"
-                  title="Mais opções"
+                  className="h-6 w-6 p-0 text-white/60 hover:text-white hover:bg-white/20 flex-shrink-0"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <MoreHorizontal className="h-4 w-4" />
+                  <MoreHorizontal className="h-3.5 w-3.5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-popover">
-                <DropdownMenuItem onClick={() => handleEdit(account)}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(account); }}>
                   <Edit2 className="mr-2 h-4 w-4" />
                   Editar
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => setFavoriteExpenseAccount(account.id)}
+                  onClick={(e) => { e.stopPropagation(); setFavoriteExpenseAccount(account.id); }}
                   className={isDefaultAccount(account.id, 'despesa') ? 'bg-accent' : ''}
                 >
                   <Star className="mr-2 h-4 w-4" />
-                  {isDefaultAccount(account.id, 'despesa') ? 'Padrão para Despesas' : 'Definir como Padrão para Despesas'}
+                  {isDefaultAccount(account.id, 'despesa') ? 'Padrão Despesas' : 'Padrão Despesas'}
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => setFavoriteIncomeAccount(account.id)}
+                  onClick={(e) => { e.stopPropagation(); setFavoriteIncomeAccount(account.id); }}
                   className={isDefaultAccount(account.id, 'receita') ? 'bg-accent' : ''}
                 >
                   <Star className="mr-2 h-4 w-4" />
-                  {isDefaultAccount(account.id, 'receita') ? 'Padrão para Receitas' : 'Definir como Padrão para Receitas'}
+                  {isDefaultAccount(account.id, 'receita') ? 'Padrão Receitas' : 'Padrão Receitas'}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
-                  onClick={() => onDeleteAccount(account.id)}
+                  onClick={(e) => { e.stopPropagation(); onDeleteAccount(account.id); }}
                   disabled={isDeleting}
                   className="text-red-600"
                 >
@@ -464,84 +464,72 @@ export function AccountsList({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </CardHeader>
-        
-        <CardContent className="pt-0 pb-4 space-y-4">
-          {/* Saldo Grande Branco */}
-          <div className="text-3xl font-bold text-white">
-            {formatCurrency(balance)}
+          
+          {/* Saldo + Status inline */}
+          <div className="flex items-center justify-between">
+            <span className="text-xl font-bold text-white tabular-nums">
+              {formatCurrency(balance)}
+            </span>
+            <div className="flex items-center gap-1 text-[10px] text-white/70">
+              {reconciliationStatus.isAlert ? (
+                <Clock className="h-3 w-3 text-yellow-300" />
+              ) : (
+                <CheckCircle className="h-3 w-3 text-green-300" />
+              )}
+              <span>{getUpdateText()}</span>
+            </div>
           </div>
           
-          {/* Apenas para cartões: linha simples de disponível */}
+          {/* Cartão de crédito: disponível */}
           {isCreditCard(account) && account.credit_limit && (
-            <div className="text-sm text-white/70">
-              Disponível: {formatCurrency((account.credit_limit || 0) - Math.abs(balance))}
+            <div className="text-[10px] text-white/60">
+              Disp: {formatCurrency((account.credit_limit || 0) - Math.abs(balance))}
             </div>
           )}
-          
-          {/* Botão Ajustar Saldo */}
-          <Button 
-            variant="secondary"
-            className="w-full bg-white text-gray-900 hover:bg-gray-100 rounded-lg font-medium"
-            onClick={() => handleReconcile(account)}
-            disabled={isReconciling}
-          >
-            Ajustar Saldo
-          </Button>
-          
-          {/* Status de Atualização */}
-          <div className="flex items-center gap-2 text-white/80 text-sm">
-            {reconciliationStatus.isAlert ? (
-              <Clock className="h-4 w-4 text-yellow-300" />
-            ) : (
-              <CheckCircle className="h-4 w-4 text-green-300" />
-            )}
-            <span>{getUpdateText()}</span>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   };
 
   const renderAccountGroup = (title: string, icon: React.ReactNode, groups: Record<string, Account[]>, totalCount: number) => (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
+    <div className="space-y-3">
+      {/* Header inline com subtypes como badges */}
+      <div className="flex flex-wrap items-center gap-2">
         {icon}
-        <h3 className="text-lg font-semibold text-white">{title}</h3>
-        <Badge variant="secondary" className="bg-white/20 text-white border-white/20">{totalCount}</Badge>
+        <h3 className="text-base font-semibold text-white">{title}</h3>
+        <span className="text-xs text-white/50">({totalCount})</span>
+        
+        <div className="flex flex-wrap gap-1 ml-2">
+          {Object.entries(groups).map(([subtype, accts]) => (
+            <span 
+              key={subtype}
+              className="px-2 py-0.5 rounded text-[10px] bg-white/10 text-white/70"
+            >
+              {SUBTYPE_LABELS[subtype as Account['subtype']]} {accts.length}
+            </span>
+          ))}
+        </div>
       </div>
       
-      {Object.entries(groups).map(([subtype, accounts]) => (
-        <div key={subtype} className="space-y-3">
-          <div className="flex items-center gap-2 ml-2">
-            {getSubtypeIcon(subtype as Account['subtype'], 'sm')}
-            <h4 className="text-md font-medium text-gray-400">{SUBTYPE_LABELS[subtype as Account['subtype']]}</h4>
-            <Badge variant="outline" className="text-xs text-gray-400 border-gray-600">{accounts.length}</Badge>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {accounts.map(renderAccountCard)}
-          </div>
-        </div>
-      ))}
+      {/* Grid denso de cards */}
+      <div className="grid gap-2.5 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {Object.values(groups).flat().map(renderAccountCard)}
+      </div>
     </div>
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Contas</h2>
-          <p className="text-gray-400">
-            Gerencie suas contas de ativos e passivos
-          </p>
-        </div>
+        <h2 className="text-lg font-bold text-white">Contas</h2>
         <Button 
           onClick={() => setShowModal(true)}
-          className="rounded-xl px-6 border border-white/10 hover:bg-white/10"
+          size="sm"
+          className="rounded-lg px-4 border border-white/10 hover:bg-white/10 text-sm"
           style={{ backgroundColor: '#1F2937' }}
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Conta
+          <Plus className="h-4 w-4 mr-1.5" />
+          Nova
         </Button>
       </div>
 

@@ -131,6 +131,27 @@ function getKindColorScheme(kind: Account['kind']) {
   }
 }
 
+// Helper function to get institution branding
+function getInstitutionBranding(institution: Institution | undefined, accountKind: Account['kind']) {
+  const defaultScheme = getKindColorScheme(accountKind);
+  
+  if (!institution?.primary_color) {
+    return {
+      borderColor: undefined,
+      bgColor: undefined,
+      logoUrl: institution?.logo_url || undefined,
+      hasCustomBranding: false,
+    };
+  }
+
+  return {
+    borderColor: institution.primary_color,
+    bgColor: `${institution.primary_color}08`, // 3% opacity
+    logoUrl: institution.logo_url || undefined,
+    hasCustomBranding: true,
+  };
+}
+
 // Helper function to get account groups by kind and subtype
 function getAccountGroups(accounts: Account[]) {
   const assetAccounts = accounts.filter(account => account.kind === 'asset');
@@ -349,6 +370,8 @@ export function AccountsList({
 
   const renderAccountCard = (account: Account) => {
     const balance = getAccountBalance(account.id);
+    const institution = institutions.find(i => i.id === account.institution_id);
+    const branding = getInstitutionBranding(institution, account.kind);
     const colorScheme = getKindColorScheme(account.kind);
     const reconciliationStatus = getReconciliationStatus(account);
     const intensity = intensityMap[account.id] || 1;
@@ -357,14 +380,47 @@ export function AccountsList({
       accountKind: account.kind,
       intensity: intensity as any
     });
+
+    // Determina estilos baseados no branding customizado ou fallback
+    const cardStyle: React.CSSProperties = branding.hasCustomBranding 
+      ? { 
+          borderLeftColor: branding.borderColor,
+          backgroundColor: branding.bgColor,
+        }
+      : {};
+
+    const cardClasses = `group hover:shadow-lg transition-all duration-200 border-l-4 ${
+      branding.hasCustomBranding ? '' : `${balanceColors.borderColor} ${balanceColors.bgColor}`
+    } ${!account.is_active ? 'opacity-50' : ''} ${
+      reconciliationStatus.isAlert ? 'ring-2 ring-offset-1' : ''
+    } ${
+      reconciliationStatus.alertLevel === 'critical' ? 'ring-red-200' : 
+      reconciliationStatus.alertLevel === 'warning' ? 'ring-amber-200' : ''
+    } hover:shadow-md`;
     
     return (
-      <Card key={account.id} className={`group hover:shadow-lg transition-all duration-200 border-l-4 ${balanceColors.borderColor} ${balanceColors.bgColor} ${!account.is_active ? 'opacity-50' : ''} ${reconciliationStatus.isAlert ? 'ring-2 ring-offset-1' : ''} ${reconciliationStatus.alertLevel === 'critical' ? 'ring-red-200' : reconciliationStatus.alertLevel === 'warning' ? 'ring-amber-200' : ''} hover:shadow-md`}>
+      <Card key={account.id} className={cardClasses} style={cardStyle}>
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="space-y-2 flex-1">
               <CardTitle className="text-base flex items-center gap-2">
-                {getSubtypeIcon(account.subtype, 'sm')}
+                {/* Logo da instituição ou ícone de fallback */}
+                {branding.logoUrl ? (
+                  <img 
+                    src={branding.logoUrl} 
+                    alt={institution?.name || ''} 
+                    className="h-5 w-auto max-w-[60px] object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      // Mostra o ícone de fallback se a imagem falhar
+                      const sibling = (e.target as HTMLImageElement).nextElementSibling;
+                      if (sibling) (sibling as HTMLElement).style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <span className={branding.logoUrl ? 'hidden' : ''}>
+                  {getSubtypeIcon(account.subtype, 'sm')}
+                </span>
                 {!account.is_active && <EyeOff className="h-4 w-4 text-muted-foreground" />}
                 {reconciliationStatus.isAlert && (
                   <div className={`inline-flex items-center justify-center w-2 h-2 rounded-full ${reconciliationStatus.alertLevel === 'critical' ? 'bg-red-500' : 'bg-amber-500'} animate-pulse`} />
@@ -374,9 +430,17 @@ export function AccountsList({
                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                  )}
               </CardTitle>
-              <p className="text-sm text-muted-foreground font-medium">
-                {getInstitutionName(account.institution_id)}
-              </p>
+              <div className="flex items-center gap-2">
+                {branding.hasCustomBranding && (
+                  <div 
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: branding.borderColor }}
+                  />
+                )}
+                <p className="text-sm text-muted-foreground font-medium">
+                  {getInstitutionName(account.institution_id)}
+                </p>
+              </div>
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className={colorScheme.badge}>
                   {SUBTYPE_LABELS[account.subtype]}

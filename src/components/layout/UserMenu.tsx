@@ -39,35 +39,43 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0 hover:bg-notion-gray-100 transition-notion">
-          <Avatar className="h-8 w-8 bg-notion-gray-200">
+        <Button 
+          variant="ghost" 
+          className="relative h-8 w-8 rounded-full p-0 hover:bg-white/10 transition-all"
+        >
+          <Avatar className="h-8 w-8">
             <AvatarImage src={profile?.avatar_url || ''} alt="Avatar" />
-            <AvatarFallback className="bg-notion-gray-200 text-notion-gray-700 text-sm font-medium">
+            <AvatarFallback className="bg-white/20 text-white text-sm font-medium">
               {getInitials()}
             </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56 bg-white border-notion-gray-200 shadow-notion-lg" align="end" forceMount>
+      <DropdownMenuContent 
+        className="w-56 border-white/10" 
+        style={{ backgroundColor: '#1F2937' }}
+        align="end" 
+        forceMount
+      >
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-notion-body-sm font-medium text-notion-gray-900">{getDisplayName()}</p>
-            <p className="text-notion-caption text-notion-gray-600">
+            <p className="text-sm font-medium text-white">{getDisplayName()}</p>
+            <p className="text-xs text-gray-400">
               {user?.email}
             </p>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator className="bg-notion-gray-200" />
+        <DropdownMenuSeparator className="bg-white/10" />
         <DropdownMenuItem
-          className="cursor-pointer hover:bg-notion-gray-100 transition-notion text-notion-gray-700"
+          className="cursor-pointer text-gray-300 hover:bg-white/10 hover:text-white transition-all focus:bg-white/10 focus:text-white"
           onClick={() => navigate('/profile')}
         >
           <span className="material-icons mr-2 text-sm">person</span>
           Meu Perfil
         </DropdownMenuItem>
-        <DropdownMenuSeparator className="bg-notion-gray-200" />
+        <DropdownMenuSeparator className="bg-white/10" />
         <DropdownMenuItem
-          className="cursor-pointer text-notion-danger hover:bg-notion-danger-light transition-notion"
+          className="cursor-pointer text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all focus:bg-red-500/20 focus:text-red-300"
           onClick={handleSignOut}
         >
           <span className="material-icons mr-2 text-sm">logout</span>

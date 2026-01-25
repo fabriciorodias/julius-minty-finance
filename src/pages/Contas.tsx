@@ -67,10 +67,7 @@ export default function Contas() {
   const activeInstitutions = institutions.filter(inst => inst.is_active);
 
   return (
-    <div 
-      className="min-h-screen -m-6 p-6 space-y-8"
-      style={{ backgroundColor: '#111827' }}
-    >
+    <div className="space-y-8">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-white">Contas</h1>

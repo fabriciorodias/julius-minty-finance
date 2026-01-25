@@ -507,16 +507,16 @@ export function AccountsList({
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         {icon}
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <Badge variant="secondary">{totalCount}</Badge>
+        <h3 className="text-lg font-semibold text-white">{title}</h3>
+        <Badge variant="secondary" className="bg-white/20 text-white border-white/20">{totalCount}</Badge>
       </div>
       
       {Object.entries(groups).map(([subtype, accounts]) => (
         <div key={subtype} className="space-y-3">
           <div className="flex items-center gap-2 ml-2">
             {getSubtypeIcon(subtype as Account['subtype'], 'sm')}
-            <h4 className="text-md font-medium text-muted-foreground">{SUBTYPE_LABELS[subtype as Account['subtype']]}</h4>
-            <Badge variant="outline" className="text-xs">{accounts.length}</Badge>
+            <h4 className="text-md font-medium text-gray-400">{SUBTYPE_LABELS[subtype as Account['subtype']]}</h4>
+            <Badge variant="outline" className="text-xs text-gray-400 border-gray-600">{accounts.length}</Badge>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {accounts.map(renderAccountCard)}
@@ -530,12 +530,16 @@ export function AccountsList({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Contas</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-2xl font-bold text-white">Contas</h2>
+          <p className="text-gray-400">
             Gerencie suas contas de ativos e passivos
           </p>
         </div>
-        <Button onClick={() => setShowModal(true)}>
+        <Button 
+          onClick={() => setShowModal(true)}
+          className="rounded-xl px-6 border border-white/10 hover:bg-white/10"
+          style={{ backgroundColor: '#1F2937' }}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Nova Conta
         </Button>

@@ -57,7 +57,7 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
           {[1, 2, 3].map((i) => (
             <div 
               key={i} 
-              className="rounded-xl p-6"
+              className="rounded-xl p-6 border border-white/10"
               style={{ backgroundColor: '#1F2937' }}
             >
               <Skeleton className="h-4 w-24 mb-4 bg-white/20" />
@@ -104,8 +104,8 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
     <TooltipProvider>
       <div className="space-y-4 mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-foreground mb-2">Resumo das Contas</h2>
-          <p className="text-sm text-muted-foreground">Visão geral dos seus saldos e liquidez</p>
+          <h2 className="text-2xl font-bold text-white mb-2">Resumo das Contas</h2>
+          <p className="text-sm text-gray-400">Visão geral dos seus saldos e liquidez</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
@@ -115,7 +115,7 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
               <Tooltip key={card.label}>
                 <TooltipTrigger asChild>
                   <div 
-                    className="rounded-xl p-6 transition-all duration-200 hover:scale-[1.02] cursor-default"
+                    className="rounded-xl p-6 transition-all duration-200 hover:scale-[1.02] cursor-default border border-white/10"
                     style={{ backgroundColor: '#1F2937' }}
                   >
                     <div className="flex items-start justify-between">

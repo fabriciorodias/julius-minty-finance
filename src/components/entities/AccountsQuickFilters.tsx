@@ -78,7 +78,7 @@ export function AccountsQuickFilters({ accounts, activeFilter, onFilterChange }:
 
   return (
     <div 
-      className="flex flex-wrap gap-2 p-4 rounded-xl"
+      className="flex flex-wrap gap-2 p-4 rounded-xl border border-white/10"
       style={{ backgroundColor: '#1F2937' }}
     >
       {filters.map((filter) => {

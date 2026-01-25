@@ -131,24 +131,20 @@ function getKindColorScheme(kind: Account['kind']) {
   }
 }
 
-// Helper function to get institution branding
-function getInstitutionBranding(institution: Institution | undefined, accountKind: Account['kind']) {
+// Helper function to get institution branding - Julius/Nubank solid style
+function getInstitutionBranding(institution: Institution | undefined) {
   if (!institution?.primary_color) {
     return {
-      borderColor: undefined,
-      bgColor: undefined,
-      borderTintColor: undefined,
-      textColor: undefined,
+      bgColor: '#374151', // gray-700 como fallback
+      borderColor: '#4B5563', // gray-600
       logoUrl: institution?.logo_url || undefined,
       hasCustomBranding: false,
     };
   }
 
   return {
+    bgColor: institution.primary_color, // Cor sólida
     borderColor: institution.primary_color,
-    bgColor: `${institution.primary_color}40`, // ~25% opacity - vibrant fill like Nubank reference
-    borderTintColor: `${institution.primary_color}50`, // ~31% opacity for border
-    textColor: institution.primary_color,
     logoUrl: institution.logo_url || undefined,
     hasCustomBranding: true,
   };
@@ -373,142 +369,135 @@ export function AccountsList({
   const renderAccountCard = (account: Account) => {
     const balance = getAccountBalance(account.id);
     const institution = institutions.find(i => i.id === account.institution_id);
-    const branding = getInstitutionBranding(institution, account.kind);
-    const colorScheme = getKindColorScheme(account.kind);
+    const branding = getInstitutionBranding(institution);
     const reconciliationStatus = getReconciliationStatus(account);
-    const intensity = intensityMap[account.id] || 1;
-    const balanceColors = getBalanceColors({
-      balance,
-      accountKind: account.kind,
-      intensity: intensity as any
-    });
 
-    // Determina estilos baseados no branding customizado ou fallback
-    const cardStyle: React.CSSProperties = branding.hasCustomBranding 
-      ? { 
-          borderLeftColor: branding.borderColor,
-          backgroundColor: branding.bgColor,
-        }
-      : {};
+    // Estilo sólido colorido (Julius/Nubank style)
+    const cardStyle: React.CSSProperties = { 
+      backgroundColor: branding.bgColor,
+      borderColor: branding.borderColor,
+      borderWidth: '3px',
+    };
 
-    const cardClasses = `group hover:shadow-lg transition-all duration-200 border-l-4 ${
-      branding.hasCustomBranding ? '' : `${balanceColors.borderColor} ${balanceColors.bgColor}`
-    } ${!account.is_active ? 'opacity-50' : ''} ${
-      reconciliationStatus.isAlert ? 'ring-2 ring-offset-1' : ''
-    } ${
-      reconciliationStatus.alertLevel === 'critical' ? 'ring-red-200' : 
-      reconciliationStatus.alertLevel === 'warning' ? 'ring-amber-200' : ''
-    } hover:shadow-md`;
+    const cardClasses = `group rounded-xl overflow-hidden transition-all duration-200 ${
+      !account.is_active ? 'opacity-50' : ''
+    } hover:shadow-xl hover:scale-[1.02]`;
+
+    // Formata o status de atualização para o footer
+    const getUpdateText = () => {
+      if (!account.last_reconciled_at) return 'Nunca atualizado';
+      const reconciledDate = new Date(account.last_reconciled_at);
+      const now = new Date();
+      const daysDiff = Math.floor((now.getTime() - reconciledDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff === 0) return 'Atualizado: Hoje';
+      if (daysDiff === 1) return 'Atualizado: Ontem';
+      return `Atualizado: há ${daysDiff} dias`;
+    };
     
     return (
       <Card key={account.id} className={cardClasses} style={cardStyle}>
-        <CardHeader className="pb-2">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              {/* Logo da instituição ou ícone de fallback */}
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            {/* Logo + Nome da Instituição */}
+            <div className="flex items-center gap-2">
               {branding.logoUrl ? (
                 <img 
                   src={branding.logoUrl} 
                   alt={institution?.name || ''} 
-                  className="h-6 w-auto max-w-[48px] object-contain"
+                  className="h-8 w-8 rounded-lg object-contain bg-white/20 p-1"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}
                 />
               ) : (
-                <div 
-                  className="w-8 h-8 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: branding.bgColor || 'hsl(var(--muted))' }}
-                >
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/20">
                   {getSubtypeIcon(account.subtype, 'sm')}
                 </div>
               )}
-              
-              <div>
-                <CardTitle className="text-base flex items-center gap-2">
-                  {account.name}
-                  {!account.is_active && <EyeOff className="h-4 w-4 text-muted-foreground" />}
-                  {reconciliationStatus.isAlert && (
-                    <div className={`w-2 h-2 rounded-full ${
-                      reconciliationStatus.alertLevel === 'critical' ? 'bg-red-500' : 'bg-amber-500'
-                    } animate-pulse`} />
-                  )}
-                </CardTitle>
-              </div>
+              <span className="text-white font-medium text-sm">
+                {institution?.name || account.name}
+              </span>
+              {!account.is_active && <EyeOff className="h-4 w-4 text-white/60" />}
             </div>
             
-            {/* Botões de ação - hover only */}
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleReconcile(account)}
-                disabled={isReconciling}
-                className={`h-8 w-8 p-0 hover:bg-green-50 hover:text-green-600 ${reconciliationStatus.isAlert ? 'ring-1 ring-green-300 bg-green-50/50' : ''}`}
-                title="Conciliar conta"
-              >
-                <CheckCircle className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleEdit(account)}
-                className="h-8 w-8 p-0"
-                title="Editar conta"
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    title="Mais opções"
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem 
-                    onClick={() => setFavoriteExpenseAccount(account.id)}
-                    className={isDefaultAccount(account.id, 'despesa') ? 'bg-accent' : ''}
-                  >
-                    <Star className="mr-2 h-4 w-4" />
-                    {isDefaultAccount(account.id, 'despesa') ? 'Padrão para Despesas' : 'Definir como Padrão para Despesas'}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => setFavoriteIncomeAccount(account.id)}
-                    className={isDefaultAccount(account.id, 'receita') ? 'bg-accent' : ''}
-                  >
-                    <Star className="mr-2 h-4 w-4" />
-                    {isDefaultAccount(account.id, 'receita') ? 'Padrão para Receitas' : 'Definir como Padrão para Receitas'}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={() => onDeleteAccount(account.id)}
-                    disabled={isDeleting}
-                    className="text-red-600"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Excluir
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            {/* Menu sempre visível */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-white/80 hover:text-white hover:bg-white/20"
+                  title="Mais opções"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-popover">
+                <DropdownMenuItem onClick={() => handleEdit(account)}>
+                  <Edit2 className="mr-2 h-4 w-4" />
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setFavoriteExpenseAccount(account.id)}
+                  className={isDefaultAccount(account.id, 'despesa') ? 'bg-accent' : ''}
+                >
+                  <Star className="mr-2 h-4 w-4" />
+                  {isDefaultAccount(account.id, 'despesa') ? 'Padrão para Despesas' : 'Definir como Padrão para Despesas'}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setFavoriteIncomeAccount(account.id)}
+                  className={isDefaultAccount(account.id, 'receita') ? 'bg-accent' : ''}
+                >
+                  <Star className="mr-2 h-4 w-4" />
+                  {isDefaultAccount(account.id, 'receita') ? 'Padrão para Receitas' : 'Definir como Padrão para Receitas'}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={() => onDeleteAccount(account.id)}
+                  disabled={isDeleting}
+                  className="text-red-600"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardHeader>
-        <CardContent className="pt-0">
-          <div className={`text-2xl font-bold ${balanceColors.textColor}`}>
-            {formatBalanceWithSign(balance, account.kind, balanceColors.showNegativeSign)}
+        
+        <CardContent className="pt-0 pb-4 space-y-4">
+          {/* Saldo Grande Branco */}
+          <div className="text-3xl font-bold text-white">
+            {formatCurrency(balance)}
           </div>
           
           {/* Apenas para cartões: linha simples de disponível */}
           {isCreditCard(account) && account.credit_limit && (
-            <div className="text-sm text-muted-foreground mt-1">
+            <div className="text-sm text-white/70">
               Disponível: {formatCurrency((account.credit_limit || 0) - Math.abs(balance))}
             </div>
           )}
+          
+          {/* Botão Ajustar Saldo */}
+          <Button 
+            variant="secondary"
+            className="w-full bg-white text-gray-900 hover:bg-gray-100 rounded-lg font-medium"
+            onClick={() => handleReconcile(account)}
+            disabled={isReconciling}
+          >
+            Ajustar Saldo
+          </Button>
+          
+          {/* Status de Atualização */}
+          <div className="flex items-center gap-2 text-white/80 text-sm">
+            {reconciliationStatus.isAlert ? (
+              <Clock className="h-4 w-4 text-yellow-300" />
+            ) : (
+              <CheckCircle className="h-4 w-4 text-green-300" />
+            )}
+            <span>{getUpdateText()}</span>
+          </div>
         </CardContent>
       </Card>
     );

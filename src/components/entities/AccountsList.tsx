@@ -146,8 +146,8 @@ function getInstitutionBranding(institution: Institution | undefined, accountKin
 
   return {
     borderColor: institution.primary_color,
-    bgColor: `${institution.primary_color}20`, // ~12% opacity - more visible fill
-    borderTintColor: `${institution.primary_color}30`, // ~19% opacity for subtle border
+    bgColor: `${institution.primary_color}40`, // ~25% opacity - vibrant fill like Nubank reference
+    borderTintColor: `${institution.primary_color}50`, // ~31% opacity for border
     textColor: institution.primary_color,
     logoUrl: institution.logo_url || undefined,
     hasCustomBranding: true,

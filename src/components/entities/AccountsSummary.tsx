@@ -27,7 +27,6 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
     return balance?.current_balance || 0;
   };
 
-  // Cálculos dos dados do resumo
   const assetAccounts = accounts.filter(acc => acc.kind === 'asset' && acc.is_active);
   const liabilityAccounts = accounts.filter(acc => acc.kind === 'liability' && acc.is_active);
 
@@ -41,106 +40,89 @@ export function AccountsSummary({ accounts, accountBalances, isLoading }: Accoun
   }, 0);
 
   const immediateLiquidity = totalAssetBalance - totalLiabilityBalance;
-  
-  const liquidityPercentage = totalLiabilityBalance > 0 
-    ? (totalAssetBalance / totalLiabilityBalance) * 100 
-    : totalAssetBalance > 0 ? 100 : 0;
 
   if (isLoading) {
     return (
-      <div className="space-y-4 mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground mb-2">Resumo das Contas</h2>
-          <p className="text-sm text-muted-foreground">Visão geral dos seus saldos e liquidez</p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <div 
-              key={i} 
-              className="rounded-xl p-6 border border-white/10"
-              style={{ backgroundColor: '#1F2937' }}
-            >
-              <Skeleton className="h-4 w-24 mb-4 bg-white/20" />
-              <Skeleton className="h-8 w-32 bg-white/20" />
-            </div>
-          ))}
-        </div>
+      <div 
+        className="flex items-center gap-6 p-3 rounded-lg border border-white/10"
+        style={{ backgroundColor: '#1F2937' }}
+      >
+        <Skeleton className="h-6 w-32 bg-white/20" />
+        <Skeleton className="h-6 w-32 bg-white/20" />
+        <Skeleton className="h-6 w-32 bg-white/20" />
       </div>
     );
   }
 
-  const summaryCards = [
+  const metrics = [
     {
-      label: 'Total em Ativos',
+      label: 'Ativos',
       value: formatCurrency(totalAssetBalance),
-      subtext: `${assetAccounts.length} conta${assetAccounts.length !== 1 ? 's' : ''}`,
+      count: assetAccounts.length,
       icon: Wallet,
       iconColor: 'text-emerald-400',
       iconBg: 'bg-emerald-500/20',
-      tooltip: 'Soma dos saldos atuais de todas as contas de ativo ativas'
+      tooltip: 'Soma dos saldos de todas as contas de ativo ativas'
     },
     {
-      label: 'Total em Passivos',
+      label: 'Passivos',
       value: formatCurrency(totalLiabilityBalance),
-      subtext: `${liabilityAccounts.length} passivo${liabilityAccounts.length !== 1 ? 's' : ''}`,
+      count: liabilityAccounts.length,
       icon: TrendingDown,
       iconColor: 'text-red-400',
       iconBg: 'bg-red-500/20',
-      tooltip: 'Valor total de todos os passivos (cartões, empréstimos, etc.)'
+      tooltip: 'Valor total de todos os passivos'
     },
     {
-      label: 'Liquidez Imediata',
+      label: 'Liquidez',
       value: formatCurrency(immediateLiquidity),
-      subtext: `${immediateLiquidity >= 0 ? 'Saldo positivo' : 'Saldo negativo'} • ${liquidityPercentage.toFixed(0)}%`,
       icon: Zap,
       iconColor: 'text-amber-400',
       iconBg: 'bg-amber-500/20',
-      tooltip: 'Diferença entre ativos e passivos (Ativos - Passivos)',
-      valueClass: immediateLiquidity < 0 ? 'text-red-400' : 'text-white'
+      tooltip: 'Ativos - Passivos',
+      valueClass: immediateLiquidity < 0 ? 'text-red-400' : 'text-emerald-400'
     }
   ];
 
   return (
     <TooltipProvider>
-      <div className="space-y-4 mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-2">Resumo das Contas</h2>
-          <p className="text-sm text-gray-400">Visão geral dos seus saldos e liquidez</p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          {summaryCards.map((card) => {
-            const Icon = card.icon;
-            return (
-              <Tooltip key={card.label}>
+      <div 
+        className="flex flex-wrap items-center gap-4 lg:gap-6 p-3 rounded-lg border border-white/10"
+        style={{ backgroundColor: '#1F2937' }}
+      >
+        {metrics.map((metric, index) => {
+          const Icon = metric.icon;
+          return (
+            <div key={metric.label} className="flex items-center gap-4">
+              {index > 0 && (
+                <div className="hidden sm:block h-8 w-px bg-white/20" />
+              )}
+              <Tooltip>
                 <TooltipTrigger asChild>
-                  <div 
-                    className="rounded-xl p-6 transition-all duration-200 hover:scale-[1.02] cursor-default border border-white/10"
-                    style={{ backgroundColor: '#1F2937' }}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2 flex-1">
-                        <p className="text-sm font-medium text-white/70">{card.label}</p>
-                        <p className={`text-2xl font-bold tabular-nums ${card.valueClass || 'text-white'}`}>
-                          {card.value}
-                        </p>
-                        <p className="text-sm text-white/50">
-                          {card.subtext}
-                        </p>
-                      </div>
-                      <div className={`${card.iconBg} rounded-xl p-3`}>
-                        <Icon className={`h-6 w-6 ${card.iconColor}`} />
-                      </div>
+                  <div className="flex items-center gap-2.5 cursor-default">
+                    <div className={`${metric.iconBg} rounded-lg p-1.5`}>
+                      <Icon className={`h-4 w-4 ${metric.iconColor}`} />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase tracking-wide text-white/50 font-medium">
+                        {metric.label}
+                        {metric.count !== undefined && (
+                          <span className="ml-1 text-white/40">({metric.count})</span>
+                        )}
+                      </span>
+                      <span className={`text-base font-bold tabular-nums ${metric.valueClass || 'text-white'}`}>
+                        {metric.value}
+                      </span>
                     </div>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className="bg-gray-900 text-white border-gray-700">
-                  <p className="text-xs max-w-xs">{card.tooltip}</p>
+                  <p className="text-xs">{metric.tooltip}</p>
                 </TooltipContent>
               </Tooltip>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
     </TooltipProvider>
   );

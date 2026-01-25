@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge';
 import { CheckCircle, AlertTriangle, Clock, CreditCard, EyeOff, Layers } from 'lucide-react';
 import { Account } from '@/hooks/useAccounts';
 import { useReconciliationSettings } from '@/hooks/useReconciliationSettings';
@@ -38,47 +37,17 @@ export function AccountsQuickFilters({ accounts, activeFilter, onFilterChange }:
   };
 
   const filters = [
-    {
-      id: 'all' as const,
-      label: 'Todas',
-      icon: Layers,
-      count: filterCounts.all,
-    },
-    {
-      id: 'recently_reconciled' as const,
-      label: 'Conciliadas (3 dias)',
-      icon: CheckCircle,
-      count: filterCounts.recently_reconciled,
-    },
-    {
-      id: 'stale_reconciliation' as const,
-      label: 'Conciliação Atrasada',
-      icon: Clock,
-      count: filterCounts.stale_reconciliation,
-    },
-    {
-      id: 'never_reconciled' as const,
-      label: 'Nunca Conciliadas',
-      icon: AlertTriangle,
-      count: filterCounts.never_reconciled,
-    },
-    {
-      id: 'credit_cards' as const,
-      label: 'Cartões de Crédito',
-      icon: CreditCard,
-      count: filterCounts.credit_cards,
-    },
-    {
-      id: 'inactive' as const,
-      label: 'Inativas',
-      icon: EyeOff,
-      count: filterCounts.inactive,
-    },
+    { id: 'all' as const, label: 'Todas', icon: Layers, count: filterCounts.all },
+    { id: 'recently_reconciled' as const, label: 'Conciliadas', icon: CheckCircle, count: filterCounts.recently_reconciled },
+    { id: 'stale_reconciliation' as const, label: 'Atrasadas', icon: Clock, count: filterCounts.stale_reconciliation },
+    { id: 'never_reconciled' as const, label: 'Nunca', icon: AlertTriangle, count: filterCounts.never_reconciled },
+    { id: 'credit_cards' as const, label: 'Cartões', icon: CreditCard, count: filterCounts.credit_cards },
+    { id: 'inactive' as const, label: 'Inativas', icon: EyeOff, count: filterCounts.inactive },
   ];
 
   return (
     <div 
-      className="flex flex-wrap gap-2 p-4 rounded-xl border border-white/10"
+      className="flex flex-wrap gap-1.5 p-2 rounded-lg border border-white/10"
       style={{ backgroundColor: '#1F2937' }}
     >
       {filters.map((filter) => {
@@ -90,26 +59,19 @@ export function AccountsQuickFilters({ accounts, activeFilter, onFilterChange }:
             key={filter.id}
             onClick={() => onFilterChange(filter.id)}
             className={`
-              inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
-              transition-all duration-200
+              inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium
+              transition-all duration-150
               ${isActive 
-                ? 'bg-white text-gray-900 shadow-md' 
-                : 'bg-white/10 text-white hover:bg-white/20'
+                ? 'bg-white text-gray-900' 
+                : 'bg-white/10 text-white/80 hover:bg-white/20 hover:text-white'
               }
             `}
           >
-            <Icon className="h-4 w-4" />
+            <Icon className="h-3 w-3" />
             <span>{filter.label}</span>
-            <Badge 
-              variant="secondary" 
-              className={`ml-1 text-xs px-2 py-0.5 ${
-                isActive 
-                  ? 'bg-gray-200 text-gray-900 border-gray-300' 
-                  : 'bg-white/20 text-white border-white/20'
-              }`}
-            >
+            <span className={`text-[10px] ${isActive ? 'text-gray-600' : 'text-white/50'}`}>
               {filter.count}
-            </Badge>
+            </span>
           </button>
         );
       })}
